@@ -728,7 +728,56 @@ const SupportModal = ({onClose,onToast}) => {
   );
 };
 
-const ProfilScreen = ({user,onLogout,onToast,onUpgrade}) => {
+const AdminScreen = ({onBack,onToast}) => {
+  const [users,setUsers]=useState([]);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    (async()=>{
+      const {data,error}=await supabase.from("users").select("*").order("created_at",{ascending:false});
+      if(error)onToast("Erreur de chargement des utilisateurs","error");
+      else setUsers(data||[]);
+      setLoading(false);
+    })();
+  },[]);
+  const totalUsers=users.length;
+  const totalPremium=users.filter(u=>u.plan==="premium").length;
+  return(
+    <div style={{paddingBottom:16}}>
+      <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
+        <h2 style={{color:"#FDF6EC",fontSize:20,fontWeight:900,margin:0}}>Panneau Administrateur</h2>
+      </div>
+      <div style={{display:"flex",gap:10,padding:"14px 16px 0"}}>
+        <div style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
+          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>UTILISATRICES</p>
+          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:24,fontWeight:900}}>{totalUsers}</p>
+        </div>
+        <div style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
+          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>PREMIUM</p>
+          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:24,fontWeight:900}}>{totalPremium}</p>
+        </div>
+      </div>
+      <div style={{margin:"12px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
+        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>⚠️ Les tontines/groupes sont encore en donnees de demonstration (etape 4 de la roadmap). Cette liste d utilisatrices est en revanche 100% reelle, issue de Supabase.</p>
+      </div>
+      <div style={{padding:"14px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>UTILISATRICES INSCRITES</p>
+        {loading?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Chargement...</p>
+        :users.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucune utilisatrice pour le moment</p>
+        :users.map(u=><div key={u.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
+          <Avatar prenom={u.prenom} photo={u.photo_url} size={38}/>
+          <div style={{flex:1}}>
+            <p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{u.prenom}{u.role==="admin"&&<span style={{marginLeft:6,color:"#D4A843",fontSize:10,fontWeight:900}}>ADMIN</span>}</p>
+            <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{u.telephone}</p>
+          </div>
+          <span style={{background:u.plan==="premium"?"#D4A843":"#1B4332",color:u.plan==="premium"?"#0A1A0F":"#6B7280",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{u.plan==="premium"?"PREMIUM":"GRATUIT"}</span>
+        </div>)}
+      </div>
+    </div>
+  );
+};
+
+const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin}) => {
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
   return(
@@ -771,7 +820,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade}) => {
           </div>
         </div>}
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>REGLAGES</p>
-        {[{ic:"🔔",lb:"Notifications",fn:()=>onToast("Notifications activees")},{ic:"📲",lb:"Lier WhatsApp",fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:"Changer mon PIN",fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:"Exporter mes donnees",fn:()=>onToast("Export en cours...")},{ic:"💬",lb:"Contacter le support",fn:()=>setShowSupport(true)}].map(item=>(
+        {[...(user.role==="admin"?[{ic:"🛡️",lb:"Panneau Administrateur",fn:onOpenAdmin}]:[]),{ic:"🔔",lb:"Notifications",fn:()=>onToast("Notifications activees")},{ic:"📲",lb:"Lier WhatsApp",fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:"Changer mon PIN",fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:"Exporter mes donnees",fn:()=>onToast("Export en cours...")},{ic:"💬",lb:"Contacter le support",fn:()=>setShowSupport(true)}].map(item=>(
           <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
             <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
           </div>
@@ -854,7 +903,8 @@ export default function App() {
         :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
-        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")}/>:null}
+        :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast}/>
+        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>setNav("admin")}/>:null}
       </div>
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#0F2419",borderTop:"1px solid #1B4332",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#D4A843":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}

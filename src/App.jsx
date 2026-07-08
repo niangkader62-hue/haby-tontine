@@ -178,7 +178,7 @@ const AuthScreen = ({onLogin}) => {
   );
 };
 
-const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete}) => (
+const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,onPhoto}) => (
   <div style={{background:"#0F2419",border:`1px solid ${m.paye?"#1B4332":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
       <Avatar prenom={m.prenom} photo={m.photo} size={46}/>
@@ -207,6 +207,7 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete}) 
       <button onClick={onWA} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"8px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>WhatsApp</button>
       <button onClick={()=>onVersement(m)} style={{flex:1,background:"#1A2E1F",border:"1px solid #D4A843",borderRadius:10,padding:"8px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>+ Versement</button>
       <button onClick={()=>onHistorique(m)} style={{flex:1,background:"#1A2E1F",border:"1px solid #6B7280",borderRadius:10,padding:"8px",color:"#FDF6EC",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>Historique</button>
+      <label style={{background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 10px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"center"}}>📷<input type="file" accept="image/*" hidden onChange={e=>onPhoto(m.id,e)}/></label>
       <button onClick={()=>onDelete(m.id)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"8px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Retirer</button>
     </div>
     {!m.paye&&<button onClick={onToggle} style={{width:"100%",background:"#1B4332",border:"1px solid #22C55E",borderRadius:10,padding:"8px",color:"#22C55E",fontSize:12,fontWeight:700,cursor:"pointer",marginTop:6}}>Marquer paye ce cycle</button>}
@@ -273,7 +274,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user}) => {
   const [tab,setTab]=useState("membres");
   const [msgInput,setMsgInput]=useState("");
   const [showAdd,setShowAdd]=useState(false);
-  const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",dateEcheance:""});
+  const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",photo:""});
   const [showVers,setShowVers]=useState(false);
   const [versM,setVersM]=useState(null);
   const [versAmt,setVersAmt]=useState("");
@@ -331,11 +332,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user}) => {
   const sendMsg=()=>{if(!msgInput.trim())return;setGroupe(g=>({...g,messages:[...g.messages,{id:genId(),auteur:user.prenom,texte:s(msgInput.trim()),time:"maintenant"}]}));setMsgInput("");};
   const addM=async()=>{
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prenom et telephone requis","error");
-    const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
+    const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
     if(error)return onToast("Ajout impossible","error");
-    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:null,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
-    setNewM({prenom:"",tel:"",quartier:"",dateEcheance:""});setShowAdd(false);onToast("Membre ajoute !");
+    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
+    setNewM({prenom:"",tel:"",quartier:"",photo:""});setShowAdd(false);onToast("Membre ajoute !");
   };
   const delM=async(mid)=>{
     const {error}=await supabase.from("membres").delete().eq("id",mid);
@@ -348,6 +349,19 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user}) => {
     setHistoM({...m,historique:[]});setShowHisto(true);
     const {data,error}=await supabase.from("transactions").select("*").eq("membre_id",m.id).order("created_at",{ascending:false});
     if(!error)setHistoM(h=>h&&h.id===m.id?{...h,historique:(data||[]).map(t=>({mois:new Date(t.created_at).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}),montant:Number(t.montant),statut:t.statut,date:t.created_at?.split("T")[0]}))}:h);
+  };
+  const updatePhoto=(mid,e)=>{
+    const f=e.target.files?.[0];if(!f)return;
+    if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");
+    const r=new FileReader();
+    r.onload=async(ev)=>{
+      const photoUrl=ev.target.result;
+      const {error}=await supabase.from("membres").update({photo_url:photoUrl}).eq("id",mid);
+      if(error)return onToast("Photo impossible a sauvegarder","error");
+      setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===mid?{...m,photo:photoUrl}:m)}));
+      onToast("Photo mise a jour !");
+    };
+    r.readAsDataURL(f);
   };
 
   const buildRecu=(m,amt,paye)=>{
@@ -451,8 +465,8 @@ HABY Tontine - La tontine digitale africaine`;
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
           <button onClick={()=>setShowAdd(true)} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 12px",color:"#D4A843",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
-        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM}/>)}
-        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM}/>)}</>}
+        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}
+        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}</>}
       </div>}
 
       {tab==="events"&&<div style={{padding:"14px 16px 0"}}>
@@ -567,6 +581,7 @@ HABY Tontine - La tontine digitale africaine`;
       {showAdd&&<Modal onClose={()=>setShowAdd(false)}>
         <MH title="Ajouter un membre" onClose={()=>setShowAdd(false)}/>
         <p style={{color:"#6B7280",fontSize:13,marginBottom:16,lineHeight:1.6}}>Le chef de tontine ajoute les membres. Un rappel WhatsApp leur sera envoye.</p>
+        <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#1B4332",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 14px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");const r=new FileReader();r.onload=ev=>setNewM(n=>({...n,photo:ev.target.result}));r.readAsDataURL(f);}}/></label></div></Fld>
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>

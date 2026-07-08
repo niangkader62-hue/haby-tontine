@@ -751,11 +751,12 @@ const SupportModal = ({onClose,onToast}) => {
   );
 };
 
-const AdminScreen = ({onBack,onToast}) => {
+const AdminScreen = ({onBack,onToast,currentUserId}) => {
   const [users,setUsers]=useState([]);
   const [groupesCount,setGroupesCount]=useState(0);
   const [totalCollecte,setTotalCollecte]=useState(0);
   const [loading,setLoading]=useState(true);
+  const [busyId,setBusyId]=useState(null);
   useEffect(()=>{
     (async()=>{
       const [{data:us,error:e1},{count:gc},{data:txs,error:e3}]=await Promise.all([
@@ -772,6 +773,15 @@ const AdminScreen = ({onBack,onToast}) => {
   },[]);
   const totalUsers=users.length;
   const totalPremium=users.filter(u=>u.plan==="premium").length;
+  const toggleAdmin=async(u)=>{
+    const newRole=u.role==="admin"?"user":"admin";
+    setBusyId(u.id);
+    const {error}=await supabase.from("users").update({role:newRole}).eq("id",u.id);
+    setBusyId(null);
+    if(error)return onToast("Impossible de changer le role","error");
+    setUsers(list=>list.map(x=>x.id===u.id?{...x,role:newRole}:x));
+    onToast(newRole==="admin"?`${u.prenom} est maintenant co-administrateur !`:`${u.prenom} n est plus administrateur`);
+  };
   return(
     <div style={{paddingBottom:16}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
@@ -793,13 +803,14 @@ const AdminScreen = ({onBack,onToast}) => {
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>UTILISATRICES INSCRITES</p>
         {loading?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Chargement...</p>
         :users.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucune utilisatrice pour le moment</p>
-        :users.map(u=><div key={u.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
+        :users.map(u=><div key={u.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
           <Avatar prenom={u.prenom} photo={u.photo_url} size={38}/>
-          <div style={{flex:1}}>
+          <div style={{flex:1,minWidth:120}}>
             <p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{u.prenom}{u.role==="admin"&&<span style={{marginLeft:6,color:"#D4A843",fontSize:10,fontWeight:900}}>ADMIN</span>}</p>
             <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{u.telephone}</p>
           </div>
           <span style={{background:u.plan==="premium"?"#D4A843":"#1B4332",color:u.plan==="premium"?"#0A1A0F":"#6B7280",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{u.plan==="premium"?"PREMIUM":"GRATUIT"}</span>
+          {u.id!==currentUserId&&<button onClick={()=>toggleAdmin(u)} disabled={busyId===u.id} style={{background:u.role==="admin"?"transparent":"#1B4332",border:`1px solid ${u.role==="admin"?"#C1440E":"#2D6A4F"}`,borderRadius:10,padding:"6px 10px",color:u.role==="admin"?"#EF4444":"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer",width:"100%",marginTop:2}}>{busyId===u.id?"...":u.role==="admin"?"Retirer admin":"Nommer co-admin"}</button>}
         </div>)}
       </div>
     </div>
@@ -959,7 +970,7 @@ export default function App() {
         :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
-        :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast}/>
+        :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast} currentUserId={cu.id}/>
         :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>setNav("admin")}/>:null}
       </div>
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#0F2419",borderTop:"1px solid #1B4332",display:"flex",padding:"8px 0 20px",zIndex:100}}>

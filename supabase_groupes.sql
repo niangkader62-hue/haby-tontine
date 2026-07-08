@@ -69,3 +69,7 @@ create policy "checklist_all_own_or_admin" on checklist for all using (
 ) with check (
   exists (select 1 from groupes g where g.id = checklist.groupe_id and (g.user_id = auth.uid() or is_admin()))
 );
+
+-- 6) Filet de securite : la table groupes avait deja une colonne owner_id obligatoire
+-- avant nos changements ; on lui donne une valeur par defaut pour eviter tout futur souci
+alter table groupes alter column owner_id set default auth.uid();

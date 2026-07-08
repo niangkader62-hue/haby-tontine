@@ -878,7 +878,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
     if(user.plan==="free"&&user.groupesCount>=3)return setErr("Plan gratuit limite a 3 tontines. Passe a Premium !");
     setBusy(true);
-    const payload={user_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
+    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
     setBusy(false);
     if(error)return setErr("Erreur technique : "+(error.message||"inconnue"));

@@ -269,7 +269,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil}) => {
   );
 };
 
-const GroupeScreen = ({groupe:gInit,onBack,onToast,user}) => {
+const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateGroupe}) => {
   const [groupe,setGroupe]=useState(gInit);
   const [tab,setTab]=useState("membres");
   const [msgInput,setMsgInput]=useState("");
@@ -283,6 +283,28 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user}) => {
   const [newTask,setNewTask]=useState("");
   const [evtM,setEvtM]=useState(null);
   const [evtTxt,setEvtTxt]=useState("");
+  const [showEdit,setShowEdit]=useState(false);
+  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence});
+  const [editBusy,setEditBusy]=useState(false);
+
+  const deleteGroupe=async()=>{
+    if(!confirm("Supprimer cette tontine et tous ses membres ? Cette action est irreversible."))return;
+    const {error}=await supabase.from("groupes").delete().eq("id",groupe.id);
+    if(error)return onToast("Suppression impossible","error");
+    onDeleteGroupe(groupe.id);
+    onToast("Tontine supprimee");
+  };
+  const saveEdit=async()=>{
+    if(!editG.nom.trim())return onToast("Le nom est requis","error");
+    if(!editG.montant||Number(editG.montant)<500)return onToast("Montant minimum 500 FCFA","error");
+    setEditBusy(true);
+    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence}).eq("id",groupe.id);
+    setEditBusy(false);
+    if(error)return onToast("Modification impossible","error");
+    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence}));
+    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence});
+    setShowEdit(false);onToast("Tontine modifiee !");
+  };
 
   const aJour=groupe.membres.filter(m=>m.paye);
   const enRet=groupe.membres.filter(m=>!m.paye);
@@ -431,7 +453,8 @@ HABY Tontine - La tontine digitale africaine`;
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#FDF6EC",fontSize:24,cursor:"pointer",padding:0}}>←</button>
         <div style={{flex:1}}><h2 style={{color:"#FDF6EC",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#D4A843",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
-        <span style={{background:"#1B4332",color:"#22C55E",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:99}}>Actif</span>
+        <button onClick={()=>{setEditG({nom:groupe.nom,montant:String(groupe.montant),frequence:groupe.frequence});setShowEdit(true);}} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 10px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer"}}>Modifier</button>
+        <button onClick={deleteGroupe} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:8,padding:"5px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Suppr.</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"14px 16px 0"}}>
         {[["Collecte",fmtFCFA(collecte),"💰"],["Cagnotte tour",fmtFCFA(cagnotteTour),"🏆"],["Ponctualite",`${taux}%`,"📊"],["Caisse soc.",fmtFCFA(groupe.caisseSociale),"🏦"],["A jour",`${aJour.length}/${groupe.membres.length}`,"✅"],["En retard",`${enRet.length}`,"⚠️"]].map(([l,v,i])=>(
@@ -586,6 +609,13 @@ HABY Tontine - La tontine digitale africaine`;
         <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
         <Btn onClick={addM}>Ajouter ce membre</Btn>
+      </Modal>}
+      {showEdit&&<Modal onClose={()=>setShowEdit(false)}>
+        <MH title="Modifier la tontine" onClose={()=>setShowEdit(false)}/>
+        <Fld label="Nom"><Inp value={editG.nom} onChange={e=>setEditG(g=>({...g,nom:e.target.value}))} placeholder="Nom de la tontine" maxLength={40} autoFocus/></Fld>
+        <Fld label="Montant par cotisation (FCFA)"><Inp value={editG.montant} onChange={e=>setEditG(g=>({...g,montant:e.target.value.replace(/\D/g,"")}))} placeholder="25000" inputMode="numeric"/></Fld>
+        <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setEditG(g=>({...g,frequence:f}))} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:editG.frequence===f?"#D4A843":"#1B4332",color:editG.frequence===f?"#0A1A0F":"#FDF6EC",borderColor:editG.frequence===f?"#D4A843":"#2D6A4F"}}>{f}</button>)}</div></Fld>
+        <Btn onClick={saveEdit} disabled={editBusy}>{editBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
     </div>
   );
@@ -981,7 +1011,7 @@ export default function App() {
     <div style={{background:"#0A1A0F",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
-        {sel?<GroupeScreen groupe={sel} onBack={()=>setSel(null)} onToast={showToast} user={cu}/>
+        {sel?<GroupeScreen groupe={sel} onBack={()=>setSel(null)} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
         :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>

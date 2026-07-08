@@ -881,7 +881,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     const payload={user_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
     setBusy(false);
-    if(error)return setErr("Impossible de creer la tontine, reessaie.");
+    if(error)return setErr("Erreur technique : "+(error.message||"inconnue"));
     onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,prochainTour:"-",membres:[],checklist:[],messages:[]});
     onClose();
   };

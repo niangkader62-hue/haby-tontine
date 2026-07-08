@@ -826,6 +826,9 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
     if(error)return onToast("Impossible de changer le role","error");
     setUsers(list=>list.map(x=>x.id===u.id?{...x,role:newRole}:x));
     onToast(newRole==="admin"?`${u.prenom} est maintenant co-administrateur !`:`${u.prenom} n est plus administrateur`);
+    if(newRole==="admin"){
+      supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"HABY Tontine",body:"Tu es maintenant co-administrateur de la plateforme !"}}).catch(()=>{});
+    }
   };
   return(
     <div style={{paddingBottom:16}}>
@@ -862,9 +865,33 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
   );
 };
 
+const VAPID_PUBLIC_KEY="BCkH2-70XXEE0xobtKRkfBGuwUWpTh_GBrIXVvJ4dGvql0ZUxVrtzRwCv23hRPqYBcufOvgZhepTIqWjwq4zjTw";
+const urlBase64ToUint8Array=(base64String)=>{
+  const padding="=".repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+};
+
 const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin}) => {
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
+  const [notifBusy,setNotifBusy]=useState(false);
+  const enableNotifications=async()=>{
+    if(!("serviceWorker" in navigator)||!("PushManager" in window))return onToast("Notifications non supportees sur ce navigateur","error");
+    setNotifBusy(true);
+    try{
+      const perm=await Notification.requestPermission();
+      if(perm!=="granted"){setNotifBusy(false);return onToast("Autorisation refusee","error");}
+      const reg=await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+      const {error}=await supabase.from("push_subscriptions").upsert({user_id:user.id,subscription:sub.toJSON()},{onConflict:"user_id"});
+      setNotifBusy(false);
+      if(error)return onToast("Impossible d activer les notifications","error");
+      onToast("Notifications activees !");
+    }catch(e){setNotifBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
+  };
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"linear-gradient(135deg,#0F2419,#1B4332)",padding:"44px 20px 30px"}}>
@@ -905,7 +932,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin}) => {
           </div>
         </div>}
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>REGLAGES</p>
-        {[...(user.role==="admin"?[{ic:"🛡️",lb:"Panneau Administrateur",fn:onOpenAdmin}]:[]),{ic:"🔔",lb:"Notifications",fn:()=>onToast("Notifications activees")},{ic:"📲",lb:"Lier WhatsApp",fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:"Changer mon PIN",fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:"Exporter mes donnees",fn:()=>onToast("Export en cours...")},{ic:"💬",lb:"Contacter le support",fn:()=>setShowSupport(true)}].map(item=>(
+        {[...(user.role==="admin"?[{ic:"🛡️",lb:"Panneau Administrateur",fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"Activation...":"Activer les notifications",fn:enableNotifications},{ic:"📲",lb:"Lier WhatsApp",fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:"Changer mon PIN",fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:"Exporter mes donnees",fn:()=>onToast("Export en cours...")},{ic:"💬",lb:"Contacter le support",fn:()=>setShowSupport(true)}].map(item=>(
           <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
             <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
           </div>

@@ -25,27 +25,7 @@ function useVoiceInput(onResult,onToast){
   return {listening,toggle};
 }
 
-const DEMO_GROUPES = [
-  { id:"g1", nom:"Tontine des Mamans", montant:25000, frequence:"Mensuel", couleur:"#D4A843", cycle:3, totalCycles:12, prochainTour:"Aissata", cagnotte:75000, caisseSociale:15000, dateProchaine:"2026-07-05",dateEcheance:"2026-07-01",
-    membres:[
-      {id:"m1",prenom:"Fatoumata",tel:"+22376111111",photo:null,quartier:"Badalabougou",versements:75000,score:98,paye:true,cyclesPaies:3,cyclesTotal:3,evenement:null,historique:[{mois:"Avril 2026",montant:25000,statut:"paye",date:"2026-04-01"},{mois:"Mai 2026",montant:25000,statut:"paye",date:"2026-05-03"},{mois:"Juin 2026",montant:25000,statut:"paye",date:"2026-06-01"}]},
-      {id:"m2",prenom:"Aissata",tel:"+22365222222",photo:null,quartier:"Hamdallaye ACI",versements:50000,score:72,paye:false,cyclesPaies:2,cyclesTotal:3,evenement:"Bapteme bebe le 12 Juil",historique:[{mois:"Avril 2026",montant:25000,statut:"paye",date:"2026-04-05"},{mois:"Mai 2026",montant:15000,statut:"retard",date:"2026-05-12"},{mois:"Juin 2026",montant:0,statut:"non paye",date:null}]},
-      {id:"m3",prenom:"Mariama",tel:"+22379333333",photo:null,quartier:"Lafiabougou",versements:75000,score:95,paye:true,cyclesPaies:3,cyclesTotal:3,evenement:null},
-      {id:"m4",prenom:"Kadiatou",tel:"+22370444444",photo:null,quartier:"Magnambougou",versements:25000,score:60,paye:false,cyclesPaies:1,cyclesTotal:3,evenement:"Mariage fille 20 Juil"},
-    ],
-    checklist:[{id:"c1",label:"Appeler Aissata pour son retard",done:false},{id:"c2",label:"Confirmer lieu reunion",done:true},{id:"c3",label:"Envoyer resume mensuel",done:false}],
-    messages:[{id:"msg1",auteur:"Fatoumata",texte:"Merci a toutes !",time:"il y a 2h"},{id:"msg2",auteur:"HABY",texte:"Aissata recoit la cagnotte ce mois !",time:"hier"}],
-  },
-  { id:"g2", nom:"Groupe Solidarite", montant:10000, frequence:"Hebdo", couleur:"#1B6B45", cycle:7, totalCycles:20, prochainTour:"Rokia", cagnotte:70000, caisseSociale:8000, dateProchaine:"2026-06-30",dateEcheance:"2026-07-01",
-    membres:[
-      {id:"m5",prenom:"Rokia",tel:"+22372555555",photo:null,quartier:"Kalaban Coro",versements:70000,score:100,paye:true,cyclesPaies:7,cyclesTotal:7,evenement:null},
-      {id:"m6",prenom:"Hawa",tel:"+22366666666",photo:null,quartier:"Sogoniko",versements:60000,score:88,paye:true,cyclesPaies:6,cyclesTotal:7,evenement:null},
-      {id:"m7",prenom:"Bintou",tel:"+22375777777",photo:null,quartier:"Faladie",versements:40000,score:55,paye:false,cyclesPaies:4,cyclesTotal:7,evenement:"Anniversaire 5 Juil"},
-    ],
-    checklist:[{id:"c4",label:"Relancer Bintou",done:false},{id:"c5",label:"Preparer bilan trimestriel",done:false}],
-    messages:[{id:"msg3",auteur:"Rokia",texte:"Reunion vendredi a 18h chez moi",time:"il y a 1j"}],
-  },
-];
+
 
 const Avatar = ({ prenom, photo, size=40, gold=false }) => {
   const [err, setErr] = useState(false);
@@ -198,7 +178,7 @@ const AuthScreen = ({onLogin}) => {
   );
 };
 
-const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique}) => (
+const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete}) => (
   <div style={{background:"#0F2419",border:`1px solid ${m.paye?"#1B4332":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
       <Avatar prenom={m.prenom} photo={m.photo} size={46}/>
@@ -227,6 +207,7 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique}) => (
       <button onClick={onWA} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"8px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>WhatsApp</button>
       <button onClick={()=>onVersement(m)} style={{flex:1,background:"#1A2E1F",border:"1px solid #D4A843",borderRadius:10,padding:"8px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>+ Versement</button>
       <button onClick={()=>onHistorique(m)} style={{flex:1,background:"#1A2E1F",border:"1px solid #6B7280",borderRadius:10,padding:"8px",color:"#FDF6EC",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>Historique</button>
+      <button onClick={()=>onDelete(m.id)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"8px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Retirer</button>
     </div>
     {!m.paye&&<button onClick={onToggle} style={{width:"100%",background:"#1B4332",border:"1px solid #22C55E",borderRadius:10,padding:"8px",color:"#22C55E",fontSize:12,fontWeight:700,cursor:"pointer",marginTop:6}}>Marquer paye ce cycle</button>}
   </div>
@@ -308,20 +289,66 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user}) => {
   const cagnotteTour=groupe.membres.length*groupe.montant;
   const taux=groupe.membres.length>0?Math.round((aJour.length/groupe.membres.length)*100):0;
 
-  const toggleP=(mid)=>{setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===mid?{...m,paye:!m.paye,score:!m.paye?Math.min(m.score+5,100):Math.max(m.score-10,0)}:m)}));onToast("Statut mis a jour");};
-  const toggleC=(cid)=>{setGroupe(g=>({...g,checklist:g.checklist.map(c=>c.id===cid?{...c,done:!c.done}:c)}));};
-  const addTask=()=>{if(!newTask.trim())return onToast("Ecris une tache d abord","error");setGroupe(g=>({...g,checklist:[...g.checklist,{id:genId(),label:s(newTask.trim()),done:false}]}));setNewTask("");onToast("Tache ajoutee !");};
-  const delTask=(cid)=>{setGroupe(g=>({...g,checklist:g.checklist.filter(c=>c.id!==cid)}));onToast("Tache supprimee");};
+  const toggleP=async(mid)=>{
+    const m=groupe.membres.find(x=>x.id===mid);
+    const newPaye=!m.paye;
+    const newScore=newPaye?Math.min(m.score+5,100):Math.max(m.score-10,0);
+    const {error}=await supabase.from("membres").update({paye:newPaye,score:newScore}).eq("id",mid);
+    if(error)return onToast("Mise a jour impossible","error");
+    if(newPaye){
+      await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:mid,montant:groupe.montant,cycle:groupe.cycle,statut:"paye"});
+    }
+    setGroupe(g=>({...g,membres:g.membres.map(x=>x.id===mid?{...x,paye:newPaye,score:newScore}:x)}));
+    onToast("Statut mis a jour");
+  };
+  const toggleC=async(cid)=>{
+    const c=groupe.checklist.find(x=>x.id===cid);
+    const {error}=await supabase.from("checklist").update({done:!c.done}).eq("id",cid);
+    if(error)return onToast("Mise a jour impossible","error");
+    setGroupe(g=>({...g,checklist:g.checklist.map(c=>c.id===cid?{...c,done:!c.done}:c)}));
+  };
+  const addTask=async()=>{
+    if(!newTask.trim())return onToast("Ecris une tache d abord","error");
+    const {data,error}=await supabase.from("checklist").insert({groupe_id:groupe.id,label:s(newTask.trim()),done:false}).select().single();
+    if(error)return onToast("Ajout impossible","error");
+    setGroupe(g=>({...g,checklist:[...g.checklist,{id:data.id,label:data.label,done:false}]}));
+    setNewTask("");onToast("Tache ajoutee !");
+  };
+  const delTask=async(cid)=>{
+    const {error}=await supabase.from("checklist").delete().eq("id",cid);
+    if(error)return onToast("Suppression impossible","error");
+    setGroupe(g=>({...g,checklist:g.checklist.filter(c=>c.id!==cid)}));
+    onToast("Tache supprimee");
+  };
   const openEvt=(m)=>{setEvtM(m);setEvtTxt(m.evenement||"");};
-  const saveEvt=()=>{setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===evtM.id?{...m,evenement:evtTxt.trim()?s(evtTxt.trim()):null}:m)}));setEvtM(null);setEvtTxt("");onToast(evtTxt.trim()?"Evenement enregistre !":"Evenement supprime");};
+  const saveEvt=async()=>{
+    const val=evtTxt.trim()?s(evtTxt.trim()):null;
+    const {error}=await supabase.from("membres").update({evenement:val}).eq("id",evtM.id);
+    if(error)return onToast("Mise a jour impossible","error");
+    setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===evtM.id?{...m,evenement:val}:m)}));
+    setEvtM(null);setEvtTxt("");onToast(val?"Evenement enregistre !":"Evenement supprime");
+  };
   const sendMsg=()=>{if(!msgInput.trim())return;setGroupe(g=>({...g,messages:[...g.messages,{id:genId(),auteur:user.prenom,texte:s(msgInput.trim()),time:"maintenant"}]}));setMsgInput("");};
-  const addM=()=>{
+  const addM=async()=>{
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prenom et telephone requis","error");
-    setGroupe(g=>({...g,membres:[...g.membres,{id:genId(),prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo:null,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0,historique:[]}]}));
+    const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
+    const {data,error}=await supabase.from("membres").insert(payload).select().single();
+    if(error)return onToast("Ajout impossible","error");
+    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:null,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
     setNewM({prenom:"",tel:"",quartier:"",dateEcheance:""});setShowAdd(false);onToast("Membre ajoute !");
   };
+  const delM=async(mid)=>{
+    const {error}=await supabase.from("membres").delete().eq("id",mid);
+    if(error)return onToast("Suppression impossible","error");
+    setGroupe(g=>({...g,membres:g.membres.filter(m=>m.id!==mid)}));
+    onToast("Membre retire");
+  };
   const openVers=(m)=>{setVersM(m);setVersAmt("");setShowVers(true);};
-  const openHisto=(m)=>{setHistoM(m);setShowHisto(true);};
+  const openHisto=async(m)=>{
+    setHistoM({...m,historique:[]});setShowHisto(true);
+    const {data,error}=await supabase.from("transactions").select("*").eq("membre_id",m.id).order("created_at",{ascending:false});
+    if(!error)setHistoM(h=>h&&h.id===m.id?{...h,historique:(data||[]).map(t=>({mois:new Date(t.created_at).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}),montant:Number(t.montant),statut:t.statut,date:t.created_at?.split("T")[0]}))}:h);
+  };
 
   const buildRecu=(m,amt,paye)=>{
     const now=new Date();
@@ -348,24 +375,20 @@ Merci ${m.prenom} pour votre confiance !
 HABY Tontine - La tontine digitale africaine`;
   };
 
-  const saveVers=(sendWA)=>{
+  const saveVers=async(sendWA)=>{
     const amt=Number(versAmt);
     if(!amt||amt<1)return;
     const paye=amt>=groupe.montant;
     const recu=buildRecu(versM,amt,paye);
-    const now=new Date();
-    const moisLabel=now.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-    const newEntry={mois:moisLabel,montant:amt,statut:paye?"paye":"retard",date:now.toISOString().split("T")[0]};
+    const newVersements=(versM.versements||0)+amt;
+    const newScore=Math.min(versM.score+(paye?5:2),100);
+    const newCyclesPaies=paye?versM.cyclesPaies+1:versM.cyclesPaies;
+    const {error:mErr}=await supabase.from("membres").update({versements:newVersements,paye,score:newScore,cycles_paies:newCyclesPaies}).eq("id",versM.id);
+    if(mErr)return onToast("Versement impossible","error");
+    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"retard"});
     setGroupe(g=>({...g,
       cagnotte:g.cagnotte+amt,
-      membres:g.membres.map(m=>m.id===versM.id?{
-        ...m,
-        versements:(m.versements||0)+amt,
-        paye,
-        cyclesPaies:paye?m.cyclesPaies+1:m.cyclesPaies,
-        score:Math.min(m.score+(paye?5:2),100),
-        historique:[...(m.historique||[]),newEntry]
-      }:m)
+      membres:g.membres.map(m=>m.id===versM.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)
     }));
     if(sendWA){
       const tel=versM.tel.replace(/[\s+]/g,"");
@@ -428,8 +451,8 @@ HABY Tontine - La tontine digitale africaine`;
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
           <button onClick={()=>setShowAdd(true)} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 12px",color:"#D4A843",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
-        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto}/>)}
-        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto}/>)}</>}
+        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM}/>)}
+        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM}/>)}</>}
       </div>}
 
       {tab==="events"&&<div style={{padding:"14px 16px 0"}}>
@@ -730,12 +753,20 @@ const SupportModal = ({onClose,onToast}) => {
 
 const AdminScreen = ({onBack,onToast}) => {
   const [users,setUsers]=useState([]);
+  const [groupesCount,setGroupesCount]=useState(0);
+  const [totalCollecte,setTotalCollecte]=useState(0);
   const [loading,setLoading]=useState(true);
   useEffect(()=>{
     (async()=>{
-      const {data,error}=await supabase.from("users").select("*").order("created_at",{ascending:false});
-      if(error)onToast("Erreur de chargement des utilisateurs","error");
-      else setUsers(data||[]);
+      const [{data:us,error:e1},{count:gc},{data:txs,error:e3}]=await Promise.all([
+        supabase.from("users").select("*").order("created_at",{ascending:false}),
+        supabase.from("groupes").select("id",{count:"exact",head:true}),
+        supabase.from("transactions").select("montant"),
+      ]);
+      if(e1)onToast("Erreur de chargement des utilisatrices","error");
+      else setUsers(us||[]);
+      if(!e3)setTotalCollecte((txs||[]).reduce((a,t)=>a+(Number(t.montant)||0),0));
+      setGroupesCount(gc||0);
       setLoading(false);
     })();
   },[]);
@@ -747,18 +778,16 @@ const AdminScreen = ({onBack,onToast}) => {
         <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
         <h2 style={{color:"#FDF6EC",fontSize:20,fontWeight:900,margin:0}}>Panneau Administrateur</h2>
       </div>
-      <div style={{display:"flex",gap:10,padding:"14px 16px 0"}}>
-        <div style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
-          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>UTILISATRICES</p>
-          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:24,fontWeight:900}}>{totalUsers}</p>
-        </div>
-        <div style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
-          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>PREMIUM</p>
-          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:24,fontWeight:900}}>{totalPremium}</p>
-        </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"14px 16px 0"}}>
+        {[["UTILISATRICES",totalUsers],["PREMIUM",totalPremium],["TONTINES CREEES",groupesCount],["TOTAL COLLECTE",fmtFCFA(totalCollecte)]].map(([l,v])=>(
+          <div key={l} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
+            <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>{l}</p>
+            <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:20,fontWeight:900}}>{v}</p>
+          </div>
+        ))}
       </div>
       <div style={{margin:"12px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
-        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>⚠️ Les tontines/groupes sont encore en donnees de demonstration (etape 4 de la roadmap). Cette liste d utilisatrices est en revanche 100% reelle, issue de Supabase.</p>
+        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>✅ Toutes ces donnees sont desormais 100% reelles : tontines, membres et cotisations viennent directement de Supabase, tous comptes confondus.</p>
       </div>
       <div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>UTILISATRICES INSCRITES</p>
@@ -843,11 +872,17 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const [freq,setFreq]=useState("Mensuel");
   const [echeance,setEcheance]=useState("");
   const [err,setErr]=useState("");
-  const handle=()=>{
+  const [busy,setBusy]=useState(false);
+  const handle=async()=>{
     if(!nom.trim())return setErr("Donne un nom a ta tontine");
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
     if(user.plan==="free"&&user.groupesCount>=3)return setErr("Plan gratuit limite a 3 tontines. Passe a Premium !");
-    onCreate({id:genId(),nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,totalCycles:12,prochainTour:"-",cagnotte:0,caisseSociale:0,dateProchaine:new Date(Date.now()+30*86400000).toISOString().split("T")[0],dateEcheance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],membres:[],checklist:[],messages:[]});
+    setBusy(true);
+    const payload={user_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
+    const {data,error}=await supabase.from("groupes").insert(payload).select().single();
+    setBusy(false);
+    if(error)return setErr("Impossible de creer la tontine, reessaie.");
+    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,prochainTour:"-",membres:[],checklist:[],messages:[]});
     onClose();
   };
   return <Modal onClose={onClose}>
@@ -857,7 +892,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <Fld label="Date d echeance mensuelle"><Inp value={echeance} onChange={e=>setEcheance(e.target.value)} placeholder="Ex: 2026-07-01" type="date"/></Fld>
     <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#D4A843":"#1B4332",color:freq===f?"#0A1A0F":"#FDF6EC",borderColor:freq===f?"#D4A843":"#2D6A4F"}}>{f}</button>)}</div></Fld>
     <ErrBox msg={err}/>
-    <Btn onClick={handle}>Creer ma tontine</Btn>
+    <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer ma tontine"}</Btn>
   </Modal>;
 };
 
@@ -865,17 +900,38 @@ export default function App() {
   const [user,setUser]=useState(null);
   const [checking,setChecking]=useState(true);
   const [nav,setNav]=useState("home");
-  const [groupes,setGroupes]=useState(DEMO_GROUPES);
+  const [groupes,setGroupes]=useState([]);
   const [sel,setSel]=useState(null);
   const [toast,setToast]=useState(null);
   const [showC,setShowC]=useState(false);
 
   const showToast=useCallback((msg,type)=>setToast({msg,type}),[]);
 
+  const loadGroupes=useCallback(async(uid)=>{
+    const {data:gs,error}=await supabase.from("groupes").select("*").eq("user_id",uid).order("created_at",{ascending:false});
+    if(error){showToast("Erreur de chargement des tontines","error");return;}
+    const full=await Promise.all((gs||[]).map(async g=>{
+      const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
+      const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
+      const mm=(membres||[]).map(m=>({id:m.id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1}));
+      const aJourCount=mm.filter(m=>m.paye).length;
+      return {
+        id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
+        cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,
+        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
+        prochainTour:(mm.find(m=>!m.paye)||mm[0])?.prenom||"-",
+        membres:mm,
+        checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
+        messages:[],
+      };
+    }));
+    setGroupes(full);
+  },[showToast]);
+
   useEffect(()=>{
     (async()=>{
       const sessionUser=await getSession();
-      if(sessionUser)setUser(sessionUser);
+      if(sessionUser){setUser(sessionUser);await loadGroupes(sessionUser.id);}
       setChecking(false);
     })();
   },[]);
@@ -891,7 +947,7 @@ export default function App() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={setUser}/>;
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);await loadGroupes(u.id);}}/>;
   const cu={...user,groupesCount:groupes.length};
   const NAV=[["home","🏠","Accueil"],["epargne","🏺","Epargne"],["haby","🤖","HABY"],["profil","👤","Profil"]];
 

@@ -43,4 +43,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-// deploiement auto active

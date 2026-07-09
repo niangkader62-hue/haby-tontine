@@ -27,18 +27,24 @@ Deno.serve(async (req) => {
     }));
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents,
+          generationConfig: { temperature: 0.6, maxOutputTokens: 500, topP: 0.9 },
         }),
       }
     );
     const data = await res.json();
     const reply = data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+    if (!reply && data.error) {
+      return new Response(JSON.stringify({ content: [{ text: "HABY a un souci technique, reessaie dans un instant." }] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // On reformate la reponse pour rester compatible avec le code du chat HABY, sans rien changer cote App.jsx
     return new Response(JSON.stringify({ content: [{ text: reply || "Desole, reessaie !" }] }), {

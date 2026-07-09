@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { registerUser, loginUser, getSession, logoutUser } from "./authService";
 import { supabase } from "./supabaseClient";
+import authHomme from "./assets/auth-homme.webp";
 
 const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
 const sPhone = (p) => String(p).replace(/[^\d+\s]/g, "").slice(0, 16);
@@ -170,7 +171,9 @@ const AuthScreen = ({onLogin}) => {
   if(step==="welcome") return(
     <div style={W}><div style={C}>
       <div style={{textAlign:"center",paddingBottom:8}}>
-        <div style={{width:80,height:80,background:"linear-gradient(135deg,#D4A843,#E8B96A)",borderRadius:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,fontWeight:900,color:"#0A1A0F",margin:"0 auto 10px"}}>H</div>
+        <div style={{width:120,height:120,borderRadius:"50%",margin:"0 auto 18px",padding:4,background:"linear-gradient(135deg,#D4A843,#E8B96A)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <img src={authHomme} alt="HABY Tontine" style={{width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover",border:"3px solid #0A1A0F"}}/>
+        </div>
         <h1 style={{color:"#FDF6EC",fontSize:30,fontWeight:900,margin:"8px 0 4px",letterSpacing:2}}>HABY Tontine</h1>
         <p style={{color:"#6B7280",fontSize:13,margin:0}}>Ta tontine. Digitale. Securisee.</p>
       </div>

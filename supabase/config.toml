@@ -1,0 +1,2 @@
+[functions.daily-reminders]
+verify_jwt = false

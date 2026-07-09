@@ -256,7 +256,7 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
   </div>
 );
 
-const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil}) => {
+const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation}) => {
   const totalEp=groupes.reduce((a,g)=>a+g.cagnotte,0);
   const totalCS=groupes.reduce((a,g)=>a+g.caisseSociale,0);
   const nbRet=groupes.reduce((a,g)=>a+g.membres.filter(m=>!m.paye).length,0);
@@ -307,6 +307,55 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil}) => {
         })}
       </div>
       {groupes.length>0&&<div style={{margin:"16px 16px 0",background:"#0A1A0F",border:"1px solid #D4A843",borderRadius:14,padding:"12px 16px",display:"flex",gap:12,alignItems:"center"}}><span style={{fontSize:22,color:"#D4A843"}}>🔔</span><div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:13}}>Rappel cotisation</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>Dans 3 jours - Tontine des Mamans</p></div></div>}
+      {participations&&participations.length>0&&<div style={{padding:"22px 16px 0"}}>
+        <h3 style={{color:"#FDF6EC",fontSize:16,fontWeight:800,margin:"0 0 14px"}}>Tontines ou je participe</h3>
+        {participations.map(g=>(
+          <div key={g.id} onClick={()=>onSelectParticipation(g)} style={{background:"#0F2419",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #2D6A4F",cursor:"pointer"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:12,height:12,borderRadius:"50%",background:g.couleur,flexShrink:0}}/><div><p style={{margin:0,color:"#FDF6EC",fontWeight:800,fontSize:15}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{g.membres.length} membres - {g.frequence}</p></div></div>
+              <span style={{background:g.moi?.paye?"#22C55E":"#C1440E",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{g.moi?.paye?"A jour":"En retard"}</span>
+            </div>
+          </div>
+        ))}
+      </div>}
+    </div>
+  );
+};
+
+const ParticipationScreen = ({groupe,onBack}) => {
+  const pct=Math.round((groupe.cycle/groupe.totalCycles)*100);
+  return(
+    <div style={{paddingBottom:16}}>
+      <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
+        <div style={{flex:1}}><h2 style={{color:"#FDF6EC",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#D4A843",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
+        <span style={{background:"#1B4332",color:"#6B7280",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:99}}>Lecture seule</span>
+      </div>
+      <div style={{padding:"16px 16px 0"}}>
+        <Bar pct={pct} c={groupe.couleur}/>
+        <p style={{color:"#6B7280",fontSize:12,margin:"6px 0 0"}}>Cycle {groupe.cycle}/{groupe.totalCycles}</p>
+      </div>
+      {groupe.moi&&<div style={{margin:"16px 16px 0",background:"#0F2419",border:"1px solid #D4A843",borderRadius:14,padding:16}}>
+        <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:13}}>Ma situation</p>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:10}}>
+          <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Statut</p><p style={{margin:"2px 0 0",color:groupe.moi.paye?"#22C55E":"#EF4444",fontWeight:800,fontSize:14}}>{groupe.moi.paye?"A jour":"En retard"}</p></div>
+          <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Verse au total</p><p style={{margin:"2px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:14}}>{fmtFCFA(groupe.moi.versements)}</p></div>
+          <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Cycles payes</p><p style={{margin:"2px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:14}}>{groupe.moi.cyclesPaies}/{groupe.totalCycles}</p></div>
+        </div>
+      </div>}
+      <div style={{padding:"20px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>MEMBRES DU GROUPE</p>
+        {groupe.membres.map(m=>(
+          <div key={m.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
+            <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
+            <p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14,flex:1}}>{m.prenom}</p>
+            <span style={{background:m.paye?"#1B4332":"#1A0800",color:m.paye?"#22C55E":"#EF4444",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{m.paye?"Paye":"En retard"}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{margin:"16px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
+        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu es membre de cette tontine, pas administratrice. Seule la personne qui l a creee peut la modifier. Pour signaler un paiement, contacte-la directement.</p>
+      </div>
     </div>
   );
 };
@@ -399,6 +448,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
     if(error)return onToast("Ajout impossible","error");
+    supabase.rpc("link_membre",{p_membre_id:data.id}).catch(()=>{});
     setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
     setNewM({prenom:"",tel:"",quartier:"",photo:""});setShowAdd(false);onToast("Membre ajoute !");
   };
@@ -1056,6 +1106,8 @@ export default function App() {
   const [toast,setToast]=useState(null);
   const [showC,setShowC]=useState(false);
   const [lang,setLang]=useState("fr");
+  const [participations,setParticipations]=useState([]);
+  const [selPart,setSelPart]=useState(null);
 
   const showToast=useCallback((msg,type)=>setToast({msg,type}),[]);
 
@@ -1063,6 +1115,24 @@ export default function App() {
     setAppLang(l);setLang(l);
     if(user)await supabase.from("users").update({langue:l}).eq("id",user.id);
   },[user]);
+
+  const loadParticipations=useCallback(async(uid)=>{
+    const {data:mine,error}=await supabase.from("membres").select("*").eq("user_id",uid);
+    if(error||!mine||mine.length===0){setParticipations([]);return;}
+    const groupeIds=[...new Set(mine.map(m=>m.groupe_id))];
+    const {data:gs}=await supabase.from("groupes").select("*").in("id",groupeIds);
+    const full=await Promise.all((gs||[]).map(async g=>{
+      const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
+      const moi=mine.find(m=>m.groupe_id===g.id);
+      return {
+        id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
+        cycle:g.cycle||1,totalCycles:g.total_cycles||12,
+        membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement})),
+        moi:moi?{versements:Number(moi.versements)||0,paye:moi.paye,cyclesPaies:moi.cycles_paies||0}:null,
+      };
+    }));
+    setParticipations(full);
+  },[]);
 
   const loadGroupes=useCallback(async(uid)=>{
     const {data:gs,error}=await supabase.from("groupes").select("*").eq("user_id",uid).order("created_at",{ascending:false});
@@ -1088,7 +1158,7 @@ export default function App() {
   useEffect(()=>{
     (async()=>{
       const sessionUser=await getSession();
-      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await loadGroupes(sessionUser.id);}
+      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await loadGroupes(sessionUser.id);await loadParticipations(sessionUser.id);}
       setChecking(false);
     })();
   },[]);
@@ -1104,7 +1174,7 @@ export default function App() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await loadGroupes(u.id);}}/>;
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await loadGroupes(u.id);await loadParticipations(u.id);}}/>;
   const cu={...user,groupesCount:groupes.length};
   const NAV=[["home","🏠",t("accueil")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
@@ -1112,8 +1182,9 @@ export default function App() {
     <div style={{background:"#0A1A0F",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
-        {sel?<GroupeScreen groupe={sel} onBack={()=>{setSel(null);loadGroupes(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
-        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")}/>
+        {selPart?<ParticipationScreen groupe={selPart} onBack={()=>setSelPart(null)}/>
+        :sel?<GroupeScreen groupe={sel} onBack={()=>{setSel(null);loadGroupes(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
+        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={setSelPart}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast} currentUserId={cu.id}/>

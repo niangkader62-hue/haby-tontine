@@ -26,7 +26,7 @@ export async function registerUser(tel, pin, prenom, photoUrl) {
   });
   if (profileErr) return { ok: false, err: "Erreur de création de profil." };
 
-  return { ok: true, user: { id: userId, prenom, tel, photo: photoUrl, plan: "free", role: "user" } };
+  return { ok: true, user: { id: userId, prenom, tel, photo: photoUrl, plan: "free", role: "user", langue: "fr" } };
 }
 
 export async function loginUser(tel, pin) {
@@ -45,7 +45,7 @@ export async function loginUser(tel, pin) {
 
   return {
     ok: true,
-    user: { id: profile.id, prenom: profile.prenom, tel: profile.telephone, photo: profile.photo_url, plan: profile.plan, role: profile.role || "user" },
+    user: { id: profile.id, prenom: profile.prenom, tel: profile.telephone, photo: profile.photo_url, plan: profile.plan, role: profile.role || "user", langue: profile.langue || "fr" },
   };
 }
 
@@ -54,7 +54,7 @@ export async function getSession() {
   if (!data.session) return null;
   const { data: profile } = await supabase.from("users").select("*").eq("id", data.session.user.id).single();
   if (!profile) return null;
-  return { id: profile.id, prenom: profile.prenom, tel: profile.telephone, photo: profile.photo_url, plan: profile.plan, role: profile.role || "user" };
+  return { id: profile.id, prenom: profile.prenom, tel: profile.telephone, photo: profile.photo_url, plan: profile.plan, role: profile.role || "user", langue: profile.langue || "fr" };
 }
 
 export async function logoutUser() {

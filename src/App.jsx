@@ -8,6 +8,45 @@ const sPin = (p) => String(p).replace(/\D/g, "").slice(0, 4);
 const fmtFCFA = (n) => Number(n).toLocaleString("fr-FR") + " FCFA";
 const genId = () => Date.now() + Math.random().toString(36).slice(2, 7);
 
+const I18N={
+  fr:{
+    connexion:"Connexion",inscription:"Inscription",bienvenue:"Bienvenue",
+    accueil:"Accueil",epargne:"Epargne",profil:"Profil",
+    mesTontines:"Mes Tontines",creer:"Creer",ajouter:"Ajouter",modifier:"Modifier",supprimer:"Supprimer",
+    enregistrer:"Enregistrer",annuler:"Annuler",gratuit:"GRATUIT",premium:"PREMIUM",
+    notifications:"Activer les notifications",lierWA:"Lier WhatsApp",changerPin:"Changer mon PIN",
+    exporterDonnees:"Exporter mes donnees",contacterSupport:"Contacter le support",deconnexion:"Deconnexion",
+    panneauAdmin:"Panneau Administrateur",langue:"Langue",
+    mesEpargnes:"Mes epargnes",caisseSociale:"Caisse sociale",
+    membresEnRetard:"membre(s) en retard",cliquezTontine:"Cliquez sur une tontine",
+  },
+  en:{
+    connexion:"Log in",inscription:"Sign up",bienvenue:"Welcome",
+    accueil:"Home",epargne:"Savings",profil:"Profile",
+    mesTontines:"My Tontines",creer:"Create",ajouter:"Add",modifier:"Edit",supprimer:"Delete",
+    enregistrer:"Save",annuler:"Cancel",gratuit:"FREE",premium:"PREMIUM",
+    notifications:"Enable notifications",lierWA:"Link WhatsApp",changerPin:"Change my PIN",
+    exporterDonnees:"Export my data",contacterSupport:"Contact support",deconnexion:"Log out",
+    panneauAdmin:"Admin Panel",langue:"Language",
+    mesEpargnes:"My savings",caisseSociale:"Social fund",
+    membresEnRetard:"member(s) late",cliquezTontine:"Click on a tontine",
+  },
+  ar:{
+    connexion:"تسجيل الدخول",inscription:"إنشاء حساب",bienvenue:"مرحبا",
+    accueil:"الرئيسية",epargne:"الادخار",profil:"الملف الشخصي",
+    mesTontines:"جمعياتي",creer:"إنشاء",ajouter:"إضافة",modifier:"تعديل",supprimer:"حذف",
+    enregistrer:"حفظ",annuler:"إلغاء",gratuit:"مجاني",premium:"بريميوم",
+    notifications:"تفعيل الإشعارات",lierWA:"ربط واتساب",changerPin:"تغيير الرمز السري",
+    exporterDonnees:"تصدير بياناتي",contacterSupport:"الاتصال بالدعم",deconnexion:"تسجيل الخروج",
+    panneauAdmin:"لوحة الإدارة",langue:"اللغة",
+    mesEpargnes:"مدخراتي",caisseSociale:"الصندوق الاجتماعي",
+    membresEnRetard:"عضو(ة) متأخر(ة)",cliquezTontine:"اضغطي على جمعية",
+  },
+};
+let CURRENT_LANG="fr";
+const setAppLang=(l)=>{CURRENT_LANG=I18N[l]?l:"fr";document.documentElement.dir=CURRENT_LANG==="ar"?"rtl":"ltr";document.documentElement.lang=CURRENT_LANG;};
+const t=(key)=>I18N[CURRENT_LANG]?.[key]||I18N.fr[key]||key;
+
 const SpeechRec = typeof window!=="undefined" ? (window.SpeechRecognition||window.webkitSpeechRecognition) : null;
 function useVoiceInput(onResult,onToast){
   const recRef=useRef(null);
@@ -222,7 +261,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil}) => {
     <div style={{paddingBottom:16}}>
       <div style={{background:"linear-gradient(135deg,#0F2419,#1B4332)",padding:"48px 20px 36px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
         <div>
-          <p style={{color:"#D4A843",fontSize:13,margin:0,fontWeight:600}}>Bienvenue</p>
+          <p style={{color:"#D4A843",fontSize:13,margin:0,fontWeight:600}}>{t("bienvenue")}</p>
           <h2 style={{color:"#FDF6EC",margin:"2px 0 0",fontSize:24,fontWeight:900}}>{user.prenom}</h2>
           <span style={{background:user.plan==="premium"?"#D4A843":"#1B4332",color:user.plan==="premium"?"#0A1A0F":"#D4A843",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:99,marginTop:4,display:"inline-block"}}>
             {user.plan==="premium"?"PREMIUM":`GRATUIT - ${groupes.length}/3 tontines`}
@@ -231,7 +270,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil}) => {
         <div onClick={onProfil} style={{cursor:"pointer"}}><Avatar prenom={user.prenom} photo={user.photo} size={50} gold/></div>
       </div>
       <div style={{display:"flex",gap:10,padding:"0 16px",marginTop:-22}}>
-        {[["💰","Mes epargnes",totalEp,"linear-gradient(135deg,#1B4332,#2D6A4F)"],["🏦","Caisse sociale",totalCS,"linear-gradient(135deg,#8B2500,#C1440E)"]].map(([ic,lb,val,bg])=>(
+        {[["💰",t("mesEpargnes"),totalEp,"linear-gradient(135deg,#1B4332,#2D6A4F)"],["🏦",t("caisseSociale"),totalCS,"linear-gradient(135deg,#8B2500,#C1440E)"]].map(([ic,lb,val,bg])=>(
           <div key={lb} style={{flex:1,background:bg,borderRadius:16,padding:"14px 12px"}}>
             <span style={{fontSize:20}}>{ic}</span>
             <p style={{color:"rgba(255,255,255,0.6)",fontSize:11,margin:"6px 0 2px",fontWeight:600}}>{lb}</p>
@@ -239,11 +278,11 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil}) => {
           </div>
         ))}
       </div>
-      {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} membre(s) en retard</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>Cliquez sur une tontine</p></div></div>}
+      {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} {t("membresEnRetard")}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{t("cliquezTontine")}</p></div></div>}
       <div style={{padding:"20px 16px 0"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{color:"#FDF6EC",fontSize:16,fontWeight:800,margin:0}}>Mes Tontines</h3>
-          <button onClick={onCreer} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 16px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Creer</button>
+          <h3 style={{color:"#FDF6EC",fontSize:16,fontWeight:800,margin:0}}>{t("mesTontines")}</h3>
+          <button onClick={onCreer} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 16px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ {t("creer")}</button>
         </div>
         {groupes.length===0&&<div style={{textAlign:"center",padding:"40px 20px",color:"#2D6A4F"}}><p style={{fontSize:40}}>🏺</p><p style={{fontWeight:700,color:"#FDF6EC"}}>Aucune tontine</p><p style={{fontSize:13}}>Cree ta premiere tontine</p></div>}
         {groupes.map(g=>{
@@ -890,7 +929,7 @@ const urlBase64ToUint8Array=(base64String)=>{
   return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
 };
 
-const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin}) => {
+const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChangeLang}) => {
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
   const [notifBusy,setNotifBusy]=useState(false);
@@ -912,17 +951,25 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin}) => {
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"linear-gradient(135deg,#0F2419,#1B4332)",padding:"44px 20px 30px"}}>
-        <h2 style={{color:"#FDF6EC",margin:"0 0 20px",fontSize:20,fontWeight:800}}>Mon Profil</h2>
+        <h2 style={{color:"#FDF6EC",margin:"0 0 20px",fontSize:20,fontWeight:800}}>{t("profil")}</h2>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           <Avatar prenom={user.prenom} photo={user.photo} size={76} gold/>
           <div>
             <p style={{margin:0,color:"#FDF6EC",fontSize:20,fontWeight:900}}>{user.prenom}</p>
             <p style={{margin:"3px 0 0",color:"#6B7280",fontSize:13}}>{user.tel}</p>
-            <span style={{background:user.plan==="premium"?"#D4A843":"#1B4332",color:user.plan==="premium"?"#0A1A0F":"#D4A843",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,marginTop:6,display:"inline-block"}}>{user.plan==="premium"?"PREMIUM":"GRATUIT"}</span>
+            <span style={{background:user.plan==="premium"?"#D4A843":"#1B4332",color:user.plan==="premium"?"#0A1A0F":"#D4A843",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,marginTop:6,display:"inline-block"}}>{user.plan==="premium"?t("premium"):t("gratuit")}</span>
           </div>
         </div>
       </div>
       <div style={{padding:"16px 16px 0"}}>
+        <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14,marginBottom:16}}>
+          <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:12,fontWeight:700}}>{t("langue")}</p>
+          <div style={{display:"flex",gap:8}}>
+            {[["fr","Francais"],["en","English"],["ar","العربية"]].map(([code,label])=>(
+              <button key={code} onClick={()=>onChangeLang(code)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:lang===code?"#D4A843":"#1B4332",color:lang===code?"#0A1A0F":"#FDF6EC",borderColor:lang===code?"#D4A843":"#2D6A4F"}}>{label}</button>
+            ))}
+          </div>
+        </div>
         {user.plan==="free"&&<div style={{background:"linear-gradient(135deg,#1A0800,#3D1500)",border:"1px solid #D4A843",borderRadius:18,padding:18,marginBottom:16}}>
           <p style={{margin:"0 0 4px",color:"#D4A843",fontWeight:800,fontSize:16}}>Passer a HABY Premium</p>
           <p style={{margin:"0 0 14px",color:"#FDF6EC",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
@@ -949,14 +996,14 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin}) => {
           </div>
         </div>}
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>REGLAGES</p>
-        {[...(user.role==="admin"?[{ic:"🛡️",lb:"Panneau Administrateur",fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"Activation...":"Activer les notifications",fn:enableNotifications},{ic:"📲",lb:"Lier WhatsApp",fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:"Changer mon PIN",fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:"Exporter mes donnees",fn:()=>onToast("Export en cours...")},{ic:"💬",lb:"Contacter le support",fn:()=>setShowSupport(true)}].map(item=>(
+        {[...(user.role==="admin"?[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:t("exporterDonnees"),fn:()=>onToast("Export en cours...")},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}].map(item=>(
           <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
             <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
           </div>
         ))}
         <div style={{marginTop:16}}>
           {!showOut
-            ?<button onClick={()=>setShowOut(true)} style={{width:"100%",background:"transparent",border:"1px solid #C1440E",borderRadius:14,padding:"14px",color:"#EF4444",fontWeight:700,fontSize:15,cursor:"pointer"}}>Se deconnecter</button>
+            ?<button onClick={()=>setShowOut(true)} style={{width:"100%",background:"transparent",border:"1px solid #C1440E",borderRadius:14,padding:"14px",color:"#EF4444",fontWeight:700,fontSize:15,cursor:"pointer"}}>{t("deconnexion")}</button>
             :<div style={{background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:16}}><p style={{color:"#FDF6EC",fontWeight:700,margin:"0 0 14px",textAlign:"center"}}>Confirmer la deconnexion ?</p><div style={{display:"flex",gap:10}}><button onClick={()=>setShowOut(false)} style={{flex:1,background:"#1B4332",border:"none",borderRadius:12,padding:12,color:"#FDF6EC",fontWeight:700,cursor:"pointer"}}>Annuler</button><button onClick={onLogout} style={{flex:1,background:"#C1440E",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer"}}>Deconnecter</button></div></div>}
         </div>
         <p style={{color:"#2D6A4F",fontSize:11,textAlign:"center",margin:"20px 0 10px"}}>HABY Tontine v2.1 - Fait avec amour pour l Afrique</p>
@@ -1004,8 +1051,14 @@ export default function App() {
   const [sel,setSel]=useState(null);
   const [toast,setToast]=useState(null);
   const [showC,setShowC]=useState(false);
+  const [lang,setLang]=useState("fr");
 
   const showToast=useCallback((msg,type)=>setToast({msg,type}),[]);
+
+  const changeLang=useCallback(async(l)=>{
+    setAppLang(l);setLang(l);
+    if(user)await supabase.from("users").update({langue:l}).eq("id",user.id);
+  },[user]);
 
   const loadGroupes=useCallback(async(uid)=>{
     const {data:gs,error}=await supabase.from("groupes").select("*").eq("user_id",uid).order("created_at",{ascending:false});
@@ -1031,7 +1084,7 @@ export default function App() {
   useEffect(()=>{
     (async()=>{
       const sessionUser=await getSession();
-      if(sessionUser){setUser(sessionUser);await loadGroupes(sessionUser.id);}
+      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await loadGroupes(sessionUser.id);}
       setChecking(false);
     })();
   },[]);
@@ -1047,9 +1100,9 @@ export default function App() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);await loadGroupes(u.id);}}/>;
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await loadGroupes(u.id);}}/>;
   const cu={...user,groupesCount:groupes.length};
-  const NAV=[["home","🏠","Accueil"],["epargne","🏺","Epargne"],["haby","🤖","HABY"],["profil","👤","Profil"]];
+  const NAV=[["home","🏠",t("accueil")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
   return(
     <div style={{background:"#0A1A0F",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
@@ -1060,7 +1113,7 @@ export default function App() {
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast} currentUserId={cu.id}/>
-        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>setNav("admin")}/>:null}
+        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>setNav("admin")} lang={lang} onChangeLang={changeLang}/>:null}
       </div>
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#0F2419",borderTop:"1px solid #1B4332",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#D4A843":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}

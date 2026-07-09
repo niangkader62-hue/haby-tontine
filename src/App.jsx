@@ -366,6 +366,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [msgInput,setMsgInput]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",photo:""});
+  const [pickerBusy,setPickerBusy]=useState(false);
   const [showVers,setShowVers]=useState(false);
   const [versM,setVersM]=useState(null);
   const [versAmt,setVersAmt]=useState("");
@@ -444,9 +445,12 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   };
   const sendMsg=()=>{if(!msgInput.trim())return;setGroupe(g=>({...g,messages:[...g.messages,{id:genId(),auteur:user.prenom,texte:s(msgInput.trim()),time:"maintenant"}]}));setMsgInput("");};
   const addM=async()=>{
+    if(pickerBusy)return;
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prenom et telephone requis","error");
+    setPickerBusy(true);
     const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
+    setPickerBusy(false);
     if(error)return onToast("Ajout impossible","error");
     supabase.rpc("link_membre",{p_membre_id:data.id}).catch(()=>{});
     setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
@@ -696,12 +700,20 @@ HABY Tontine - La tontine digitale africaine`;
       {showAdd&&<Modal onClose={()=>setShowAdd(false)}>
         <MH title="Ajouter un membre" onClose={()=>setShowAdd(false)}/>
         <p style={{color:"#6B7280",fontSize:13,marginBottom:16,lineHeight:1.6}}>Le chef de tontine ajoute les membres. Un rappel WhatsApp leur sera envoye.</p>
-        {"contacts" in navigator&&"ContactsManager" in window&&<button onClick={async()=>{try{const c=await navigator.contacts.select(["name","tel"],{multiple:false});if(c&&c[0]){setNewM(n=>({...n,prenom:c[0].name?.[0]?.split(" ")[0]||n.prenom,tel:sPhone(c[0].tel?.[0]||n.tel)}));}}catch{}}} style={{width:"100%",background:"#1B4332",border:"1px solid #D4A843",borderRadius:12,padding:"12px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>📇 Choisir depuis mes contacts</button>}
+        {"contacts" in navigator&&"ContactsManager" in window&&<button disabled={pickerBusy} onClick={async()=>{
+          if(pickerBusy)return;
+          setPickerBusy(true);
+          try{
+            const c=await navigator.contacts.select(["name","tel"],{multiple:false});
+            if(c&&c[0]){setNewM(n=>({...n,prenom:c[0].name?.[0]?.split(" ")[0]||n.prenom,tel:sPhone(c[0].tel?.[0]||n.tel)}));onToast("Contact selectionne !");}
+          }catch{}
+          finally{setPickerBusy(false);}
+        }} style={{width:"100%",background:pickerBusy?"#0F2419":"#1B4332",border:"1px solid #D4A843",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#D4A843",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ouverture des contacts...":"📇 Choisir depuis mes contacts"}</button>}
         <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#1B4332",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 14px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");const r=new FileReader();r.onload=ev=>setNewM(n=>({...n,photo:ev.target.result}));r.readAsDataURL(f);}}/></label></div></Fld>
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
-        <Btn onClick={addM}>Ajouter ce membre</Btn>
+        <Btn onClick={addM} disabled={pickerBusy}>{pickerBusy?"Ajout...":"Ajouter ce membre"}</Btn>
       </Modal>}
       {showEdit&&<Modal onClose={()=>setShowEdit(false)}>
         <MH title="Modifier la tontine" onClose={()=>setShowEdit(false)}/>

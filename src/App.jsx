@@ -662,7 +662,7 @@ Donnees reelles des tontines de l utilisatrice en ce moment : ${ctx||"aucune ton
 
   const sugg=["C est quand mon tour ?","Qui n a pas paye ?","Combien j ai epargne ?","Conseils pour mon groupe"];
   return(
-    <div style={{display:"flex",flexDirection:"column",height:"100vh",background:"#0A1A0F"}}>
+    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 78px)",background:"#0A1A0F"}}>
       <div style={{background:"#0F2419",padding:"44px 16px 14px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332",flexShrink:0}}>
         <div style={{width:46,height:46,background:"linear-gradient(135deg,#D4A843,#B8922E)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:20,color:"#0A1A0F",flexShrink:0}}>H</div>
         <div><p style={{margin:0,color:"#FDF6EC",fontWeight:800,fontSize:16}}>HABY</p><p style={{margin:0,color:"#22C55E",fontSize:11}}>En ligne - Assistante HABY Tontine</p></div>

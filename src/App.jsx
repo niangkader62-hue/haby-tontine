@@ -964,6 +964,18 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
       supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"HABY Tontine",body:"Tu es maintenant co-administrateur de la plateforme !"}}).catch(()=>{});
     }
   };
+  const togglePremium=async(u)=>{
+    const newPlan=u.plan==="premium"?"free":"premium";
+    setBusyId(u.id);
+    const {error}=await supabase.from("users").update({plan:newPlan}).eq("id",u.id);
+    setBusyId(null);
+    if(error)return onToast("Impossible de changer le plan","error");
+    setUsers(list=>list.map(x=>x.id===u.id?{...x,plan:newPlan}:x));
+    onToast(newPlan==="premium"?`${u.prenom} est maintenant Premium !`:`${u.prenom} repasse en Gratuit`);
+    if(newPlan==="premium"){
+      supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"HABY Tontine",body:"Ton compte est maintenant Premium ! Merci pour ta confiance."}}).catch(()=>{});
+    }
+  };
   return(
     <div style={{paddingBottom:16}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
@@ -992,7 +1004,10 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
             <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{u.telephone}</p>
           </div>
           <span style={{background:u.plan==="premium"?"#D4A843":"#1B4332",color:u.plan==="premium"?"#0A1A0F":"#6B7280",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{u.plan==="premium"?"PREMIUM":"GRATUIT"}</span>
-          {u.id!==currentUserId&&<button onClick={()=>toggleAdmin(u)} disabled={busyId===u.id} style={{background:u.role==="admin"?"transparent":"#1B4332",border:`1px solid ${u.role==="admin"?"#C1440E":"#2D6A4F"}`,borderRadius:10,padding:"6px 10px",color:u.role==="admin"?"#EF4444":"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer",width:"100%",marginTop:2}}>{busyId===u.id?"...":u.role==="admin"?"Retirer admin":"Nommer co-admin"}</button>}
+          <div style={{display:"flex",gap:6,width:"100%",marginTop:2}}>
+            <button onClick={()=>togglePremium(u)} disabled={busyId===u.id} style={{flex:1,background:u.plan==="premium"?"transparent":"#D4A843",border:`1px solid ${u.plan==="premium"?"#C1440E":"#D4A843"}`,borderRadius:10,padding:"6px 10px",color:u.plan==="premium"?"#EF4444":"#0A1A0F",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.plan==="premium"?"Repasser Gratuit":"Activer Premium"}</button>
+            {u.id!==currentUserId&&<button onClick={()=>toggleAdmin(u)} disabled={busyId===u.id} style={{flex:1,background:u.role==="admin"?"transparent":"#1B4332",border:`1px solid ${u.role==="admin"?"#C1440E":"#2D6A4F"}`,borderRadius:10,padding:"6px 10px",color:u.role==="admin"?"#EF4444":"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.role==="admin"?"Retirer admin":"Nommer co-admin"}</button>}
+          </div>
         </div>)}
       </div>
     </div>

@@ -653,10 +653,14 @@ Ton style :
 
 Donnees reelles des tontines de l utilisatrice en ce moment : ${ctx||"aucune tontine pour le moment"}.`;
       const {data,error}=await supabase.functions.invoke("haby-chat",{body:{system,messages:newMsgs}});
-      if(error)throw error;
+      if(error){
+        let detail=error.message||"inconnue";
+        try{if(error.context?.json){const body=await error.context.json();detail=body.error||detail;}}catch{}
+        throw new Error(detail);
+      }
       const reply=data?.content?.map(b=>b.text||"").join("")||"Desole, reessaie !";
       setMsgs([...newMsgs,{role:"assistant",content:reply}]);
-    }catch{setMsgs([...newMsgs,{role:"assistant",content:"Connexion perdue. Verifie ta connexion et reessaie."}]);}
+    }catch(e){setMsgs([...newMsgs,{role:"assistant",content:"Erreur technique : "+(e?.message||"inconnue")}]);}
     setLoading(false);
   };
 

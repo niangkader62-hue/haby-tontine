@@ -367,6 +367,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [showAdd,setShowAdd]=useState(false);
   const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",photo:""});
   const [pickerBusy,setPickerBusy]=useState(false);
+  const [showUpgrade,setShowUpgrade]=useState(false);
   const [showVers,setShowVers]=useState(false);
   const [versM,setVersM]=useState(null);
   const [versAmt,setVersAmt]=useState("");
@@ -447,6 +448,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const addM=async()=>{
     if(pickerBusy)return;
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prenom et telephone requis","error");
+    if(user.plan==="free"&&groupe.membres.length>=15){setShowAdd(false);setShowUpgrade(true);return;}
     setPickerBusy(true);
     const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
@@ -582,7 +584,7 @@ HABY Tontine - La tontine digitale africaine`;
         </div>}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
-          <button onClick={()=>setShowAdd(true)} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 12px",color:"#D4A843",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
+          <button onClick={()=>{if(user.plan==="free"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 12px",color:"#D4A843",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
         {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}
         {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}</>}
@@ -714,6 +716,16 @@ HABY Tontine - La tontine digitale africaine`;
         <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
         <Btn onClick={addM} disabled={pickerBusy}>{pickerBusy?"Ajout...":"Ajouter ce membre"}</Btn>
+      </Modal>}
+      {showUpgrade&&<Modal onClose={()=>setShowUpgrade(false)}>
+        <MH title="Limite atteinte" onClose={()=>setShowUpgrade(false)}/>
+        <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
+        <p style={{color:"#FDF6EC",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>15 membres, c'est le maximum en gratuit</p>
+        <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a HABY Premium pour ajouter des membres illimites dans cette tontine, et beneficier de toutes les autres fonctionnalites avancees.</p>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Orange Money</button>
+          <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Wave</button>
+        </div>
       </Modal>}
       {showEdit&&<Modal onClose={()=>setShowEdit(false)}>
         <MH title="Modifier la tontine" onClose={()=>setShowEdit(false)}/>
@@ -1041,7 +1053,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           <p style={{margin:"0 0 14px",color:"#FDF6EC",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
           <div style={{background:"#0A1A0F",borderRadius:12,padding:14,marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"flex-end",gap:20,marginBottom:8}}><span style={{color:"#6B7280",fontSize:11,fontWeight:700,width:70,textAlign:"center"}}>GRATUIT</span><span style={{color:"#D4A843",fontSize:11,fontWeight:800,width:80,textAlign:"center"}}>PREMIUM</span></div>
-            {[["Tontines actives","3 max","Illimite"],["Membres/groupe","15 max","Illimite"],["Export PDF","Non","Oui"],["Rappels SMS","Non","Oui"],["Caisse sociale","Non","Oui"],["HABY IA","Basique","Prioritaire"],["Support","Standard","24h"]].map(([f,fr,pr])=>(
+            {[["Tontines actives","1 max","Illimite"],["Membres/groupe","15 max","Illimite"],["HABY IA","Basique","Prioritaire"],["Support","Standard","24h"]].map(([f,fr,pr])=>(
               <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #1B4332",fontSize:12}}>
                 <span style={{color:"#6B7280"}}>{f}</span>
                 <div style={{display:"flex",gap:20}}><span style={{color:fr==="Non"?"#EF4444":"#6B7280",width:70,textAlign:"center"}}>{fr}</span><span style={{color:"#D4A843",fontWeight:700,width:80,textAlign:"center"}}>{pr}</span></div>
@@ -1089,7 +1101,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const handle=async()=>{
     if(!nom.trim())return setErr("Donne un nom a ta tontine");
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
-    if(user.plan==="free"&&user.groupesCount>=3)return setErr("Plan gratuit limite a 3 tontines. Passe a Premium !");
+    if(user.plan==="free"&&user.groupesCount>=1)return setErr("Plan gratuit limite a 1 tontine geree. Passe a Premium pour en creer davantage !");
     setBusy(true);
     const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();

@@ -69,6 +69,8 @@ export async function loginUser(tel, pin) {
     .single();
   if (pErr || !profile) return { ok: false, err: "Profil introuvable." };
 
+  supabase.from("users").update({ derniere_connexion: new Date().toISOString() }).eq("id", profile.id).then(() => {});
+
   return {
     ok: true,
     user: { id: profile.id, prenom: profile.prenom, tel: profile.telephone, photo: profile.photo_url, plan: profile.plan, role: profile.role || "user", langue: profile.langue || "fr", parrainCode: profile.parrain_code, premiumExpireLe: profile.premium_expire_le },
@@ -80,6 +82,7 @@ export async function getSession() {
   if (!data.session) return null;
   const { data: profile } = await supabase.from("users").select("*").eq("id", data.session.user.id).single();
   if (!profile) return null;
+  supabase.from("users").update({ derniere_connexion: new Date().toISOString() }).eq("id", profile.id).then(() => {});
   return { id: profile.id, prenom: profile.prenom, tel: profile.telephone, photo: profile.photo_url, plan: profile.plan, role: profile.role || "user", langue: profile.langue || "fr", parrainCode: profile.parrain_code, premiumExpireLe: profile.premium_expire_le };
 }
 

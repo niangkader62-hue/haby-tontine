@@ -1442,24 +1442,41 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
   const [users,setUsers]=useState([]);
   const [groupesCount,setGroupesCount]=useState(0);
   const [totalCollecte,setTotalCollecte]=useState(0);
+  const [paiements,setPaiements]=useState([]);
   const [loading,setLoading]=useState(true);
   const [busyId,setBusyId]=useState(null);
   useEffect(()=>{
     (async()=>{
-      const [{data:us,error:e1},{count:gc},{data:txs,error:e3}]=await Promise.all([
+      const [{data:us,error:e1},{count:gc},{data:txs,error:e3},{data:pmts}]=await Promise.all([
         supabase.from("users").select("*").order("created_at",{ascending:false}),
         supabase.from("groupes").select("id",{count:"exact",head:true}),
         supabase.from("transactions").select("montant"),
+        supabase.from("paiements").select("*").order("created_at",{ascending:false}),
       ]);
       if(e1)onToast("Erreur de chargement des utilisatrices","error");
       else setUsers(us||[]);
       if(!e3)setTotalCollecte((txs||[]).reduce((a,t)=>a+(Number(t.montant)||0),0));
       setGroupesCount(gc||0);
+      setPaiements(pmts||[]);
       setLoading(false);
     })();
   },[]);
   const totalUsers=users.length;
   const totalPremium=users.filter(u=>u.plan==="premium").length;
+
+  const today=new Date().toDateString();
+  const yesterday=new Date(Date.now()-86400000).toDateString();
+  const weekAgo=Date.now()-7*86400000;
+  const connecteesAuj=users.filter(u=>u.derniere_connexion&&new Date(u.derniere_connexion).toDateString()===today).length;
+  const connecteesHier=users.filter(u=>u.derniere_connexion&&new Date(u.derniere_connexion).toDateString()===yesterday).length;
+  const connecteesSemaine=users.filter(u=>u.derniere_connexion&&new Date(u.derniere_connexion).getTime()>=weekAgo).length;
+
+  const paiementsAcceptes=paiements.filter(p=>p.statut==="accepted");
+  const revenuTotal=paiementsAcceptes.reduce((a,p)=>a+(Number(p.montant)||0),0);
+  const debutMois=new Date();debutMois.setDate(1);debutMois.setHours(0,0,0,0);
+  const revenuMois=paiementsAcceptes.filter(p=>new Date(p.created_at)>=debutMois).reduce((a,p)=>a+(Number(p.montant)||0),0);
+  const paiementsAuj=paiementsAcceptes.filter(p=>new Date(p.created_at).toDateString()===today).length;
+
   const toggleAdmin=async(u)=>{
     const newRole=u.role==="admin"?"user":"admin";
     setBusyId(u.id);
@@ -1498,8 +1515,26 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
           </div>
         ))}
       </div>
+      <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"18px 16px 8px",letterSpacing:.5}}>ACTIVITE (BASEE SUR LES CONNEXIONS)</p>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"0 16px"}}>
+        {[["Aujourd'hui",connecteesAuj],["Hier",connecteesHier],["7 derniers jours",connecteesSemaine]].map(([l,v])=>(
+          <div key={l} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
+            <p style={{margin:0,color:"#D4A843",fontSize:18,fontWeight:900}}>{v}</p>
+            <p style={{margin:"3px 0 0",color:"#6B7280",fontSize:10}}>{l}</p>
+          </div>
+        ))}
+      </div>
+      <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"18px 16px 8px",letterSpacing:.5}}>REVENUS (PAIEMENTS CINETPAY REELS)</p>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 16px"}}>
+        {[["Revenu total",fmtFCFA(revenuTotal)],["Ce mois-ci",fmtFCFA(revenuMois)],["Paiements reussis",paiementsAcceptes.length],["Paiements aujourd'hui",paiementsAuj]].map(([l,v])=>(
+          <div key={l} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
+            <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>{l}</p>
+            <p style={{margin:"4px 0 0",color:"#22C55E",fontSize:18,fontWeight:900}}>{v}</p>
+          </div>
+        ))}
+      </div>
       <div style={{margin:"12px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
-        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>✅ Toutes ces donnees sont desormais 100% reelles : tontines, membres et cotisations viennent directement de Supabase, tous comptes confondus.</p>
+        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>✅ Toutes ces donnees sont desormais 100% reelles : tontines, membres, cotisations et paiements viennent directement de Supabase, tous comptes confondus. ℹ️ "Connectee" = derniere ouverture de l app, pas presence en direct.</p>
       </div>
       <div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>UTILISATRICES INSCRITES</p>

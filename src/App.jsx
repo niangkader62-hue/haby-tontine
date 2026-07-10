@@ -816,10 +816,15 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
     pickerBusyRef.current=false;setPickerBusy(false);
-    if(error)return onToast("Ajout impossible","error");
+    if(error){
+      if(error.code==="23505")return onToast("Ce numero est deja membre de cette tontine !","error");
+      return onToast("Ajout impossible : "+(error.message||"erreur inconnue"),"error");
+    }
     supabase.rpc("link_membre",{p_membre_id:data.id}).catch(()=>{});
     setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
-    setNewM({prenom:"",tel:"",quartier:"",photo:""});setShowAdd(false);onToast("Membre ajoute !");
+    setNewM({prenom:"",tel:"",quartier:"",photo:""});
+    setShowAdd(false);
+    onToast(`${data.prenom} a ete ajoute(e) !`);
   };
   const delM=async(mid)=>{
     const {error}=await supabase.from("membres").delete().eq("id",mid);
@@ -1199,8 +1204,9 @@ HABY Tontine - La tontine digitale africaine`;
         </div>
       </Modal>}
 
-      {showAdd&&<Modal onClose={()=>setShowAdd(false)}>
-        <MH title="Ajouter un membre" onClose={()=>setShowAdd(false)}/>
+      {showAdd&&<Modal onClose={()=>{if(!pickerBusy)setShowAdd(false);}}>
+        <MH title="Ajouter un membre" onClose={()=>{if(!pickerBusy)setShowAdd(false);}}/>
+        <div style={{opacity:pickerBusy?0.4:1,pointerEvents:pickerBusy?"none":"auto",transition:"opacity 0.15s"}}>
         <p style={{color:"#6B7280",fontSize:13,marginBottom:16,lineHeight:1.6}}>Le chef de tontine ajoute les membres. Un rappel WhatsApp leur sera envoye.</p>
         {"contacts" in navigator&&"ContactsManager" in window&&<button disabled={pickerBusy} onClick={async()=>{
           if(pickerBusyRef.current)return;
@@ -1215,7 +1221,8 @@ HABY Tontine - La tontine digitale africaine`;
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
-        <Btn onClick={addM} disabled={pickerBusy}>{pickerBusy?"Ajout...":"Ajouter ce membre"}</Btn>
+        </div>
+        <Btn onClick={addM} disabled={pickerBusy}>{pickerBusy?"⏳ Ajout en cours...":"Ajouter ce membre"}</Btn>
       </Modal>}
       {showUpgrade&&<Modal onClose={()=>setShowUpgrade(false)}>
         <MH title="Limite atteinte" onClose={()=>setShowUpgrade(false)}/>

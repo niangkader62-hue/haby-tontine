@@ -413,6 +413,22 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
           </div>
         ))}
       </div>}
+      {groupe.reglement&&<div style={{padding:"16px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>REGLEMENT INTERIEUR</p>
+        <div style={{background:"#0F2419",border:"1px solid #D4A843",borderRadius:14,padding:16}}>
+          <p style={{margin:0,color:"#FDF6EC",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{groupe.reglement}</p>
+        </div>
+      </div>}
+      {groupe.rapports&&groupe.rapports.length>0&&<div style={{padding:"16px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>COMPTES RENDUS DE REUNION</p>
+        {groupe.rapports.map(r=>(
+          <div key={r.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:16,marginBottom:10}}>
+            <p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{r.titre}</p>
+            <p style={{margin:"3px 0 0",color:"#D4A843",fontSize:11}}>{r.date_reunion?new Date(r.date_reunion).toLocaleDateString("fr-FR"):""}</p>
+            {r.contenu&&<p style={{margin:"10px 0 0",color:"#6B7280",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{r.contenu}</p>}
+          </div>
+        ))}
+      </div>}
       {groupe.prets&&groupe.prets.length>0&&<div style={{padding:"16px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>PRETS EN COURS</p>
         {groupe.prets.map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;return(
@@ -494,6 +510,13 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [pretBusy,setPretBusy]=useState(false);
   const [remboM,setRemboM]=useState(null);
   const [remboAmt,setRemboAmt]=useState("");
+  const [rapports,setRapports]=useState([]);
+  const [showRapport,setShowRapport]=useState(false);
+  const [newRapport,setNewRapport]=useState({titre:"",contenu:"",date:""});
+  const [rapportBusy,setRapportBusy]=useState(false);
+  const [editReglement,setEditReglement]=useState(false);
+  const [reglementTxt,setReglementTxt]=useState(gInit.reglement||"");
+  const [reglementBusy,setReglementBusy]=useState(false);
 
   const deleteGroupe=async()=>{
     if(!confirm("Supprimer cette tontine et tous ses membres ? Cette action est irreversible."))return;
@@ -585,6 +608,41 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setPrets(data||[]);
   };
   useEffect(()=>{loadPrets();},[groupe.id]);
+
+  const loadRapports=async()=>{
+    const {data}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",groupe.id).order("date_reunion",{ascending:false});
+    setRapports(data||[]);
+  };
+  useEffect(()=>{loadRapports();},[groupe.id]);
+
+  const creerRapport=async()=>{
+    if(!newRapport.titre.trim())return onToast("Donne un titre au rapport","error");
+    setRapportBusy(true);
+    const {data,error}=await supabase.from("rapports_reunion").insert({groupe_id:groupe.id,titre:s(newRapport.titre.trim()),contenu:s(newRapport.contenu||""),date_reunion:newRapport.date||new Date().toISOString().split("T")[0]}).select().single();
+    setRapportBusy(false);
+    if(error)return onToast("Impossible d enregistrer le rapport","error");
+    setRapports(r=>[data,...r]);
+    setShowRapport(false);setNewRapport({titre:"",contenu:"",date:""});
+    onToast("Rapport de reunion enregistre !");
+  };
+
+  const supprimerRapport=async(id)=>{
+    const {error}=await supabase.from("rapports_reunion").delete().eq("id",id);
+    if(error)return onToast("Suppression impossible","error");
+    setRapports(r=>r.filter(x=>x.id!==id));
+    onToast("Rapport supprime");
+  };
+
+  const enregistrerReglement=async()=>{
+    setReglementBusy(true);
+    const {error}=await supabase.from("groupes").update({reglement:reglementTxt}).eq("id",groupe.id);
+    setReglementBusy(false);
+    if(error)return onToast("Enregistrement impossible","error");
+    setGroupe(g=>({...g,reglement:reglementTxt}));
+    onUpdateGroupe(groupe.id,{reglement:reglementTxt});
+    setEditReglement(false);
+    onToast("Reglement interieur enregistre !");
+  };
 
   const creerPret=async()=>{
     if(!newPret.membreId)return onToast("Choisis un membre emprunteur","error");
@@ -770,7 +828,7 @@ HABY Tontine - La tontine digitale africaine`;
   const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
-  const TABS=[["membres","Membres"],["bureau","Bureau"],["tirage","Tirage"],["prets","Prets"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
+  const TABS=[["membres","Membres"],["bureau","Bureau"],["tirage","Tirage"],["prets","Prets"],["reunions","Reunions"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
@@ -918,6 +976,41 @@ HABY Tontine - La tontine digitale africaine`;
         <MH title="Enregistrer un remboursement" onClose={()=>setRemboM(null)}/>
         <Fld label="Montant rembourse (FCFA)"><Inp value={remboAmt} onChange={e=>setRemboAmt(e.target.value.replace(/\D/g,""))} placeholder="Ex: 10000" inputMode="numeric" autoFocus/></Fld>
         <Btn onClick={rembourserPret}>Confirmer</Btn>
+      </Modal>}
+      {tab==="reunions"&&<div style={{padding:"14px 16px 0"}}>
+        <div style={{background:"#0F2419",border:"1px solid #D4A843",borderRadius:14,padding:16,marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <p style={{margin:0,color:"#D4A843",fontWeight:800,fontSize:14}}>Reglement interieur</p>
+            <button onClick={()=>{setReglementTxt(groupe.reglement||"");setEditReglement(e=>!e);}} style={{background:"transparent",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 10px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer"}}>{editReglement?"Annuler":"Modifier"}</button>
+          </div>
+          {editReglement?(
+            <>
+              <textarea value={reglementTxt} onChange={e=>setReglementTxt(e.target.value)} rows={8} placeholder="Ex: Toute cotisation doit etre versee avant le 5 du mois. En cas de retard..." style={{width:"100%",background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:12,padding:"12px 14px",color:"#FDF6EC",fontSize:13,outline:"none",resize:"vertical",fontFamily:"inherit"}}/>
+              <div style={{marginTop:10}}><Btn onClick={enregistrerReglement} disabled={reglementBusy}>{reglementBusy?"Enregistrement...":"Enregistrer"}</Btn></div>
+            </>
+          ):(groupe.reglement?<p style={{color:"#FDF6EC",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap",margin:0}}>{groupe.reglement}</p>:<p style={{color:"#6B7280",fontSize:13,margin:0}}>Aucun reglement redige pour l instant</p>)}
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <p style={{color:"#6B7280",fontSize:12,fontWeight:700,letterSpacing:.5}}>COMPTES RENDUS DE REUNION</p>
+          <button onClick={()=>setShowRapport(true)} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 10px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Ajouter</button>
+        </div>
+        {rapports.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucun compte rendu pour l instant</p>
+        :rapports.map(r=>(
+          <div key={r.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:16,marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{r.titre}</p><p style={{margin:"3px 0 0",color:"#D4A843",fontSize:11}}>{r.date_reunion?new Date(r.date_reunion).toLocaleDateString("fr-FR"):""}</p></div>
+              <button onClick={()=>supprimerRapport(r.id)} style={{background:"transparent",border:"none",color:"#EF4444",fontSize:16,cursor:"pointer"}}>✕</button>
+            </div>
+            {r.contenu&&<p style={{margin:"10px 0 0",color:"#6B7280",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{r.contenu}</p>}
+          </div>
+        ))}
+      </div>}
+      {showRapport&&<Modal onClose={()=>setShowRapport(false)}>
+        <MH title="Nouveau compte rendu" onClose={()=>setShowRapport(false)}/>
+        <Fld label="Titre"><Inp value={newRapport.titre} onChange={e=>setNewRapport(r=>({...r,titre:e.target.value}))} placeholder="Ex: Reunion mensuelle Juillet" maxLength={80} autoFocus/></Fld>
+        <Fld label="Date de la reunion"><Inp value={newRapport.date} onChange={e=>setNewRapport(r=>({...r,date:e.target.value}))} type="date"/></Fld>
+        <Fld label="Notes / decisions prises"><textarea value={newRapport.contenu} onChange={e=>setNewRapport(r=>({...r,contenu:e.target.value}))} rows={5} placeholder="Ce qui a ete discute et decide..." style={{width:"100%",background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:12,padding:"12px 14px",color:"#FDF6EC",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
+        <Btn onClick={creerRapport} disabled={rapportBusy}>{rapportBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
       {tab==="events"&&<div style={{padding:"14px 16px 0"}}>
         {groupe.membres.filter(m=>m.evenement).length===0
@@ -1496,17 +1589,19 @@ export default function App() {
       const {data:elections}=await supabase.from("elections").select("*").eq("groupe_id",g.id).eq("statut","ouverte");
       const {data:mesVotes}=await supabase.from("votes").select("*").eq("voter_user_id",uid);
       const {data:prets}=await supabase.from("prets").select("*").eq("groupe_id",g.id).order("created_at",{ascending:false});
+      const {data:rapports}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",g.id).order("date_reunion",{ascending:false});
       const moi=mine.find(m=>m.groupe_id===g.id);
       const aJourCount=(membres||[]).filter(m=>m.paye).length;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
-        cycle:g.cycle||1,totalCycles:g.total_cycles||12,
+        cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
         membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
         elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),
         prets:prets||[],
+        rapports:rapports||[],
         moi:moi?{versements:Number(moi.versements)||0,paye:moi.paye,cyclesPaies:moi.cycles_paies||0}:null,
       };
     }));
@@ -1525,7 +1620,7 @@ export default function App() {
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
-        cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,
+        cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
         prochainTour:gagnant?gagnant.prenom:"A tirer au sort",
         membres:mm,

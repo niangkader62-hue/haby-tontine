@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { registerUser, loginUser, getSession, logoutUser } from "./authService";
 import { supabase } from "./supabaseClient";
 import authHomme from "./assets/auth-homme.webp";
+import { jsPDF } from "jspdf";
 
 const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
 const sPhone = (p) => String(p).replace(/[^\d+\s]/g, "").slice(0, 16);
@@ -735,6 +736,23 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const cagnotteTour=groupe.membres.length*groupe.montant;
   const taux=groupe.membres.length>0?Math.round((aJour.length/groupe.membres.length)*100):0;
 
+  const exporterRapportPDF=()=>{
+    const doc=new jsPDF();
+    let y=20;
+    doc.setFontSize(18);doc.text(`HABY Tontine - ${groupe.nom}`,14,y);y+=10;
+    doc.setFontSize(11);doc.text(`Genere le ${new Date().toLocaleDateString("fr-FR")}`,14,y);y+=12;
+    doc.setFontSize(13);doc.text(`Bilan - Cycle ${groupe.cycle}/${groupe.totalCycles}`,14,y);y+=8;
+    doc.setFontSize(10);
+    [["Total collecte ce cycle",fmtFCFA(collecte)],["Cagnotte du tour",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",String(groupe.totalCycles-groupe.cycle)]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
+    y+=6;
+    doc.setFontSize(13);doc.text("Suivi par membre",14,y);y+=8;
+    doc.setFontSize(10);
+    groupe.membres.forEach(m=>{doc.text(`${m.prenom} - ${fmtFCFA(m.cyclesPaies*groupe.montant)} verse (${m.cyclesPaies}/${m.cyclesTotal} cycles)`,14,y);y+=7;if(y>270){doc.addPage();y=20;}});
+    doc.save(`rapport-${groupe.nom.replace(/[^a-z0-9]/gi,"_")}.pdf`);
+    onToast("Rapport PDF telecharge !");
+  };
+
+
   const toggleP=async(mid)=>{
     const m=groupe.membres.find(x=>x.id===mid);
     const newPaye=!m.paye;
@@ -1112,7 +1130,7 @@ HABY Tontine - La tontine digitale africaine`;
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
         {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #1B4332"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*groupe.montant)}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles</p></div></div>)}
-        <Btn onClick={()=>onToast("Rapport PDF exporte")}>Exporter rapport PDF</Btn>
+        <Btn onClick={exporterRapportPDF}>Exporter rapport PDF</Btn>
       </div>}
 
       {showVers&&versM&&<Modal onClose={()=>setShowVers(false)}>
@@ -1515,6 +1533,33 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
     const msg=encodeURIComponent(`Rejoins-moi sur HABY Tontine pour gerer tes tontines simplement !\n\nUtilise mon code de parrainage a l inscription : ${user.parrainCode}\n\nhttps://haby-tontine.netlify.app`);
     window.open(`https://wa.me/?text=${msg}`,"_blank");
   };
+  const exporterDonnees=async()=>{
+    onToast("Preparation de l export...");
+    const [{data:groupes},{data:cagnottes},{data:objectifs}]=await Promise.all([
+      supabase.from("groupes").select("*").eq("user_id",user.id),
+      supabase.from("cagnottes").select("*").eq("user_id",user.id),
+      supabase.from("objectifs").select("*").eq("user_id",user.id),
+    ]);
+    const groupeIds=(groupes||[]).map(g=>g.id);
+    const {data:membres}=groupeIds.length>0?await supabase.from("membres").select("*").in("groupe_id",groupeIds):{data:[]};
+    const {data:transactions}=groupeIds.length>0?await supabase.from("transactions").select("*").in("groupe_id",groupeIds):{data:[]};
+    const payload={
+      exporte_le:new Date().toISOString(),
+      profil:{prenom:user.prenom,telephone:user.tel,plan:user.plan},
+      tontines:groupes||[],
+      membres:membres||[],
+      transactions:transactions||[],
+      cagnottes:cagnottes||[],
+      epargne:objectifs||[],
+    };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=`haby-tontine-donnees-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);a.click();a.remove();
+    URL.revokeObjectURL(url);
+    onToast("Donnees telechargees !");
+  };
   const onPayCinetPay=async()=>{
     setPayBusy(true);
     const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
@@ -1602,7 +1647,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           </div>
         </div>}
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>REGLAGES</p>
-        {[...(user.role==="admin"?[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:t("exporterDonnees"),fn:()=>onToast("Export en cours...")},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}].map(item=>(
+        {[...(user.role==="admin"?[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}].map(item=>(
           <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
             <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
           </div>

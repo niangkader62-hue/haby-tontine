@@ -1450,21 +1450,33 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
   const [groupesCount,setGroupesCount]=useState(0);
   const [totalCollecte,setTotalCollecte]=useState(0);
   const [paiements,setPaiements]=useState([]);
+  const [tontinesList,setTontinesList]=useState([]);
   const [loading,setLoading]=useState(true);
   const [busyId,setBusyId]=useState(null);
   useEffect(()=>{
     (async()=>{
-      const [{data:us,error:e1},{count:gc},{data:txs,error:e3},{data:pmts}]=await Promise.all([
+      const [{data:us,error:e1},{data:gs},{data:txs,error:e3},{data:pmts}]=await Promise.all([
         supabase.from("users").select("*").order("created_at",{ascending:false}),
-        supabase.from("groupes").select("id",{count:"exact",head:true}),
+        supabase.from("groupes").select("*").order("created_at",{ascending:false}),
         supabase.from("transactions").select("montant"),
         supabase.from("paiements").select("*").order("created_at",{ascending:false}),
       ]);
       if(e1)onToast("Erreur de chargement des utilisatrices","error");
       else setUsers(us||[]);
       if(!e3)setTotalCollecte((txs||[]).reduce((a,t)=>a+(Number(t.montant)||0),0));
-      setGroupesCount(gc||0);
+      setGroupesCount((gs||[]).length);
       setPaiements(pmts||[]);
+      if(gs&&gs.length>0){
+        const groupeIds=gs.map(g=>g.id);
+        const {data:mm}=await supabase.from("membres").select("groupe_id").in("groupe_id",groupeIds);
+        const countByGroupe={};
+        (mm||[]).forEach(m=>{countByGroupe[m.groupe_id]=(countByGroupe[m.groupe_id]||0)+1;});
+        const withCreator=gs.map(g=>{
+          const createur=(us||[]).find(u=>u.id===g.user_id);
+          return {...g,membresCount:countByGroupe[g.id]||0,createurNom:createur?.prenom||"?",createurTel:createur?.telephone||""};
+        });
+        setTontinesList(withCreator);
+      }
       setLoading(false);
     })();
   },[]);
@@ -1542,6 +1554,23 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
       </div>
       <div style={{margin:"12px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
         <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>✅ Toutes ces donnees sont desormais 100% reelles : tontines, membres, cotisations et paiements viennent directement de Supabase, tous comptes confondus. ℹ️ "Connectee" = derniere ouverture de l app, pas presence en direct.</p>
+      </div>
+      <div style={{padding:"18px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>TONTINES CREEES ({tontinesList.length}) - CREATRICES</p>
+        {loading?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:10}}>Chargement...</p>
+        :tontinesList.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:10}}>Aucune tontine creee pour le moment</p>
+        :tontinesList.map(g=>(
+          <div key={g.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Creee par {g.createurNom} ({g.createurTel})</p></div>
+              <span style={{background:"#1B4332",color:"#D4A843",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{g.membresCount} membre(s)</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+              <p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(g.montant)}/{g.frequence} - Cycle {g.cycle}/{g.total_cycles}</p>
+              <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(g.created_at).toLocaleDateString("fr-FR")}</p>
+            </div>
+          </div>
+        ))}
       </div>
       <div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>UTILISATRICES INSCRITES</p>

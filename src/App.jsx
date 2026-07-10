@@ -325,6 +325,21 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
 const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   const pct=Math.round((groupe.cycle/groupe.totalCycles)*100);
   const [voting,setVoting]=useState(null);
+  const [messages,setMessages]=useState([]);
+  const [msgInput,setMsgInput]=useState("");
+  const loadMessages=async()=>{
+    const {data}=await supabase.from("messages").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:true});
+    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
+  };
+  useEffect(()=>{loadMessages();},[groupe.id]);
+  const sendMsg=async()=>{
+    if(!msgInput.trim())return;
+    const texte=s(msgInput.trim());
+    setMsgInput("");
+    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,texte}).select().single();
+    if(error)return onToast("Message non envoye","error");
+    setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
+  };
   const voter=async(election,candidateId)=>{
     setVoting(election.id);
     const {error}=await supabase.from("votes").insert({election_id:election.id,voter_user_id:user.id,candidate_membre_id:candidateId});
@@ -417,6 +432,15 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
           </div>
         ))}
       </div>}
+      <div style={{padding:"20px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>DISCUSSION DU GROUPE</p>
+        {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
+        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#D4A843",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div><p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.texte}</p></div></div>)}
+        <div style={{display:"flex",gap:8,marginTop:8}}>
+          <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Ecrire un message..." maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
+          <button onClick={sendMsg} style={{background:"#D4A843",border:"none",borderRadius:12,padding:"0 16px",color:"#0A1A0F",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
+        </div>
+      </div>
       <div style={{margin:"16px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
         <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu vois toutes les donnees de cette tontine en toute transparence, comme tous les autres membres. Seule la creatrice peut modifier les informations. Pour signaler un paiement, contacte-la directement.</p>
       </div>
@@ -583,7 +607,20 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===evtM.id?{...m,evenement:val}:m)}));
     setEvtM(null);setEvtTxt("");onToast(val?"Evenement enregistre !":"Evenement supprime");
   };
-  const sendMsg=()=>{if(!msgInput.trim())return;setGroupe(g=>({...g,messages:[...g.messages,{id:genId(),auteur:user.prenom,texte:s(msgInput.trim()),time:"maintenant"}]}));setMsgInput("");};
+  const [messages,setMessages]=useState([]);
+  const loadMessages=async()=>{
+    const {data}=await supabase.from("messages").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:true});
+    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
+  };
+  useEffect(()=>{loadMessages();},[groupe.id]);
+  const sendMsg=async()=>{
+    if(!msgInput.trim())return;
+    const texte=s(msgInput.trim());
+    setMsgInput("");
+    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,texte}).select().single();
+    if(error)return onToast("Message non envoye","error");
+    setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
+  };
   const addM=async()=>{
     if(pickerBusy)return;
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prenom et telephone requis","error");
@@ -830,7 +867,7 @@ HABY Tontine - La tontine digitale africaine`;
       </div>}
 
       {tab==="social"&&<div style={{padding:"14px 16px 0"}}>
-        {groupe.messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div><p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p></div></div>)}
+        {messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div><p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p></div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
           <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder="Ecrire un message..." maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#D4A843",border:"none",borderRadius:12,padding:"0 16px",color:"#0A1A0F",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>

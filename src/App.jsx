@@ -337,7 +337,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
     const texte=s(msgInput.trim());
     setMsgInput("");
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,texte}).select().single();
-    if(error)return onToast("Message non envoye","error");
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
   };
   const voter=async(election,candidateId)=>{
@@ -725,7 +725,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const texte=s(msgInput.trim());
     setMsgInput("");
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,texte}).select().single();
-    if(error)return onToast("Message non envoye","error");
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
   };
   const addM=async()=>{

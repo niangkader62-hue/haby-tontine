@@ -256,7 +256,7 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
   </div>
 );
 
-const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation}) => {
+const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation,cagnottes,onCreerCagnotte,onSelectCagnotte}) => {
   const totalEp=groupes.reduce((a,g)=>a+g.cagnotte,0);
   const totalCS=groupes.reduce((a,g)=>a+g.caisseSociale,0);
   const nbRet=groupes.reduce((a,g)=>a+g.membres.filter(m=>!m.paye).length,0);
@@ -318,6 +318,23 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
           </div>
         ))}
       </div>}
+      <div style={{padding:"22px 16px 0"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <h3 style={{color:"#FDF6EC",fontSize:16,fontWeight:800,margin:0}}>Mes Cagnottes</h3>
+          <button onClick={onCreerCagnotte} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 16px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Creer</button>
+        </div>
+        {(!cagnottes||cagnottes.length===0)?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:"10px 0"}}>Aucune cagnotte pour le moment (mariage, sante, funerailles, etudes...)</p>
+        :cagnottes.map(c=>{const pct=Math.min(100,Math.round((c.montant_collecte/c.objectif)*100));return(
+          <div key={c.id} onClick={()=>onSelectCagnotte(c)} style={{background:"#0F2419",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #1B4332",cursor:"pointer"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <p style={{margin:0,color:"#FDF6EC",fontWeight:800,fontSize:15}}>{c.titre}</p>
+              <span style={{background:c.statut==="cloturee"?"#1B4332":"#D4A843",color:c.statut==="cloturee"?"#6B7280":"#0A1A0F",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{c.statut==="cloturee"?"Cloturee":"Ouverte"}</span>
+            </div>
+            <Bar pct={pct} c="#D4A843"/>
+            <p style={{margin:"6px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(c.montant_collecte)} / {fmtFCFA(c.objectif)} ({pct}%)</p>
+          </div>
+        );})}
+      </div>
     </div>
   );
 };
@@ -1537,6 +1554,133 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   );
 };
 
+const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
+  const [cagnotte,setCagnotte]=useState(cInit);
+  const [contributions,setContributions]=useState([]);
+  const [showContrib,setShowContrib]=useState(false);
+  const [nom,setNom]=useState("");
+  const [montant,setMontant]=useState("");
+  const [busy,setBusy]=useState(false);
+
+  const loadContribs=async()=>{
+    const {data}=await supabase.from("cagnotte_contributions").select("*").eq("cagnotte_id",cagnotte.id).order("created_at",{ascending:false});
+    setContributions(data||[]);
+  };
+  useEffect(()=>{loadContribs();},[cagnotte.id]);
+
+  const pct=Math.min(100,Math.round((cagnotte.montant_collecte/cagnotte.objectif)*100));
+
+  const ajouterContribution=async()=>{
+    if(!nom.trim())return onToast("Nom du contributeur requis","error");
+    if(!montant||Number(montant)<1)return onToast("Montant invalide","error");
+    setBusy(true);
+    const amt=Number(montant);
+    const {data,error}=await supabase.from("cagnotte_contributions").insert({cagnotte_id:cagnotte.id,contributeur:s(nom.trim()),montant:amt}).select().single();
+    if(error){setBusy(false);return onToast("Ajout impossible","error");}
+    const nouveauTotal=cagnotte.montant_collecte+amt;
+    await supabase.from("cagnottes").update({montant_collecte:nouveauTotal}).eq("id",cagnotte.id);
+    setBusy(false);
+    setContributions(c=>[data,...c]);
+    setCagnotte(c=>({...c,montant_collecte:nouveauTotal}));
+    onUpdate(cagnotte.id,{montant_collecte:nouveauTotal});
+    setNom("");setMontant("");setShowContrib(false);
+    onToast("Contribution enregistree !");
+  };
+
+  const cloturer=async()=>{
+    const {error}=await supabase.from("cagnottes").update({statut:"cloturee"}).eq("id",cagnotte.id);
+    if(error)return onToast("Impossible de cloturer","error");
+    setCagnotte(c=>({...c,statut:"cloturee"}));
+    onUpdate(cagnotte.id,{statut:"cloturee"});
+    onToast("Cagnotte cloturee !");
+  };
+
+  const supprimer=async()=>{
+    if(!confirm("Supprimer cette cagnotte definitivement ?"))return;
+    const {error}=await supabase.from("cagnottes").delete().eq("id",cagnotte.id);
+    if(error)return onToast("Suppression impossible","error");
+    onDelete(cagnotte.id);
+  };
+
+  const partager=()=>{
+    const msg=encodeURIComponent(`🎉 ${cagnotte.titre}\n\n${cagnotte.description||""}\n\nObjectif : ${fmtFCFA(cagnotte.objectif)}\nDeja collecte : ${fmtFCFA(cagnotte.montant_collecte)} (${pct}%)\n\nParticipe si tu peux, merci !`);
+    window.open(`https://wa.me/?text=${msg}`,"_blank");
+  };
+
+  return(
+    <div style={{paddingBottom:16}}>
+      <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
+        <div style={{flex:1}}><h2 style={{color:"#FDF6EC",margin:0,fontSize:17,fontWeight:800}}>{cagnotte.titre}</h2>{cagnotte.beneficiaire&&<p style={{color:"#D4A843",margin:0,fontSize:12}}>Pour : {cagnotte.beneficiaire}</p>}</div>
+        <button onClick={supprimer} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:8,padding:"5px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Suppr.</button>
+      </div>
+      {cagnotte.description&&<p style={{color:"#6B7280",fontSize:13,padding:"12px 16px 0",lineHeight:1.6}}>{cagnotte.description}</p>}
+      <div style={{margin:"16px 16px 0",background:"#0F2419",border:"1px solid #D4A843",borderRadius:16,padding:18}}>
+        <p style={{margin:0,color:"#6B7280",fontSize:12,fontWeight:600}}>COLLECTE</p>
+        <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:26,fontWeight:900}}>{fmtFCFA(cagnotte.montant_collecte)}</p>
+        <Bar pct={pct} c="#D4A843"/>
+        <p style={{margin:"6px 0 0",color:"#6B7280",fontSize:11}}>Objectif : {fmtFCFA(cagnotte.objectif)} ({pct}%){cagnotte.date_limite?` - avant le ${new Date(cagnotte.date_limite).toLocaleDateString("fr-FR")}`:""}</p>
+      </div>
+      {cagnotte.statut!=="cloturee"&&<div style={{display:"flex",gap:10,padding:"14px 16px 0"}}>
+        <button onClick={()=>setShowContrib(true)} style={{flex:1,background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"11px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Contribution</button>
+        <button onClick={partager} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager WA</button>
+      </div>}
+      {cagnotte.statut!=="cloturee"&&<button onClick={cloturer} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"transparent",border:"1px solid #2D6A4F",borderRadius:10,padding:"10px",color:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>Cloturer la cagnotte</button>}
+      <div style={{padding:"20px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>CONTRIBUTIONS ({contributions.length})</p>
+        {contributions.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucune contribution pour l instant</p>
+        :contributions.map(c=>(
+          <div key={c.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={c.contributeur} size={32}/><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{c.contributeur}</p></div>
+            <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:14}}>{fmtFCFA(c.montant)}</p>
+          </div>
+        ))}
+      </div>
+      {showContrib&&<Modal onClose={()=>setShowContrib(false)}>
+        <MH title="Nouvelle contribution" onClose={()=>setShowContrib(false)}/>
+        <Fld label="Nom du contributeur"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Fatoumata" maxLength={40} autoFocus/></Fld>
+        <Fld label="Montant (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
+        <Btn onClick={ajouterContribution} disabled={busy}>{busy?"Enregistrement...":"Ajouter"}</Btn>
+      </Modal>}
+    </div>
+  );
+};
+
+const ModalCreerCagnotte = ({onClose,onCreate,user}) => {
+  const [titre,setTitre]=useState("");
+  const [description,setDescription]=useState("");
+  const [objectif,setObjectif]=useState("");
+  const [beneficiaire,setBeneficiaire]=useState("");
+  const [dateLimite,setDateLimite]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState("");
+
+  const handle=async()=>{
+    if(!titre.trim())return setErr("Donne un titre a ta cagnotte");
+    if(!objectif||Number(objectif)<1000)return setErr("Objectif minimum 1000 FCFA");
+    setBusy(true);
+    const payload={user_id:user.id,titre:s(titre.trim()),description:s(description||""),objectif:Number(objectif),beneficiaire:s(beneficiaire||""),date_limite:dateLimite||null,montant_collecte:0};
+    const {data,error}=await supabase.from("cagnottes").insert(payload).select().single();
+    setBusy(false);
+    if(error)return setErr("Erreur technique : "+(error.message||"inconnue"));
+    onCreate(data);
+    onClose();
+  };
+
+  return(
+    <Modal onClose={onClose}>
+      <MH title="Nouvelle cagnotte" onClose={onClose}/>
+      <Fld label="Titre"><Inp value={titre} onChange={e=>setTitre(e.target.value)} placeholder="Ex: Mariage de Fatoumata" maxLength={60} autoFocus/></Fld>
+      <Fld label="Pour qui (beneficiaire)"><Inp value={beneficiaire} onChange={e=>setBeneficiaire(e.target.value)} placeholder="Ex: Fatoumata Diallo" maxLength={60}/></Fld>
+      <Fld label="Description (optionnel)"><textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} placeholder="Details de l occasion..." style={{width:"100%",background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:12,padding:"12px 14px",color:"#FDF6EC",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
+      <Fld label="Objectif (FCFA)"><Inp value={objectif} onChange={e=>setObjectif(e.target.value.replace(/\D/g,""))} placeholder="Ex: 200000" inputMode="numeric"/></Fld>
+      <Fld label="Date limite (optionnel)"><Inp value={dateLimite} onChange={e=>setDateLimite(e.target.value)} type="date"/></Fld>
+      <ErrBox msg={err}/>
+      <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer la cagnotte"}</Btn>
+    </Modal>
+  );
+};
+
 const ModalCreer = ({onClose,onCreate,user}) => {
   const [nom,setNom]=useState("");
   const [montant,setMontant]=useState("");
@@ -1578,6 +1722,9 @@ export default function App() {
   const [lang,setLang]=useState("fr");
   const [participations,setParticipations]=useState([]);
   const [selPart,setSelPart]=useState(null);
+  const [cagnottes,setCagnottes]=useState([]);
+  const [selCagnotte,setSelCagnotte]=useState(null);
+  const [showCagnotteModal,setShowCagnotteModal]=useState(false);
 
   const showToast=useCallback((msg,type)=>setToast({msg,type}),[]);
 
@@ -1585,6 +1732,11 @@ export default function App() {
     setAppLang(l);setLang(l);
     if(user)await supabase.from("users").update({langue:l}).eq("id",user.id);
   },[user]);
+
+  const loadCagnottes=useCallback(async(uid)=>{
+    const {data,error}=await supabase.from("cagnottes").select("*").eq("user_id",uid).order("created_at",{ascending:false});
+    if(!error)setCagnottes(data||[]);
+  },[]);
 
   const loadParticipations=useCallback(async(uid)=>{
     const {data:mine,error}=await supabase.from("membres").select("*").eq("user_id",uid);
@@ -1643,7 +1795,7 @@ export default function App() {
   useEffect(()=>{
     (async()=>{
       const sessionUser=await getSession();
-      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await loadGroupes(sessionUser.id);await loadParticipations(sessionUser.id);}
+      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await loadGroupes(sessionUser.id);await loadParticipations(sessionUser.id);await loadCagnottes(sessionUser.id);}
       setChecking(false);
     })();
   },[]);
@@ -1659,7 +1811,7 @@ export default function App() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await loadGroupes(u.id);await loadParticipations(u.id);}}/>;
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await loadGroupes(u.id);await loadParticipations(u.id);await loadCagnottes(u.id);}}/>;
   const cu={...user,groupesCount:groupes.length};
   const NAV=[["home","🏠",t("accueil")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
@@ -1667,9 +1819,10 @@ export default function App() {
     <div style={{background:"#0A1A0F",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
-        {selPart?<ParticipationScreen groupe={selPart} onBack={()=>setSelPart(null)} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
+        {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} onBack={()=>setSelCagnotte(null)} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
+        :selPart?<ParticipationScreen groupe={selPart} onBack={()=>setSelPart(null)} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
         :sel?<GroupeScreen groupe={sel} onBack={()=>{setSel(null);loadGroupes(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
-        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={setSelPart}/>
+        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={setSelPart} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={setSelCagnotte}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast} currentUserId={cu.id}/>
@@ -1679,6 +1832,7 @@ export default function App() {
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#D4A843":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}
       </div>
       {showC&&<ModalCreer onClose={()=>setShowC(false)} onCreate={g=>{setGroupes(p=>[...p,g]);showToast("Tontine creee !");}} user={cu}/>}
+      {showCagnotteModal&&<ModalCreerCagnotte onClose={()=>setShowCagnotteModal(false)} onCreate={c=>{setCagnottes(cs=>[c,...cs]);showToast("Cagnotte creee !");}} user={cu}/>}
       {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
     </div>
   );

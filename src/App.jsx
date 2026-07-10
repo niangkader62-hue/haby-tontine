@@ -1960,10 +1960,12 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const [echeance,setEcheance]=useState("");
   const [err,setErr]=useState("");
   const [busy,setBusy]=useState(false);
+  const [limitReached,setLimitReached]=useState(false);
+  const [payBusy,setPayBusy]=useState(false);
   const handle=async()=>{
     if(!nom.trim())return setErr("Donne un nom a ta tontine");
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
-    if(user.plan==="free"&&user.groupesCount>=1)return setErr("Plan gratuit limite a 1 tontine geree. Passe a Premium pour en creer davantage !");
+    if(user.plan==="free"&&user.groupesCount>=1){setErr("");setLimitReached(true);return;}
     setBusy(true);
     const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
@@ -1972,6 +1974,25 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,prochainTour:"-",membres:[],checklist:[],messages:[]});
     onClose();
   };
+  if(limitReached)return <Modal onClose={onClose}>
+    <MH title="Limite atteinte" onClose={onClose}/>
+    <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
+    <p style={{color:"#FDF6EC",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>1 tontine geree, c'est le maximum en gratuit</p>
+    <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a HABY Premium pour gerer plusieurs tontines en meme temps.</p>
+    <button onClick={async()=>{
+      setPayBusy(true);
+      const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
+      setPayBusy(false);
+      if(error||data?.error)return setErr("Erreur : "+(data?.error||error?.message||"paiement indisponible"));
+      if(data?.payment_url)window.open(data.payment_url,"_blank");
+    }} disabled={payBusy} style={{width:"100%",background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:12,padding:"13px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant - 1 000 FCFA"}</button>
+    <p style={{color:"#6B7280",fontSize:11,textAlign:"center",margin:"0 0 12px"}}>OU manuellement via WhatsApp :</p>
+    <div style={{display:"flex",gap:10}}>
+      <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Orange Money</button>
+      <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Wave</button>
+    </div>
+    <ErrBox msg={err}/>
+  </Modal>;
   return <Modal onClose={onClose}>
     <MH title="Nouvelle Tontine" onClose={onClose}/>
     <Fld label="Nom de la tontine"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Tontine des Mamans" maxLength={40} autoFocus/></Fld>

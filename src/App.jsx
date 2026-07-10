@@ -413,6 +413,18 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
           </div>
         ))}
       </div>}
+      {groupe.prets&&groupe.prets.length>0&&<div style={{padding:"16px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>PRETS EN COURS</p>
+        {groupe.prets.map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;return(
+          <div key={p.id} style={{background:"#0F2419",border:`1px solid ${p.statut==="rembourse"?"#1B4332":"#D4A843"}`,borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={30}/><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:13}}>{m?.prenom||"?"}</p></div>
+              <span style={{background:p.statut==="rembourse"?"#1B4332":"#1A0800",color:p.statut==="rembourse"?"#22C55E":"#D4A843",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{p.statut==="rembourse"?"Rembourse":"En cours"}</span>
+            </div>
+            <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(p.montant)} emprunte - {fmtFCFA(Math.max(0,reste))} restant</p>
+          </div>
+        );})}
+      </div>}
       {groupe.tirages&&groupe.tirages.length>0&&<div style={{padding:"8px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE DES TIRAGES AU SORT</p>
         {[...groupe.tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
@@ -476,6 +488,12 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [electionRole,setElectionRole]=useState("president");
   const [electionCands,setElectionCands]=useState([]);
   const [electionBusy,setElectionBusy]=useState(false);
+  const [prets,setPrets]=useState([]);
+  const [showPret,setShowPret]=useState(false);
+  const [newPret,setNewPret]=useState({membreId:"",montant:"",taux:"0",echeance:""});
+  const [pretBusy,setPretBusy]=useState(false);
+  const [remboM,setRemboM]=useState(null);
+  const [remboAmt,setRemboAmt]=useState("");
 
   const deleteGroupe=async()=>{
     if(!confirm("Supprimer cette tontine et tous ses membres ? Cette action est irreversible."))return;
@@ -560,6 +578,37 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     await assignerDirect(election.role,winnerId);
     setElections(es=>es.map(e=>e.id===election.id?{...e,statut:"clotturee"}:e));
     onToast("Election clôturee, le bureau est mis a jour !");
+  };
+
+  const loadPrets=async()=>{
+    const {data}=await supabase.from("prets").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:false});
+    setPrets(data||[]);
+  };
+  useEffect(()=>{loadPrets();},[groupe.id]);
+
+  const creerPret=async()=>{
+    if(!newPret.membreId)return onToast("Choisis un membre emprunteur","error");
+    if(!newPret.montant||Number(newPret.montant)<500)return onToast("Montant minimum 500 FCFA","error");
+    setPretBusy(true);
+    const {data,error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:newPret.membreId,montant:Number(newPret.montant),taux_interet:Number(newPret.taux)||0,date_echeance:newPret.echeance||null}).select().single();
+    setPretBusy(false);
+    if(error)return onToast("Impossible de creer le pret","error");
+    setPrets(p=>[data,...p]);
+    setShowPret(false);setNewPret({membreId:"",montant:"",taux:"0",echeance:""});
+    onToast("Pret enregistre !");
+  };
+
+  const rembourserPret=async()=>{
+    const amt=Number(remboAmt);
+    if(!amt||amt<1)return;
+    const total=remboM.montant*(1+remboM.taux_interet/100);
+    const nouveauRembourse=remboM.montant_rembourse+amt;
+    const statut=nouveauRembourse>=total?"rembourse":"en_cours";
+    const {error}=await supabase.from("prets").update({montant_rembourse:nouveauRembourse,statut}).eq("id",remboM.id);
+    if(error)return onToast("Remboursement impossible","error");
+    setPrets(ps=>ps.map(p=>p.id===remboM.id?{...p,montant_rembourse:nouveauRembourse,statut}:p));
+    onToast(statut==="rembourse"?"Pret entierement rembourse !":"Remboursement enregistre !");
+    setRemboM(null);setRemboAmt("");
   };
 
   const aJour=groupe.membres.filter(m=>m.paye);
@@ -721,7 +770,7 @@ HABY Tontine - La tontine digitale africaine`;
   const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
-  const TABS=[["membres","Membres"],["bureau","Bureau"],["tirage","Tirage"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
+  const TABS=[["membres","Membres"],["bureau","Bureau"],["tirage","Tirage"],["prets","Prets"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
@@ -839,6 +888,37 @@ HABY Tontine - La tontine digitale africaine`;
           </div>
         </div>}
       </div>}
+      {tab==="prets"&&<div style={{padding:"14px 16px 0"}}>
+        <button onClick={()=>setShowPret(true)} style={{width:"100%",background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"10px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14}}>+ Nouveau pret</button>
+        {prets.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucun pret pour le moment</p>
+        :prets.map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;return(
+          <div key={p.id} style={{background:"#0F2419",border:`1px solid ${p.statut==="rembourse"?"#1B4332":"#D4A843"}`,borderRadius:14,padding:16,marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m?.prenom||"Membre retire"}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans interet"}</p></div></div>
+              <span style={{background:p.statut==="rembourse"?"#1B4332":"#1A0800",color:p.statut==="rembourse"?"#22C55E":"#D4A843",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{p.statut==="rembourse"?"Rembourse":"En cours"}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",margin:"12px 0"}}>
+              <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Emprunte</p><p style={{margin:"2px 0 0",color:"#FDF6EC",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div>
+              <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Rembourse</p><p style={{margin:"2px 0 0",color:"#22C55E",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant_rembourse)}</p></div>
+              <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Reste</p><p style={{margin:"2px 0 0",color:"#D4A843",fontWeight:700,fontSize:13}}>{fmtFCFA(Math.max(0,reste))}</p></div>
+            </div>
+            {p.statut!=="rembourse"&&<button onClick={()=>{setRemboM(p);setRemboAmt("");}} style={{width:"100%",background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"9px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Remboursement</button>}
+          </div>
+        );})}
+      </div>}
+      {showPret&&<Modal onClose={()=>setShowPret(false)}>
+        <MH title="Nouveau pret" onClose={()=>setShowPret(false)}/>
+        <Fld label="Membre emprunteur"><select value={newPret.membreId} onChange={e=>setNewPret(p=>({...p,membreId:e.target.value}))} style={{width:"100%",background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:12,padding:"13px 14px",color:"#FDF6EC",fontSize:14}}><option value="">Choisir...</option>{groupe.membres.map(m=><option key={m.id} value={m.id}>{m.prenom}</option>)}</select></Fld>
+        <Fld label="Montant du pret (FCFA)"><Inp value={newPret.montant} onChange={e=>setNewPret(p=>({...p,montant:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
+        <Fld label="Taux d interet (%, optionnel)"><Inp value={newPret.taux} onChange={e=>setNewPret(p=>({...p,taux:e.target.value.replace(/\D/g,"")}))} placeholder="0" inputMode="numeric"/></Fld>
+        <Fld label="Date d echeance (optionnel)"><Inp value={newPret.echeance} onChange={e=>setNewPret(p=>({...p,echeance:e.target.value}))} type="date"/></Fld>
+        <Btn onClick={creerPret} disabled={pretBusy}>{pretBusy?"Enregistrement...":"Enregistrer le pret"}</Btn>
+      </Modal>}
+      {remboM&&<Modal onClose={()=>setRemboM(null)}>
+        <MH title="Enregistrer un remboursement" onClose={()=>setRemboM(null)}/>
+        <Fld label="Montant rembourse (FCFA)"><Inp value={remboAmt} onChange={e=>setRemboAmt(e.target.value.replace(/\D/g,""))} placeholder="Ex: 10000" inputMode="numeric" autoFocus/></Fld>
+        <Btn onClick={rembourserPret}>Confirmer</Btn>
+      </Modal>}
       {tab==="events"&&<div style={{padding:"14px 16px 0"}}>
         {groupe.membres.filter(m=>m.evenement).length===0
           ?<div style={{textAlign:"center",padding:30,color:"#2D6A4F"}}><p style={{fontSize:32}}>🎉</p><p>Aucun evenement signale</p></div>
@@ -1415,6 +1495,7 @@ export default function App() {
       const {data:tirages}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).order("cycle",{ascending:true});
       const {data:elections}=await supabase.from("elections").select("*").eq("groupe_id",g.id).eq("statut","ouverte");
       const {data:mesVotes}=await supabase.from("votes").select("*").eq("voter_user_id",uid);
+      const {data:prets}=await supabase.from("prets").select("*").eq("groupe_id",g.id).order("created_at",{ascending:false});
       const moi=mine.find(m=>m.groupe_id===g.id);
       const aJourCount=(membres||[]).filter(m=>m.paye).length;
       return {
@@ -1425,6 +1506,7 @@ export default function App() {
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
         elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),
+        prets:prets||[],
         moi:moi?{versements:Number(moi.versements)||0,paye:moi.paye,cyclesPaies:moi.cycles_paies||0}:null,
       };
     }));

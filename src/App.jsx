@@ -9,6 +9,15 @@ const sPin = (p) => String(p).replace(/\D/g, "").slice(0, 4);
 const fmtFCFA = (n) => Number(n).toLocaleString("fr-FR") + " FCFA";
 const genId = () => Date.now() + Math.random().toString(36).slice(2, 7);
 
+const uploadPhoto = async (file, prefix) => {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const { error } = await supabase.storage.from("photos").upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from("photos").getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const I18N={
   fr:{
     connexion:"Connexion",inscription:"Inscription",bienvenue:"Bienvenue",
@@ -149,12 +158,13 @@ const AuthScreen = ({onLogin}) => {
   const [pin,setPin]=useState("");
   const [pinC,setPinC]=useState("");
   const [photo,setPhoto]=useState(null);
+  const [photoFile,setPhotoFile]=useState(null);
   const [parrainCode,setParrainCode]=useState("");
   const [err,setErr]=useState("");
   const [loading,setLoading]=useState(false);
   const fileRef=useRef();
 
-  const handlePhoto=(e)=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return setErr("Photo max 4MB");const r=new FileReader();r.onload=(ev)=>setPhoto(ev.target.result);r.readAsDataURL(f);};
+  const handlePhoto=(e)=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return setErr("Photo max 4MB");setPhotoFile(f);const r=new FileReader();r.onload=(ev)=>setPhoto(ev.target.result);r.readAsDataURL(f);};
   const go=(st)=>{setStep(st);setErr("");setPin("");setPinC("");};
 
   const doLogin=async()=>{
@@ -175,7 +185,7 @@ const AuthScreen = ({onLogin}) => {
     if(pin.length!==4)return setErr("Le PIN doit faire 4 chiffres");
     if(pin!==pinC)return setErr("Les deux PIN ne correspondent pas");
     setLoading(true);
-    const res=await registerUser(tel,pin,s(prenom.trim()),photo,parrainCode);
+    const res=await registerUser(tel,pin,s(prenom.trim()),photoFile,parrainCode);
     setLoading(false);
     if(!res.ok)return setErr(res.err);
     onLogin(res.user);
@@ -787,18 +797,16 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {data,error}=await supabase.from("transactions").select("*").eq("membre_id",m.id).order("created_at",{ascending:false});
     if(!error)setHistoM(h=>h&&h.id===m.id?{...h,historique:(data||[]).map(t=>({mois:new Date(t.created_at).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}),montant:Number(t.montant),statut:t.statut,date:t.created_at?.split("T")[0]}))}:h);
   };
-  const updatePhoto=(mid,e)=>{
+  const updatePhoto=async(mid,e)=>{
     const f=e.target.files?.[0];if(!f)return;
     if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");
-    const r=new FileReader();
-    r.onload=async(ev)=>{
-      const photoUrl=ev.target.result;
+    try{
+      const photoUrl=await uploadPhoto(f,"membres");
       const {error}=await supabase.from("membres").update({photo_url:photoUrl}).eq("id",mid);
       if(error)return onToast("Photo impossible a sauvegarder","error");
       setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===mid?{...m,photo:photoUrl}:m)}));
       onToast("Photo mise a jour !");
-    };
-    r.readAsDataURL(f);
+    }catch{onToast("Envoi de la photo impossible","error");}
   };
 
   const buildRecu=(m,amt,paye)=>{
@@ -1167,7 +1175,7 @@ HABY Tontine - La tontine digitale africaine`;
           }catch{}
           finally{setPickerBusy(false);}
         }} style={{width:"100%",background:pickerBusy?"#0F2419":"#1B4332",border:"1px solid #D4A843",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#D4A843",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ouverture des contacts...":"📇 Choisir depuis mes contacts"}</button>}
-        <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#1B4332",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 14px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");const r=new FileReader();r.onload=ev=>setNewM(n=>({...n,photo:ev.target.result}));r.readAsDataURL(f);}}/></label></div></Fld>
+        <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#1B4332",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 14px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");try{const url=await uploadPhoto(f,"membres");setNewM(n=>({...n,photo:url}));}catch{onToast("Envoi de la photo impossible","error");}}}/></label></div></Fld>
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>

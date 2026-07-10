@@ -3,7 +3,7 @@ import { supabase } from "./supabaseClient";
 const telToEmail = (tel) => tel.replace(/[^\d]/g, "") + "@kolo.local";
 const pinToPassword = (pin) => `k${pin}Kolo!`;
 
-export async function registerUser(tel, pin, prenom, photoUrl, parrainCode) {
+export async function registerUser(tel, pin, prenom, photoFile, parrainCode) {
   const email = telToEmail(tel);
   const password = pinToPassword(pin);
 
@@ -16,6 +16,20 @@ export async function registerUser(tel, pin, prenom, photoUrl, parrainCode) {
   }
 
   const userId = authData.user.id;
+
+  let photoUrl = null;
+  if (photoFile) {
+    try {
+      const ext = (photoFile.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `users/${userId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("photos").upload(path, photoFile, { upsert: true });
+      if (!upErr) {
+        const { data } = supabase.storage.from("photos").getPublicUrl(path);
+        photoUrl = data.publicUrl;
+      }
+    } catch (_e) {}
+  }
+
   let parraineParId = null;
   if (parrainCode && parrainCode.trim()) {
     const { data: parrain } = await supabase.from("users").select("id").eq("parrain_code", parrainCode.trim().toUpperCase()).single();

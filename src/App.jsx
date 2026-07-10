@@ -19,6 +19,44 @@ const uploadPhoto = async (file, prefix) => {
   return data.publicUrl;
 };
 
+const uploadAudio = async (blob, groupeId) => {
+  const path = `messages/${groupeId}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.webm`;
+  const { error } = await supabase.storage.from("audio").upload(path, blob, { upsert: true, contentType: "audio/webm" });
+  if (error) throw error;
+  const { data } = supabase.storage.from("audio").getPublicUrl(path);
+  return data.publicUrl;
+};
+
+function useAudioRecorder(){
+  const [recording,setRecording]=useState(false);
+  const mediaRef=useRef(null);
+  const chunksRef=useRef([]);
+  const start=async()=>{
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const mr=new MediaRecorder(stream);
+      chunksRef.current=[];
+      mr.ondataavailable=(e)=>{if(e.data.size>0)chunksRef.current.push(e.data);};
+      mr.start();
+      mediaRef.current=mr;
+      setRecording(true);
+      return true;
+    }catch{ return false; }
+  };
+  const stop=()=>new Promise((resolve)=>{
+    const mr=mediaRef.current;
+    if(!mr){resolve(null);return;}
+    mr.onstop=()=>{
+      const blob=new Blob(chunksRef.current,{type:"audio/webm"});
+      mr.stream.getTracks().forEach((t)=>t.stop());
+      setRecording(false);
+      resolve(blob);
+    };
+    mr.stop();
+  });
+  return {recording,start,stop};
+}
+
 const I18N={
   fr:{
     connexion:"Connexion",inscription:"Inscription",bienvenue:"Bienvenue",
@@ -390,9 +428,11 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   const [msgInput,setMsgInput]=useState("");
   const loadMessages=async()=>{
     const {data}=await supabase.from("messages").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:true});
-    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
+    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id]);
+  const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
+  const [sendingAudio,setSendingAudio]=useState(false);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -400,6 +440,23 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
+  };
+  const toggleRecord=async()=>{
+    if(recording){
+      const blob=await stopRec();
+      if(!blob||blob.size<500)return;
+      setSendingAudio(true);
+      try{
+        const audioUrl=await uploadAudio(blob,groupe.id);
+        const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl}).select().single();
+        if(error)throw error;
+        setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
+      }catch{onToast("Envoi du message vocal impossible","error");}
+      setSendingAudio(false);
+    }else{
+      const ok=await startRec();
+      if(!ok)onToast("Micro indisponible ou refuse","error");
+    }
   };
   const voter=async(election,candidateId)=>{
     setVoting(election.id);
@@ -524,11 +581,13 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
       <div style={{padding:"20px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>DISCUSSION DU GROUPE</p>
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
-        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#D4A843",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div><p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.texte}</p></div></div>)}
+        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#D4A843",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
+          <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#1B4332",border:"1px solid #2D6A4F",borderRadius:12,width:44,height:44,color:recording?"#fff":"#D4A843",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
           <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Ecrire un message..." maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#D4A843",border:"none",borderRadius:12,padding:"0 16px",color:"#0A1A0F",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
+        {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
       </div>
       <div style={{margin:"16px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
         <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu vois toutes les donnees de cette tontine en toute transparence, comme tous les autres membres. Seule la creatrice peut modifier les informations. Pour signaler un paiement, contacte-la directement.</p>
@@ -797,9 +856,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [messages,setMessages]=useState([]);
   const loadMessages=async()=>{
     const {data}=await supabase.from("messages").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:true});
-    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
+    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id]);
+  const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
+  const [sendingAudio,setSendingAudio]=useState(false);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -807,6 +868,23 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
+  };
+  const toggleRecord=async()=>{
+    if(recording){
+      const blob=await stopRec();
+      if(!blob||blob.size<500)return;
+      setSendingAudio(true);
+      try{
+        const audioUrl=await uploadAudio(blob,groupe.id);
+        const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl}).select().single();
+        if(error)throw error;
+        setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
+      }catch{onToast("Envoi du message vocal impossible","error");}
+      setSendingAudio(false);
+    }else{
+      const ok=await startRec();
+      if(!ok)onToast("Micro indisponible ou refuse","error");
+    }
   };
   const addM=async()=>{
     if(pickerBusyRef.current)return;
@@ -911,7 +989,7 @@ HABY Tontine - La tontine digitale africaine`;
   const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
-  const TABS=[["membres",t("tabMembres")],["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")],["social",t("tabSocial")],["rapport",t("tabRapport")]];
+  const TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")],["rapport",t("tabRapport")]];
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
@@ -1123,11 +1201,14 @@ HABY Tontine - La tontine digitale africaine`;
       </div>}
 
       {tab==="social"&&<div style={{padding:"14px 16px 0"}}>
-        {messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div><p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p></div></div>)}
+        {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
+        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
+          <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#1B4332",border:"1px solid #2D6A4F",borderRadius:12,width:44,height:44,color:recording?"#fff":"#D4A843",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
           <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder="Ecrire un message..." maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#D4A843",border:"none",borderRadius:12,padding:"0 16px",color:"#0A1A0F",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
+        {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
       </div>}
 
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>

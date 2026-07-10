@@ -1445,6 +1445,14 @@ const urlBase64ToUint8Array=(base64String)=>{
 };
 
 const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChangeLang}) => {
+  const [payBusy,setPayBusy]=useState(false);
+  const onPayCinetPay=async()=>{
+    setPayBusy(true);
+    const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
+    setPayBusy(false);
+    if(error||data?.error)return onToast("Erreur : "+(data?.error||error?.message||"paiement indisponible"),"error");
+    if(data?.payment_url)window.open(data.payment_url,"_blank");
+  };
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
   const [notifBusy,setNotifBusy]=useState(false);
@@ -1498,11 +1506,12 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
             ))}
           </div>
           <div style={{display:"flex",gap:10,marginBottom:12}}>
-            <button onClick={onUpgrade} style={{flex:1,background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:12,padding:"14px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>2 500 FCFA/mois</button>
-            <button onClick={onUpgrade} style={{flex:1,background:"#1B4332",border:"1px solid #D4A843",borderRadius:12,padding:"14px",color:"#D4A843",fontWeight:800,fontSize:13,cursor:"pointer",lineHeight:1.4}}>25 000/an<br/><span style={{fontSize:10}}>(-17%)</span></button>
+            <button onClick={onPayCinetPay} disabled={payBusy} style={{flex:1,background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:12,padding:"14px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>{payBusy?"...":"1 000 FCFA/mois"}</button>
+            <button onClick={onPayCinetPay} disabled={payBusy} style={{flex:1,background:"#1B4332",border:"1px solid #D4A843",borderRadius:12,padding:"14px",color:"#D4A843",fontWeight:800,fontSize:13,cursor:"pointer",lineHeight:1.4}}>10 000/an<br/><span style={{fontSize:10}}>(-17%)</span></button>
           </div>
+          <button onClick={onPayCinetPay} disabled={payBusy} style={{width:"100%",background:"#0A1A0F",border:"1px solid #D4A843",borderRadius:12,padding:"13px",color:"#D4A843",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant (Orange Money / Wave / Carte)"}</button>
           <div style={{background:"#0A1A0F",borderRadius:12,padding:12}}>
-            <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:11,fontWeight:700}}>PAYER VIA MOBILE MONEY :</p>
+            <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:11,fontWeight:700}}>OU MANUELLEMENT VIA WHATSAPP :</p>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"10px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Orange Money</button>
               <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"10px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Wave</button>

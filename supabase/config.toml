@@ -1,2 +1,5 @@
 [functions.daily-reminders]
 verify_jwt = false
+
+[functions.cinetpay-webhook]
+verify_jwt = false

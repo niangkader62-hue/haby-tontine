@@ -17,3 +17,6 @@ drop policy if exists "messages_write" on messages;
 create policy "messages_write" on messages for insert with check (
   auteur_user_id = auth.uid() and (is_owner_of(groupe_id) or is_admin() or is_membre_of(groupe_id))
 );
+
+-- Filet de securite : la table messages avait deja une colonne auteur obligatoire
+alter table messages alter column auteur set default '';

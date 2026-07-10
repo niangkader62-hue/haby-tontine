@@ -336,7 +336,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
     setMsgInput("");
-    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,texte}).select().single();
+    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
   };
@@ -724,7 +724,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
     setMsgInput("");
-    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,texte}).select().single();
+    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
   };

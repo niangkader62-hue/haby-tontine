@@ -134,6 +134,7 @@ const AuthScreen = ({onLogin}) => {
   const [pin,setPin]=useState("");
   const [pinC,setPinC]=useState("");
   const [photo,setPhoto]=useState(null);
+  const [parrainCode,setParrainCode]=useState("");
   const [err,setErr]=useState("");
   const [loading,setLoading]=useState(false);
   const fileRef=useRef();
@@ -159,7 +160,7 @@ const AuthScreen = ({onLogin}) => {
     if(pin.length!==4)return setErr("Le PIN doit faire 4 chiffres");
     if(pin!==pinC)return setErr("Les deux PIN ne correspondent pas");
     setLoading(true);
-    const res=await registerUser(tel,pin,s(prenom.trim()),photo);
+    const res=await registerUser(tel,pin,s(prenom.trim()),photo,parrainCode);
     setLoading(false);
     if(!res.ok)return setErr(res.err);
     onLogin(res.user);
@@ -213,6 +214,7 @@ const AuthScreen = ({onLogin}) => {
       <Fld label="Numero de telephone"><Inp value={tel} onChange={e=>setTel(sPhone(e.target.value))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
       <Fld label="Code PIN secret (4 chiffres)"><Inp value={pin} onChange={e=>setPin(sPin(e.target.value))} placeholder="Code secret" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <Fld label="Confirmer le PIN"><Inp value={pinC} onChange={e=>setPinC(sPin(e.target.value))} placeholder="Confirmer" type="password" inputMode="numeric" maxLength={4}/></Fld>
+      <Fld label="Code de parrainage (optionnel)"><Inp value={parrainCode} onChange={e=>setParrainCode(e.target.value.toUpperCase())} placeholder="Ex: A1B2C3D4" maxLength={12}/></Fld>
       <ErrBox msg={err}/>
       <Btn onClick={doRegister} disabled={loading}>{loading?"Creation...":"Creer mon compte"}</Btn>
       <p style={{color:"#2D6A4F",fontSize:11,textAlign:"center",marginTop:14}}>Ton PIN est chiffre et jamais partage</p>
@@ -1463,6 +1465,17 @@ const urlBase64ToUint8Array=(base64String)=>{
 
 const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChangeLang}) => {
   const [payBusy,setPayBusy]=useState(false);
+  const [parrainages,setParrainages]=useState([]);
+  useEffect(()=>{
+    (async()=>{
+      const {data}=await supabase.from("parrainages").select("*").eq("parrain_id",user.id);
+      setParrainages(data||[]);
+    })();
+  },[user.id]);
+  const partagerCode=()=>{
+    const msg=encodeURIComponent(`Rejoins-moi sur HABY Tontine pour gerer tes tontines simplement !\n\nUtilise mon code de parrainage a l inscription : ${user.parrainCode}\n\nhttps://haby-tontine.netlify.app`);
+    window.open(`https://wa.me/?text=${msg}`,"_blank");
+  };
   const onPayCinetPay=async()=>{
     setPayBusy(true);
     const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
@@ -1509,6 +1522,19 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
               <button key={code} onClick={()=>onChangeLang(code)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:lang===code?"#D4A843":"#1B4332",color:lang===code?"#0A1A0F":"#FDF6EC",borderColor:lang===code?"#D4A843":"#2D6A4F"}}>{label}</button>
             ))}
           </div>
+        </div>
+        <div style={{background:"#0F2419",border:"1px solid #D4A843",borderRadius:14,padding:16,marginBottom:16}}>
+          <p style={{margin:"0 0 6px",color:"#D4A843",fontWeight:800,fontSize:15}}>🎁 Parraine et gagne du Premium</p>
+          <p style={{margin:"0 0 12px",color:"#6B7280",fontSize:12,lineHeight:1.6}}>Chaque filleul(e) qui passe Premium te fait gagner 1 mois gratuit, cumulable !</p>
+          <div style={{background:"#0A1A0F",borderRadius:10,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <p style={{margin:0,color:"#FDF6EC",fontSize:18,fontWeight:900,letterSpacing:2}}>{user.parrainCode||"..."}</p>
+            <span style={{color:"#6B7280",fontSize:11}}>Ton code</span>
+          </div>
+          <div style={{display:"flex",gap:16,marginBottom:12}}>
+            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Filleul(e)s</p><p style={{margin:"2px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:16}}>{parrainages.length}</p></div>
+            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Devenus Premium</p><p style={{margin:"2px 0 0",color:"#22C55E",fontWeight:800,fontSize:16}}>{parrainages.filter(p=>p.statut==="premium").length}</p></div>
+          </div>
+          <button onClick={partagerCode} style={{width:"100%",background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager mon code sur WhatsApp</button>
         </div>
         {user.plan==="free"&&<div style={{background:"linear-gradient(135deg,#1A0800,#3D1500)",border:"1px solid #D4A843",borderRadius:18,padding:18,marginBottom:16}}>
           <p style={{margin:"0 0 4px",color:"#D4A843",fontWeight:800,fontSize:16}}>Passer a HABY Premium</p>

@@ -35,6 +35,10 @@ Deno.serve(async (req) => {
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
+  // Repasse en gratuit les comptes Premium dont le mois offert par parrainage est expire
+  const todayStr = new Date().toISOString().split("T")[0];
+  await supabase.from("users").update({ plan: "free" }).lt("premium_expire_le", todayStr).eq("plan", "premium");
+
   let sent = 0;
   for (const g of groupes || []) {
     // Destinataires : la creatrice + tous les membres lies a un compte

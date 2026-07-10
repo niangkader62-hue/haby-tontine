@@ -335,6 +335,16 @@ const ParticipationScreen = ({groupe,onBack}) => {
         <Bar pct={pct} c={groupe.couleur}/>
         <p style={{color:"#6B7280",fontSize:12,margin:"6px 0 0"}}>Cycle {groupe.cycle}/{groupe.totalCycles}</p>
       </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"16px 16px 0"}}>
+        <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
+          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>CAGNOTTE DU CYCLE</p>
+          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:18,fontWeight:900}}>{fmtFCFA(groupe.cagnotte)}</p>
+        </div>
+        <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
+          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>CAISSE SOCIALE</p>
+          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:18,fontWeight:900}}>{fmtFCFA(groupe.caisseSociale)}</p>
+        </div>
+      </div>
       {groupe.moi&&<div style={{margin:"16px 16px 0",background:"#0F2419",border:"1px solid #D4A843",borderRadius:14,padding:16}}>
         <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:13}}>Ma situation</p>
         <div style={{display:"flex",justifyContent:"space-between",marginTop:10}}>
@@ -344,17 +354,26 @@ const ParticipationScreen = ({groupe,onBack}) => {
         </div>
       </div>}
       <div style={{padding:"20px 16px 0"}}>
-        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>MEMBRES DU GROUPE</p>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>MEMBRES DU GROUPE ({groupe.membres.length})</p>
         {groupe.membres.map(m=>(
           <div key={m.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
             <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
-            <p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14,flex:1}}>{m.prenom}</p>
+            <div style={{flex:1}}><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)}</p></div>
             <span style={{background:m.paye?"#1B4332":"#1A0800",color:m.paye?"#22C55E":"#EF4444",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{m.paye?"Paye":"En retard"}</span>
           </div>
         ))}
       </div>
+      {groupe.checklist&&groupe.checklist.length>0&&<div style={{padding:"8px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>TACHES DU GROUPE</p>
+        {groupe.checklist.map(c=>(
+          <div key={c.id} style={{background:"#0F2419",border:`1px solid ${c.done?"#D4A843":"#1B4332"}`,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
+            <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${c.done?"#D4A843":"#2D6A4F"}`,background:c.done?"#D4A843":"transparent",flexShrink:0}}/>
+            <p style={{margin:0,color:c.done?"#6B7280":"#FDF6EC",fontSize:13,textDecoration:c.done?"line-through":"none"}}>{c.label}</p>
+          </div>
+        ))}
+      </div>}
       <div style={{margin:"16px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
-        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu es membre de cette tontine, pas administratrice. Seule la personne qui l a creee peut la modifier. Pour signaler un paiement, contacte-la directement.</p>
+        <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu vois toutes les donnees de cette tontine en toute transparence, comme tous les autres membres. Seule la creatrice peut modifier les informations. Pour signaler un paiement, contacte-la directement.</p>
       </div>
     </div>
   );
@@ -1162,11 +1181,15 @@ export default function App() {
     const {data:gs}=await supabase.from("groupes").select("*").in("id",groupeIds);
     const full=await Promise.all((gs||[]).map(async g=>{
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
+      const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const moi=mine.find(m=>m.groupe_id===g.id);
+      const aJourCount=(membres||[]).filter(m=>m.paye).length;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,
-        membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement})),
+        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
+        membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0})),
+        checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         moi:moi?{versements:Number(moi.versements)||0,paye:moi.paye,cyclesPaies:moi.cycles_paies||0}:null,
       };
     }));

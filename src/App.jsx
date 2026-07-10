@@ -20,6 +20,11 @@ const I18N={
     panneauAdmin:"Panneau Administrateur",langue:"Langue",
     mesEpargnes:"Mes epargnes",caisseSociale:"Caisse sociale",
     membresEnRetard:"membre(s) en retard",cliquezTontine:"Cliquez sur une tontine",
+    tabMembres:"Membres",tabBureau:"Bureau",tabTirage:"Tirage",tabPrets:"Prets",tabReunions:"Reunions",
+    tabEvenements:"Evenements",tabTaches:"Taches",tabSocial:"Social",tabRapport:"Rapport",
+    mesCagnottes:"Mes Cagnottes",lectureSeule:"Lecture seule",maSituation:"Ma situation",
+    statut:"Statut",aJour:"A jour",enRetard:"En retard",membresGroupe:"Membres du groupe",
+    ecrisAHaby:"Ecris a HABY...",panneauUtilisatrices:"Utilisatrices inscrites",
   },
   en:{
     connexion:"Log in",inscription:"Sign up",bienvenue:"Welcome",
@@ -31,6 +36,11 @@ const I18N={
     panneauAdmin:"Admin Panel",langue:"Language",
     mesEpargnes:"My savings",caisseSociale:"Social fund",
     membresEnRetard:"member(s) late",cliquezTontine:"Click on a tontine",
+    tabMembres:"Members",tabBureau:"Board",tabTirage:"Draw",tabPrets:"Loans",tabReunions:"Meetings",
+    tabEvenements:"Events",tabTaches:"Tasks",tabSocial:"Social",tabRapport:"Report",
+    mesCagnottes:"My Fundraisers",lectureSeule:"Read only",maSituation:"My situation",
+    statut:"Status",aJour:"Up to date",enRetard:"Late",membresGroupe:"Group members",
+    ecrisAHaby:"Write to HABY...",panneauUtilisatrices:"Registered users",
   },
   ar:{
     connexion:"تسجيل الدخول",inscription:"إنشاء حساب",bienvenue:"مرحبا",
@@ -42,6 +52,11 @@ const I18N={
     panneauAdmin:"لوحة الإدارة",langue:"اللغة",
     mesEpargnes:"مدخراتي",caisseSociale:"الصندوق الاجتماعي",
     membresEnRetard:"عضو(ة) متأخر(ة)",cliquezTontine:"اضغطي على جمعية",
+    tabMembres:"الأعضاء",tabBureau:"المكتب",tabTirage:"القرعة",tabPrets:"القروض",tabReunions:"الاجتماعات",
+    tabEvenements:"الأحداث",tabTaches:"المهام",tabSocial:"اجتماعي",tabRapport:"التقرير",
+    mesCagnottes:"صناديقي",lectureSeule:"قراءة فقط",maSituation:"وضعيتي",
+    statut:"الحالة",aJour:"محدث",enRetard:"متأخر",membresGroupe:"أعضاء المجموعة",
+    ecrisAHaby:"اكتبي لهابي...",panneauUtilisatrices:"المستخدمات المسجلات",
   },
 };
 let CURRENT_LANG="fr";
@@ -322,7 +337,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
       </div>}
       <div style={{padding:"22px 16px 0"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{color:"#FDF6EC",fontSize:16,fontWeight:800,margin:0}}>Mes Cagnottes</h3>
+          <h3 style={{color:"#FDF6EC",fontSize:16,fontWeight:800,margin:0}}>{t("mesCagnottes")}</h3>
           <button onClick={onCreerCagnotte} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 16px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Creer</button>
         </div>
         {(!cagnottes||cagnottes.length===0)?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:"10px 0"}}>Aucune cagnotte pour le moment (mariage, sante, funerailles, etudes...)</p>
@@ -373,7 +388,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
         <div style={{flex:1}}><h2 style={{color:"#FDF6EC",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#D4A843",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
-        <span style={{background:"#1B4332",color:"#6B7280",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:99}}>Lecture seule</span>
+        <span style={{background:"#1B4332",color:"#6B7280",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:99}}>{t("lectureSeule")}</span>
       </div>
       <div style={{padding:"16px 16px 0"}}>
         <Bar pct={pct} c={groupe.couleur}/>
@@ -390,7 +405,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
         </div>
       </div>
       {groupe.moi&&<div style={{margin:"16px 16px 0",background:"#0F2419",border:"1px solid #D4A843",borderRadius:14,padding:16}}>
-        <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:13}}>Ma situation</p>
+        <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:13}}>{t("maSituation")}</p>
         <div style={{display:"flex",justifyContent:"space-between",marginTop:10}}>
           <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Statut</p><p style={{margin:"2px 0 0",color:groupe.moi.paye?"#22C55E":"#EF4444",fontWeight:800,fontSize:14}}>{groupe.moi.paye?"A jour":"En retard"}</p></div>
           <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Verse au total</p><p style={{margin:"2px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:14}}>{fmtFCFA(groupe.moi.versements)}</p></div>
@@ -847,7 +862,7 @@ HABY Tontine - La tontine digitale africaine`;
   const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
-  const TABS=[["membres","Membres"],["bureau","Bureau"],["tirage","Tirage"],["prets","Prets"],["reunions","Reunions"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
+  const TABS=[["membres",t("tabMembres")],["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")],["social",t("tabSocial")],["rapport",t("tabRapport")]];
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>

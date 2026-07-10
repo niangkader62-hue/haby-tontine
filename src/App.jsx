@@ -343,7 +343,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
   const totalCS=groupes.reduce((a,g)=>a+g.caisseSociale,0);
   const nbRet=groupes.reduce((a,g)=>a+g.membres.filter(m=>!m.paye).length,0);
   return(
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:90}}>
       <div style={{background:"linear-gradient(135deg,#0F2419,#1B4332)",padding:"48px 20px 36px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
         <div>
           <p style={{color:"#D4A843",fontSize:13,margin:0,fontWeight:600}}>{t("bienvenue")}</p>
@@ -468,7 +468,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   };
   const ROLES_LABELS={president:"Presidente",tresoriere:"Tresoriere",secretaire:"Secretaire"};
   return(
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
         <div style={{flex:1}}><h2 style={{color:"#FDF6EC",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#D4A843",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
@@ -991,7 +991,7 @@ HABY Tontine - La tontine digitale africaine`;
 
   const TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")],["rapport",t("tabRapport")]];
   return(
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:90}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#FDF6EC",fontSize:24,cursor:"pointer",padding:0}}>←</button>
         <div style={{flex:1}}><h2 style={{color:"#FDF6EC",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#D4A843",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
@@ -1200,7 +1200,7 @@ HABY Tontine - La tontine digitale africaine`;
         {groupe.checklist.map(c=><div key={c.id} style={{background:"#0F2419",border:`1px solid ${c.done?"#D4A843":"#1B4332"}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}><div onClick={()=>toggleC(c.id)} style={{width:22,height:22,borderRadius:6,border:`2px solid ${c.done?"#D4A843":"#2D6A4F"}`,background:c.done?"#D4A843":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer"}}>{c.done&&<span style={{color:"#0A1A0F",fontWeight:900,fontSize:13}}>v</span>}</div><p onClick={()=>toggleC(c.id)} style={{margin:0,color:c.done?"#6B7280":"#FDF6EC",fontSize:14,textDecoration:c.done?"line-through":"none",flex:1,cursor:"pointer"}}>{c.label}</p><button onClick={()=>delTask(c.id)} style={{background:"transparent",border:"none",color:"#EF4444",fontSize:18,cursor:"pointer",padding:"0 4px"}}>✕</button></div>)}
       </div>}
 
-      {tab==="social"&&<div style={{padding:"14px 16px 0"}}>
+      {tab==="social"&&<div style={{padding:"14px 16px 100px"}}>
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -1456,7 +1456,7 @@ const EpargneScreen = ({onToast,user}) => {
   };
 
   return(
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <h2 style={{color:"#FDF6EC",fontSize:22,fontWeight:900,margin:0}}>Ma Tirelire</h2>
         <button onClick={()=>setShowAdd(true)} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 16px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Objectif</button>
@@ -1602,7 +1602,7 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
     }
   };
   return(
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
         <h2 style={{color:"#FDF6EC",fontSize:20,fontWeight:900,margin:0}}>Panneau Administrateur</h2>
@@ -1748,7 +1748,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
     }catch(e){setNotifBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
   };
   return(
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:90}}>
       <div style={{background:"linear-gradient(135deg,#0F2419,#1B4332)",padding:"44px 20px 30px"}}>
         <h2 style={{color:"#FDF6EC",margin:"0 0 20px",fontSize:20,fontWeight:800}}>{t("profil")}</h2>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
@@ -1880,7 +1880,7 @@ const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
   };
 
   return(
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#D4A843",fontSize:22,cursor:"pointer"}}>←</button>
         <div style={{flex:1}}><h2 style={{color:"#FDF6EC",margin:0,fontSize:17,fontWeight:800}}>{cagnotte.titre}</h2>{cagnotte.beneficiaire&&<p style={{color:"#D4A843",margin:0,fontSize:12}}>Pour : {cagnotte.beneficiaire}</p>}</div>

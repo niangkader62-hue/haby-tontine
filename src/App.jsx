@@ -322,8 +322,18 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
   );
 };
 
-const ParticipationScreen = ({groupe,onBack}) => {
+const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   const pct=Math.round((groupe.cycle/groupe.totalCycles)*100);
+  const [voting,setVoting]=useState(null);
+  const voter=async(election,candidateId)=>{
+    setVoting(election.id);
+    const {error}=await supabase.from("votes").insert({election_id:election.id,voter_user_id:user.id,candidate_membre_id:candidateId});
+    setVoting(null);
+    if(error)return onToast("Vote impossible (peut-etre deja vote ?)","error");
+    onToast("Vote enregistre !");
+    onVoted&&onVoted();
+  };
+  const ROLES_LABELS={president:"Presidente",tresoriere:"Tresoriere",secretaire:"Secretaire"};
   return(
     <div style={{paddingBottom:16}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
@@ -363,6 +373,31 @@ const ParticipationScreen = ({groupe,onBack}) => {
           </div>
         ))}
       </div>
+      {groupe.membres.some(m=>m.role_bureau)&&<div style={{padding:"16px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>BUREAU</p>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {groupe.membres.filter(m=>m.role_bureau).map(m=>(
+            <div key={m.id} style={{background:"#0F2419",border:"1px solid #D4A843",borderRadius:12,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
+              <Avatar prenom={m.prenom} photo={m.photo} size={26}/>
+              <div><p style={{margin:0,color:"#FDF6EC",fontSize:12,fontWeight:700}}>{m.prenom}</p><p style={{margin:0,color:"#D4A843",fontSize:10}}>{ROLES_LABELS[m.role_bureau]||m.role_bureau}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>}
+      {groupe.elections&&groupe.elections.length>0&&<div style={{padding:"16px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>ELECTIONS EN COURS</p>
+        {groupe.elections.map(e=>(
+          <div key={e.id} style={{background:"#0A1A0F",border:"1px solid #D4A843",borderRadius:14,padding:14,marginBottom:10}}>
+            <p style={{margin:"0 0 10px",color:"#D4A843",fontWeight:700,fontSize:13}}>🗳️ {ROLES_LABELS[e.role]||e.role}</p>
+            {e.dejaVote?<p style={{color:"#22C55E",fontSize:13,margin:0}}>✓ Tu as deja vote pour cette election</p>
+            :e.candidats.map(cid=>{const c=groupe.membres.find(m=>m.id===cid);return(
+              <button key={cid} onClick={()=>voter(e,cid)} disabled={voting===e.id} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer"}}>
+                <Avatar prenom={c?.prenom||"?"} photo={c?.photo} size={28}/><p style={{margin:0,color:"#FDF6EC",fontSize:13,fontWeight:600}}>{c?.prenom||"?"}</p>
+              </button>
+            );})}
+          </div>
+        ))}
+      </div>}
       {groupe.tirages&&groupe.tirages.length>0&&<div style={{padding:"8px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE DES TIRAGES AU SORT</p>
         {[...groupe.tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
@@ -411,6 +446,12 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [tirages,setTirages]=useState([]);
   const [tirageAnim,setTirageAnim]=useState(false);
   const [tirageBusy,setTirageBusy]=useState(false);
+  const [elections,setElections]=useState([]);
+  const [votes,setVotes]=useState([]);
+  const [showElection,setShowElection]=useState(false);
+  const [electionRole,setElectionRole]=useState("president");
+  const [electionCands,setElectionCands]=useState([]);
+  const [electionBusy,setElectionBusy]=useState(false);
 
   const deleteGroupe=async()=>{
     if(!confirm("Supprimer cette tontine et tous ses membres ? Cette action est irreversible."))return;
@@ -435,7 +476,16 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {data}=await supabase.from("tirages").select("*").eq("groupe_id",groupe.id).order("cycle",{ascending:true});
     setTirages(data||[]);
   };
-  useEffect(()=>{loadTirages();},[groupe.id]);
+  const loadElections=async()=>{
+    const {data:els}=await supabase.from("elections").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:false});
+    setElections(els||[]);
+    const openIds=(els||[]).filter(e=>e.statut==="ouverte").map(e=>e.id);
+    if(openIds.length>0){
+      const {data:vs}=await supabase.from("votes").select("*").in("election_id",openIds);
+      setVotes(vs||[]);
+    }else setVotes([]);
+  };
+  useEffect(()=>{loadTirages();loadElections();},[groupe.id]);
 
   const dejaGagnants=new Set(tirages.map(t=>t.membre_id));
   const eligibles=groupe.membres.filter(m=>!dejaGagnants.has(m.id));
@@ -453,6 +503,39 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setTirages(t=>[...t,data]);
     onToast(`${gagnant.prenom} remporte la cagnotte de ce cycle !`);
     setTimeout(()=>setTirageAnim(false),2500);
+  };
+
+  const ROLES=[["president","Presidente"],["tresoriere","Tresoriere"],["secretaire","Secretaire"]];
+  const titulaire=(role)=>groupe.membres.find(m=>m.role_bureau===role);
+  const electionActive=(role)=>elections.find(e=>e.role===role&&e.statut==="ouverte");
+
+  const assignerDirect=async(role,membreId)=>{
+    await supabase.from("membres").update({role_bureau:null}).eq("groupe_id",groupe.id).eq("role_bureau",role);
+    if(membreId)await supabase.from("membres").update({role_bureau:role}).eq("id",membreId);
+    setGroupe(g=>({...g,membres:g.membres.map(m=>({...m,role_bureau:m.id===membreId?role:(m.role_bureau===role?null:m.role_bureau)}))}));
+    onToast("Bureau mis a jour !");
+  };
+
+  const lancerElection=async()=>{
+    if(electionCands.length<2)return onToast("Choisis au moins 2 candidat(e)s","error");
+    setElectionBusy(true);
+    const {data,error}=await supabase.from("elections").insert({groupe_id:groupe.id,role:electionRole,candidats:electionCands}).select().single();
+    setElectionBusy(false);
+    if(error)return onToast("Impossible de lancer l election","error");
+    setElections(e=>[data,...e]);
+    setShowElection(false);setElectionCands([]);
+    onToast("Election lancee ! Les membres lies peuvent voter.");
+  };
+
+  const cloturerElection=async(election)=>{
+    const tally={};
+    votes.filter(v=>v.election_id===election.id).forEach(v=>{tally[v.candidate_membre_id]=(tally[v.candidate_membre_id]||0)+1;});
+    const winnerId=Object.keys(tally).sort((a,b)=>tally[b]-tally[a])[0];
+    if(!winnerId)return onToast("Aucun vote enregistre pour l instant","error");
+    await supabase.from("elections").update({statut:"clotturee"}).eq("id",election.id);
+    await assignerDirect(election.role,winnerId);
+    setElections(es=>es.map(e=>e.id===election.id?{...e,statut:"clotturee"}:e));
+    onToast("Election clôturee, le bureau est mis a jour !");
   };
 
   const aJour=groupe.membres.filter(m=>m.paye);
@@ -601,7 +684,7 @@ HABY Tontine - La tontine digitale africaine`;
   const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
-  const TABS=[["membres","Membres"],["tirage","Tirage"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
+  const TABS=[["membres","Membres"],["bureau","Bureau"],["tirage","Tirage"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
@@ -646,6 +729,46 @@ HABY Tontine - La tontine digitale africaine`;
         {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}</>}
       </div>}
 
+      {tab==="bureau"&&<div style={{padding:"14px 16px 0"}}>
+        {ROLES.map(([role,label])=>{
+          const t=titulaire(role);
+          const elec=electionActive(role);
+          const tally={};
+          if(elec)votes.filter(v=>v.election_id===elec.id).forEach(v=>{tally[v.candidate_membre_id]=(tally[v.candidate_membre_id]||0)+1;});
+          return(
+            <div key={role} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:16,marginBottom:12}}>
+              <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5}}>{label.toUpperCase()}</p>
+              {t?<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Avatar prenom={t.prenom} photo={t.photo} size={36}/><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:15}}>{t.prenom}</p></div>
+              :<p style={{color:"#6B7280",fontSize:13,marginBottom:10}}>Poste non attribue</p>}
+              {elec?(
+                <div style={{background:"#0A1A0F",borderRadius:10,padding:12,marginTop:6}}>
+                  <p style={{margin:"0 0 8px",color:"#D4A843",fontSize:12,fontWeight:700}}>🗳️ Election en cours</p>
+                  {elec.candidats.map(cid=>{const c=groupe.membres.find(m=>m.id===cid);return(
+                    <div key={cid} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",color:"#FDF6EC",fontSize:13}}><span>{c?.prenom||"?"}</span><span style={{color:"#D4A843",fontWeight:700}}>{tally[cid]||0} voix</span></div>
+                  );})}
+                  <button onClick={()=>cloturerElection(elec)} style={{marginTop:10,width:"100%",background:"#D4A843",border:"none",borderRadius:10,padding:"9px",color:"#0A1A0F",fontWeight:700,fontSize:12,cursor:"pointer"}}>Cloturer l election</button>
+                </div>
+              ):(
+                <button onClick={()=>{setElectionRole(role);setElectionCands([]);setShowElection(true);}} style={{width:"100%",background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"9px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>Lancer une election</button>
+              )}
+            </div>
+          );
+        })}
+        <div style={{margin:"14px 0 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
+          <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Seuls les membres ayant un compte HABY Tontine relie peuvent voter. Tu peux aussi attribuer un poste directement sans election.</p>
+        </div>
+      </div>}
+      {showElection&&<Modal onClose={()=>setShowElection(false)}>
+        <MH title={`Election - ${ROLES.find(r=>r[0]===electionRole)?.[1]}`} onClose={()=>setShowElection(false)}/>
+        <p style={{color:"#6B7280",fontSize:13,marginBottom:14}}>Choisis au moins 2 candidat(e)s parmi les membres.</p>
+        {groupe.membres.map(m=>(
+          <div key={m.id} onClick={()=>setElectionCands(c=>c.includes(m.id)?c.filter(x=>x!==m.id):[...c,m.id])} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:electionCands.includes(m.id)?"#1B4332":"#0F2419",border:`1px solid ${electionCands.includes(m.id)?"#D4A843":"#1B4332"}`,borderRadius:10,marginBottom:6,cursor:"pointer"}}>
+            <Avatar prenom={m.prenom} photo={m.photo} size={30}/><p style={{margin:0,color:"#FDF6EC",fontSize:13,flex:1}}>{m.prenom}</p>
+            {electionCands.includes(m.id)&&<span style={{color:"#D4A843",fontWeight:900}}>✓</span>}
+          </div>
+        ))}
+        <div style={{marginTop:14}}><Btn onClick={lancerElection} disabled={electionBusy}>{electionBusy?"Lancement...":"Lancer l election"}</Btn></div>
+      </Modal>}
       {tab==="tirage"&&<div style={{padding:"14px 16px 0"}}>
         {gagnantCycleActuel?(()=>{const g=groupe.membres.find(m=>m.id===gagnantCycleActuel.membre_id);return(
           <div style={{background:"linear-gradient(135deg,#1B4332,#0F2419)",border:"1px solid #D4A843",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
@@ -1253,15 +1376,18 @@ export default function App() {
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const {data:tirages}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).order("cycle",{ascending:true});
+      const {data:elections}=await supabase.from("elections").select("*").eq("groupe_id",g.id).eq("statut","ouverte");
+      const {data:mesVotes}=await supabase.from("votes").select("*").eq("voter_user_id",uid);
       const moi=mine.find(m=>m.groupe_id===g.id);
       const aJourCount=(membres||[]).filter(m=>m.paye).length;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
-        membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0})),
+        membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
+        elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),
         moi:moi?{versements:Number(moi.versements)||0,paye:moi.paye,cyclesPaies:moi.cycles_paies||0}:null,
       };
     }));
@@ -1318,7 +1444,7 @@ export default function App() {
     <div style={{background:"#0A1A0F",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
-        {selPart?<ParticipationScreen groupe={selPart} onBack={()=>setSelPart(null)}/>
+        {selPart?<ParticipationScreen groupe={selPart} onBack={()=>setSelPart(null)} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
         :sel?<GroupeScreen groupe={sel} onBack={()=>{setSel(null);loadGroupes(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
         :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={setSelPart}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>

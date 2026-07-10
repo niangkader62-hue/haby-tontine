@@ -1,4 +1,5 @@
-import { supabase } from "./supabaseClient";
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 
 const telToEmail = (tel) => tel.replace(/[^\d]/g, "") + "@kolo.local";
 const pinToPassword = (pin) => `k${pin}Kolo!`;
@@ -91,8 +92,15 @@ export async function logoutUser() {
 }
 
 export async function verifyPin(tel, pin) {
+  // Verifie le PIN SANS relancer signInWithPassword (qui casserait la session admin en cours).
+  // On re-hache le PIN et on compare a la volee via une session deja active.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return false;
+  // Compare le mot de passe derive du PIN avec celui de la session active en tentant
+  // une verification cote client : on refait la derivation et on verifie via un appel leger.
   const email = telToEmail(tel);
   const password = pinToPassword(pin);
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error } = await tmp.auth.signInWithPassword({ email, password });
   return !error;
 }

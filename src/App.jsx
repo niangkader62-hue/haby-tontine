@@ -1582,7 +1582,7 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
     setBusyId(u.id);
     const {error}=await supabase.from("users").update({role:newRole}).eq("id",u.id);
     setBusyId(null);
-    if(error)return onToast("Impossible de changer le role","error");
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setUsers(list=>list.map(x=>x.id===u.id?{...x,role:newRole}:x));
     onToast(newRole==="admin"?`${u.prenom} est maintenant co-administrateur !`:`${u.prenom} n est plus administrateur`);
     if(newRole==="admin"){
@@ -1594,7 +1594,7 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
     setBusyId(u.id);
     const {error}=await supabase.from("users").update({plan:newPlan}).eq("id",u.id);
     setBusyId(null);
-    if(error)return onToast("Impossible de changer le plan","error");
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setUsers(list=>list.map(x=>x.id===u.id?{...x,plan:newPlan}:x));
     onToast(newPlan==="premium"?`${u.prenom} est maintenant Premium !`:`${u.prenom} repasse en Gratuit`);
     if(newPlan==="premium"){

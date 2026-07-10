@@ -67,6 +67,22 @@ const I18N={
     statut:"الحالة",aJour:"محدث",enRetard:"متأخر",membresGroupe:"أعضاء المجموعة",
     ecrisAHaby:"اكتبي لهابي...",panneauUtilisatrices:"المستخدمات المسجلات",
   },
+  bm:{
+    connexion:"Login",inscription:"I tɔgɔ sɛbɛn",bienvenue:"I bisimila",
+    accueil:"So kɔnɔ",epargne:"Mara",profil:"I ka kunnafoni",
+    mesTontines:"N ka tontinw",creer:"Dilan",ajouter:"Fara a kan",modifier:"Yɛlɛma",supprimer:"Bɔ a la",
+    enregistrer:"Mara",annuler:"Dabila",gratuit:"FU",premium:"PREMIUM",
+    notifications:"Kunnafoniw daminɛ",lierWA:"WhatsApp sirilen",changerPin:"N ka gundo yɛlɛma",
+    exporterDonnees:"N ka kunnafoniw bɔ",contacterSupport:"Dɛmɛbaga wele",deconnexion:"Bɔ",
+    panneauAdmin:"Kuntigiya yɔrɔ",langue:"Kan",
+    mesEpargnes:"N ka mara",caisseSociale:"Jama ka wari",
+    membresEnRetard:"tɔnden(w) tɔnɔlen",cliquezTontine:"I bolo tontine kan",
+    tabMembres:"Tɔndenw",tabBureau:"Ka biro",tabTirage:"Filɛli",tabPrets:"Juruw",tabReunions:"Lajɛw",
+    tabEvenements:"Kow",tabTaches:"Baaraw",tabSocial:"Jama",tabRapport:"Kunnafoni",
+    mesCagnottes:"N ka waribɔlanw",lectureSeule:"Kalanni dɔrɔn",maSituation:"N ka cogoya",
+    statut:"Cogoya",aJour:"A bɛnnen",enRetard:"A tɔnɔlen",membresGroupe:"Jɛkulu tɔndenw",
+    ecrisAHaby:"HABY ye sɛbɛn...",panneauUtilisatrices:"Baarakɛlaw tɔgɔsɛbɛnnen",
+  },
 };
 let CURRENT_LANG="fr";
 const setAppLang=(l)=>{CURRENT_LANG=I18N[l]?l:"fr";document.documentElement.dir=CURRENT_LANG==="ar"?"rtl":"ltr";document.documentElement.lang=CURRENT_LANG;};
@@ -1540,9 +1556,9 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       <div style={{padding:"16px 16px 0"}}>
         <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14,marginBottom:16}}>
           <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:12,fontWeight:700}}>{t("langue")}</p>
-          <div style={{display:"flex",gap:8}}>
-            {[["fr","Francais"],["en","English"],["ar","العربية"]].map(([code,label])=>(
-              <button key={code} onClick={()=>onChangeLang(code)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:lang===code?"#D4A843":"#1B4332",color:lang===code?"#0A1A0F":"#FDF6EC",borderColor:lang===code?"#D4A843":"#2D6A4F"}}>{label}</button>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {[["fr","Francais"],["en","English"],["bm","Bamanankan"],["ar","العربية"]].map(([code,label])=>(
+              <button key={code} onClick={()=>onChangeLang(code)} style={{flex:"1 1 45%",minWidth:90,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:lang===code?"#D4A843":"#1B4332",color:lang===code?"#0A1A0F":"#FDF6EC",borderColor:lang===code?"#D4A843":"#2D6A4F"}}>{label}</button>
             ))}
           </div>
         </div>

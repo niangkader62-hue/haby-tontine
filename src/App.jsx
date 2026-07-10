@@ -363,6 +363,16 @@ const ParticipationScreen = ({groupe,onBack}) => {
           </div>
         ))}
       </div>
+      {groupe.tirages&&groupe.tirages.length>0&&<div style={{padding:"8px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE DES TIRAGES AU SORT</p>
+        {[...groupe.tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
+          <div key={t.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
+            <span style={{background:"#1B4332",color:"#D4A843",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {t.cycle}</span>
+            <p style={{margin:0,color:"#FDF6EC",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retire"}</p>
+            <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</p>
+          </div>
+        );})}
+      </div>}
       {groupe.checklist&&groupe.checklist.length>0&&<div style={{padding:"8px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>TACHES DU GROUPE</p>
         {groupe.checklist.map(c=>(
@@ -398,6 +408,9 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [showEdit,setShowEdit]=useState(false);
   const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence});
   const [editBusy,setEditBusy]=useState(false);
+  const [tirages,setTirages]=useState([]);
+  const [tirageAnim,setTirageAnim]=useState(false);
+  const [tirageBusy,setTirageBusy]=useState(false);
 
   const deleteGroupe=async()=>{
     if(!confirm("Supprimer cette tontine et tous ses membres ? Cette action est irreversible."))return;
@@ -416,6 +429,30 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence}));
     onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence});
     setShowEdit(false);onToast("Tontine modifiee !");
+  };
+
+  const loadTirages=async()=>{
+    const {data}=await supabase.from("tirages").select("*").eq("groupe_id",groupe.id).order("cycle",{ascending:true});
+    setTirages(data||[]);
+  };
+  useEffect(()=>{loadTirages();},[groupe.id]);
+
+  const dejaGagnants=new Set(tirages.map(t=>t.membre_id));
+  const eligibles=groupe.membres.filter(m=>!dejaGagnants.has(m.id));
+  const gagnantCycleActuel=tirages.find(t=>t.cycle===groupe.cycle);
+
+  const lancerTirage=async()=>{
+    if(eligibles.length===0)return onToast("Tout le monde a deja recu la cagnotte dans cette rotation","error");
+    if(gagnantCycleActuel)return onToast("Le tirage a deja ete fait pour ce cycle","error");
+    setTirageBusy(true);setTirageAnim(true);
+    await new Promise(r=>setTimeout(r,1800));
+    const gagnant=eligibles[Math.floor(Math.random()*eligibles.length)];
+    const {data,error}=await supabase.from("tirages").insert({groupe_id:groupe.id,membre_id:gagnant.id,cycle:groupe.cycle}).select().single();
+    setTirageBusy(false);
+    if(error){setTirageAnim(false);return onToast("Tirage impossible","error");}
+    setTirages(t=>[...t,data]);
+    onToast(`${gagnant.prenom} remporte la cagnotte de ce cycle !`);
+    setTimeout(()=>setTirageAnim(false),2500);
   };
 
   const aJour=groupe.membres.filter(m=>m.paye);
@@ -564,7 +601,7 @@ HABY Tontine - La tontine digitale africaine`;
   const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
-  const TABS=[["membres","Membres"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
+  const TABS=[["membres","Membres"],["tirage","Tirage"],["events","Evenements"],["checklist","Taches"],["social","Social"],["rapport","Rapport"]];
   return(
     <div style={{paddingBottom:16}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
@@ -609,6 +646,39 @@ HABY Tontine - La tontine digitale africaine`;
         {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}</>}
       </div>}
 
+      {tab==="tirage"&&<div style={{padding:"14px 16px 0"}}>
+        {gagnantCycleActuel?(()=>{const g=groupe.membres.find(m=>m.id===gagnantCycleActuel.membre_id);return(
+          <div style={{background:"linear-gradient(135deg,#1B4332,#0F2419)",border:"1px solid #D4A843",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
+            <p style={{margin:0,color:"#6B7280",fontSize:12,fontWeight:600}}>GAGNANTE DU CYCLE {groupe.cycle}</p>
+            <div style={{margin:"12px auto 8px"}}><Avatar prenom={g?.prenom||"?"} photo={g?.photo} size={64}/></div>
+            <p style={{margin:0,color:"#D4A843",fontSize:20,fontWeight:900}}>{g?.prenom||"Membre retire"}</p>
+            <p style={{margin:"4px 0 0",color:"#6B7280",fontSize:12}}>Tiree au sort le {new Date(gagnantCycleActuel.created_at).toLocaleDateString("fr-FR")}</p>
+          </div>
+        );})():(
+          <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
+            <p style={{fontSize:36,margin:"0 0 8px"}}>🎲</p>
+            <p style={{color:"#FDF6EC",fontSize:14,fontWeight:700,margin:0}}>Aucun tirage pour le cycle {groupe.cycle} pour le moment</p>
+            <p style={{color:"#6B7280",fontSize:12,margin:"6px 0 16px"}}>{eligibles.length} membre(s) pas encore tire(s) au sort sur cette rotation</p>
+            <button onClick={lancerTirage} disabled={tirageBusy||eligibles.length===0} style={{background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:12,padding:"12px 24px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>{tirageBusy?"Tirage en cours...":"🎲 Lancer le tirage au sort"}</button>
+          </div>
+        )}
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"16px 0 10px",letterSpacing:.5}}>HISTORIQUE DES TIRAGES (TRANSPARENT)</p>
+        {tirages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:10}}>Aucun tirage effectue pour l instant</p>
+        :[...tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
+          <div key={t.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
+            <span style={{background:"#1B4332",color:"#D4A843",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {t.cycle}</span>
+            <p style={{margin:0,color:"#FDF6EC",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retire"}</p>
+            <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</p>
+          </div>
+        );})}
+        {tirageAnim&&<div style={{position:"fixed",inset:0,background:"rgba(10,26,15,0.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}}>
+          <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+          <div style={{textAlign:"center"}}>
+            <p style={{fontSize:60,margin:0,animation:"spin 0.5s linear infinite",display:"inline-block"}}>🎲</p>
+            <p style={{color:"#D4A843",fontSize:16,fontWeight:800,marginTop:16}}>Tirage au sort en cours...</p>
+          </div>
+        </div>}
+      </div>}
       {tab==="events"&&<div style={{padding:"14px 16px 0"}}>
         {groupe.membres.filter(m=>m.evenement).length===0
           ?<div style={{textAlign:"center",padding:30,color:"#2D6A4F"}}><p style={{fontSize:32}}>🎉</p><p>Aucun evenement signale</p></div>
@@ -1182,6 +1252,7 @@ export default function App() {
     const full=await Promise.all((gs||[]).map(async g=>{
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
+      const {data:tirages}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).order("cycle",{ascending:true});
       const moi=mine.find(m=>m.groupe_id===g.id);
       const aJourCount=(membres||[]).filter(m=>m.paye).length;
       return {
@@ -1190,6 +1261,7 @@ export default function App() {
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
         membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
+        tirages:tirages||[],
         moi:moi?{versements:Number(moi.versements)||0,paye:moi.paye,cyclesPaies:moi.cycles_paies||0}:null,
       };
     }));
@@ -1202,13 +1274,15 @@ export default function App() {
     const full=await Promise.all((gs||[]).map(async g=>{
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
+      const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
       const mm=(membres||[]).map(m=>({id:m.id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1}));
       const aJourCount=mm.filter(m=>m.paye).length;
+      const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
-        prochainTour:(mm.find(m=>!m.paye)||mm[0])?.prenom||"-",
+        prochainTour:gagnant?gagnant.prenom:"A tirer au sort",
         membres:mm,
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         messages:[],

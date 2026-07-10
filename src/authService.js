@@ -89,3 +89,10 @@ export async function getSession() {
 export async function logoutUser() {
   await supabase.auth.signOut();
 }
+
+export async function verifyPin(tel, pin) {
+  const email = telToEmail(tel);
+  const password = pinToPassword(pin);
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  return !error;
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { registerUser, loginUser, getSession, logoutUser } from "./authService";
+import { registerUser, loginUser, getSession, logoutUser, verifyPin } from "./authService";
 import { supabase } from "./supabaseClient";
 import authHomme from "./assets/auth-homme.webp";
 import { jsPDF } from "jspdf";
@@ -1461,7 +1461,7 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
         supabase.from("transactions").select("montant"),
         supabase.from("paiements").select("*").order("created_at",{ascending:false}),
       ]);
-      if(e1)onToast("Erreur de chargement des utilisatrices","error");
+      if(e1)onToast("Erreur de chargement : "+(e1.message||"inconnue"),"error");
       else setUsers(us||[]);
       if(!e3)setTotalCollecte((txs||[]).reduce((a,t)=>a+(Number(t.montant)||0),0));
       setGroupesCount((gs||[]).length);
@@ -1916,6 +1916,11 @@ export default function App() {
   const [cagnottes,setCagnottes]=useState([]);
   const [selCagnotte,setSelCagnotte]=useState(null);
   const [showCagnotteModal,setShowCagnotteModal]=useState(false);
+  const [adminUnlocked,setAdminUnlocked]=useState(false);
+  const [showPinConfirm,setShowPinConfirm]=useState(false);
+  const [pinConfirm,setPinConfirm]=useState("");
+  const [pinConfirmBusy,setPinConfirmBusy]=useState(false);
+  const [pinConfirmErr,setPinConfirmErr]=useState("");
 
   const showToast=useCallback((msg,type)=>setToast({msg,type}),[]);
 
@@ -2017,13 +2022,27 @@ export default function App() {
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast} currentUserId={cu.id}/>
-        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>setNav("admin")} lang={lang} onChangeLang={changeLang}/>:null}
+        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang}/>:null}
       </div>
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#0F2419",borderTop:"1px solid #1B4332",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#D4A843":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}
       </div>
       {showC&&<ModalCreer onClose={()=>setShowC(false)} onCreate={g=>{setGroupes(p=>[...p,g]);showToast("Tontine creee !");}} user={cu}/>}
       {showCagnotteModal&&<ModalCreerCagnotte onClose={()=>setShowCagnotteModal(false)} onCreate={c=>{setCagnottes(cs=>[c,...cs]);showToast("Cagnotte creee !");}} user={cu}/>}
+      {showPinConfirm&&<Modal onClose={()=>setShowPinConfirm(false)}>
+        <MH title="Confirme ton PIN" onClose={()=>setShowPinConfirm(false)}/>
+        <p style={{color:"#6B7280",fontSize:13,marginBottom:16,lineHeight:1.6}}>Pour proteger le panneau administrateur, entre a nouveau ton code PIN.</p>
+        <Fld label="Code PIN"><Inp value={pinConfirm} onChange={e=>setPinConfirm(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4} autoFocus/></Fld>
+        <ErrBox msg={pinConfirmErr}/>
+        <Btn onClick={async()=>{
+          if(pinConfirm.length!==4)return setPinConfirmErr("Le PIN doit faire 4 chiffres");
+          setPinConfirmBusy(true);
+          const ok=await verifyPin(cu.tel,pinConfirm);
+          setPinConfirmBusy(false);
+          if(!ok)return setPinConfirmErr("PIN incorrect");
+          setAdminUnlocked(true);setShowPinConfirm(false);setNav("admin");
+        }} disabled={pinConfirmBusy}>{pinConfirmBusy?"Verification...":"Confirmer"}</Btn>
+      </Modal>}
       {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
     </div>
   );

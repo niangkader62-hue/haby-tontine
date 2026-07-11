@@ -69,7 +69,7 @@ const I18N={
     mesEpargnes:"Mes epargnes",caisseSociale:"Caisse sociale",
     membresEnRetard:"membre(s) en retard",cliquezTontine:"Cliquez sur une tontine",
     tabMembres:"Membres",tabBureau:"Bureau",tabTirage:"Tirage",tabPrets:"Prets",tabReunions:"Reunions",
-    tabEvenements:"Evenements",tabTaches:"Taches",tabSocial:"Social",tabRapport:"Rapport",
+    tabEvenements:"Evenements",tabTaches:"Taches",tabSocial:"Message",tabRapport:"Rapport",
     mesCagnottes:"Mes Cagnottes",lectureSeule:"Lecture seule",maSituation:"Ma situation",
     statut:"Statut",aJour:"A jour",enRetard:"En retard",membresGroupe:"Membres du groupe",
     ecrisAHaby:"Ecris a HABY...",panneauUtilisatrices:"Utilisatrices inscrites",
@@ -85,7 +85,7 @@ const I18N={
     mesEpargnes:"My savings",caisseSociale:"Social fund",
     membresEnRetard:"member(s) late",cliquezTontine:"Click on a tontine",
     tabMembres:"Members",tabBureau:"Board",tabTirage:"Draw",tabPrets:"Loans",tabReunions:"Meetings",
-    tabEvenements:"Events",tabTaches:"Tasks",tabSocial:"Social",tabRapport:"Report",
+    tabEvenements:"Events",tabTaches:"Tasks",tabSocial:"Message",tabRapport:"Report",
     mesCagnottes:"My Fundraisers",lectureSeule:"Read only",maSituation:"My situation",
     statut:"Status",aJour:"Up to date",enRetard:"Late",membresGroupe:"Group members",
     ecrisAHaby:"Write to HABY...",panneauUtilisatrices:"Registered users",
@@ -101,7 +101,7 @@ const I18N={
     mesEpargnes:"مدخراتي",caisseSociale:"الصندوق الاجتماعي",
     membresEnRetard:"عضو(ة) متأخر(ة)",cliquezTontine:"اضغطي على جمعية",
     tabMembres:"الأعضاء",tabBureau:"المكتب",tabTirage:"القرعة",tabPrets:"القروض",tabReunions:"الاجتماعات",
-    tabEvenements:"الأحداث",tabTaches:"المهام",tabSocial:"اجتماعي",tabRapport:"التقرير",
+    tabEvenements:"الأحداث",tabTaches:"المهام",tabSocial:"رسالة",tabRapport:"التقرير",
     mesCagnottes:"صناديقي",lectureSeule:"قراءة فقط",maSituation:"وضعيتي",
     statut:"الحالة",aJour:"محدث",enRetard:"متأخر",membresGroupe:"أعضاء المجموعة",
     ecrisAHaby:"اكتبي لهابي...",panneauUtilisatrices:"المستخدمات المسجلات",
@@ -117,7 +117,7 @@ const I18N={
     mesEpargnes:"N ka mara",caisseSociale:"Jama ka wari",
     membresEnRetard:"tɔnden(w) tɔnɔlen",cliquezTontine:"I bolo tontine kan",
     tabMembres:"Tɔndenw",tabBureau:"Ka biro",tabTirage:"Filɛli",tabPrets:"Juruw",tabReunions:"Lajɛw",
-    tabEvenements:"Kow",tabTaches:"Baaraw",tabSocial:"Jama",tabRapport:"Kunnafoni",
+    tabEvenements:"Kow",tabTaches:"Baaraw",tabSocial:"Bataki",tabRapport:"Kunnafoni",
     mesCagnottes:"N ka waribɔlanw",lectureSeule:"Kalanni dɔrɔn",maSituation:"N ka cogoya",
     statut:"Cogoya",aJour:"A bɛnnen",enRetard:"A tɔnɔlen",membresGroupe:"Jɛkulu tɔndenw",
     ecrisAHaby:"HABY ye sɛbɛn...",panneauUtilisatrices:"Baarakɛlaw tɔgɔsɛbɛnnen",
@@ -426,18 +426,21 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   const [voting,setVoting]=useState(null);
   const [messages,setMessages]=useState([]);
   const [msgInput,setMsgInput]=useState("");
+  const [thread,setThread]=useState(null);
   const loadMessages=async()=>{
-    const {data}=await supabase.from("messages").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:true});
+    let q=supabase.from("messages").select("*").eq("groupe_id",groupe.id);
+    q=thread?q.or(`and(auteur_user_id.eq.${user.id},destinataire_user_id.eq.${thread.userId}),and(auteur_user_id.eq.${thread.userId},destinataire_user_id.eq.${user.id})`):q.is("destinataire_user_id",null);
+    const {data}=await q.order("created_at",{ascending:true});
     setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
-  useEffect(()=>{loadMessages();},[groupe.id]);
+  useEffect(()=>{loadMessages();},[groupe.id,thread]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
     setMsgInput("");
-    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte}).select().single();
+    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte,destinataire_user_id:thread?.userId||null}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
   };
@@ -448,7 +451,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
       setSendingAudio(true);
       try{
         const audioUrl=await uploadAudio(blob,groupe.id);
-        const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl}).select().single();
+        const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
       }catch{onToast("Envoi du message vocal impossible","error");}
@@ -579,12 +582,20 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
         ))}
       </div>}
       <div style={{padding:"20px 16px 0"}}>
-        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>DISCUSSION DU GROUPE</p>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>MESSAGES</p>
+        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10,marginBottom:6}}>
+          <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#D4A843":"#0F2419",border:"1px solid "+(!thread?"#D4A843":"#1B4332"),borderRadius:99,padding:"7px 14px",color:!thread?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
+          {groupe.createurUserId&&groupe.createurUserId!==user.id&&<button onClick={()=>setThread({userId:groupe.createurUserId,prenom:groupe.createurNom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===groupe.createurUserId?"#D4A843":"#0F2419",border:"1px solid "+(thread?.userId===groupe.createurUserId?"#D4A843":"#1B4332"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===groupe.createurUserId?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={groupe.createurNom} photo={groupe.createurPhoto} size={22}/>{groupe.createurNom} (creatrice)</button>}
+          {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).map(m=>(
+            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#D4A843":"#0F2419",border:"1px solid "+(thread?.userId===m.userId?"#D4A843":"#1B4332"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
+          ))}
+        </div>
+        {thread&&<p style={{color:"#D4A843",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#D4A843",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
           <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#1B4332",border:"1px solid #2D6A4F",borderRadius:12,width:44,height:44,color:recording?"#fff":"#D4A843",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
-          <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Ecrire un message..." maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
+          <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder={thread?`Message prive a ${thread.prenom}...`:"Ecrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#D4A843",border:"none",borderRadius:12,padding:"0 16px",color:"#0A1A0F",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
         {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
@@ -854,18 +865,21 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setEvtM(null);setEvtTxt("");onToast(val?"Evenement enregistre !":"Evenement supprime");
   };
   const [messages,setMessages]=useState([]);
+  const [thread,setThread]=useState(null);
   const loadMessages=async()=>{
-    const {data}=await supabase.from("messages").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:true});
+    let q=supabase.from("messages").select("*").eq("groupe_id",groupe.id);
+    q=thread?q.or(`and(auteur_user_id.eq.${user.id},destinataire_user_id.eq.${thread.userId}),and(auteur_user_id.eq.${thread.userId},destinataire_user_id.eq.${user.id})`):q.is("destinataire_user_id",null);
+    const {data}=await q.order("created_at",{ascending:true});
     setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
-  useEffect(()=>{loadMessages();},[groupe.id]);
+  useEffect(()=>{loadMessages();},[groupe.id,thread]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
     setMsgInput("");
-    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte}).select().single();
+    const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte,destinataire_user_id:thread?.userId||null}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
   };
@@ -876,7 +890,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       setSendingAudio(true);
       try{
         const audioUrl=await uploadAudio(blob,groupe.id);
-        const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl}).select().single();
+        const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
       }catch{onToast("Envoi du message vocal impossible","error");}
@@ -1201,11 +1215,19 @@ HABY Tontine - La tontine digitale africaine`;
       </div>}
 
       {tab==="social"&&<div style={{padding:"14px 16px 100px"}}>
+        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10,marginBottom:6}}>
+          <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#D4A843":"#0F2419",border:"1px solid "+(!thread?"#D4A843":"#1B4332"),borderRadius:99,padding:"7px 14px",color:!thread?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
+          {groupe.membres.filter(m=>m.userId).map(m=>(
+            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#D4A843":"#0F2419",border:"1px solid "+(thread?.userId===m.userId?"#D4A843":"#1B4332"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
+          ))}
+        </div>
+        {groupe.membres.filter(m=>m.userId).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun membre n a encore de compte HABY relie pour recevoir un message prive.</p>}
+        {thread&&<p style={{color:"#D4A843",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
           <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#1B4332",border:"1px solid #2D6A4F",borderRadius:12,width:44,height:44,color:recording?"#fff":"#D4A843",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
-          <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder="Ecrire un message..." maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
+          <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder={thread?`Message prive a ${thread.prenom}...`:"Ecrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 14px",color:"#FDF6EC",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#D4A843",border:"none",borderRadius:12,padding:"0 16px",color:"#0A1A0F",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
         {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
@@ -2058,13 +2080,15 @@ export default function App() {
       const {data:mesVotes}=await supabase.from("votes").select("*").eq("voter_user_id",uid);
       const {data:prets}=await supabase.from("prets").select("*").eq("groupe_id",g.id).order("created_at",{ascending:false});
       const {data:rapports}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",g.id).order("date_reunion",{ascending:false});
+      const {data:createur}=await supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single();
       const moi=mine.find(m=>m.groupe_id===g.id);
       const aJourCount=(membres||[]).filter(m=>m.paye).length;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
-        membres:(membres||[]).map(m=>({id:m.id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau})),
+        createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
+        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
         elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),
@@ -2083,7 +2107,7 @@ export default function App() {
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
-      const mm=(membres||[]).map(m=>({id:m.id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1}));
+      const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1}));
       const aJourCount=mm.filter(m=>m.paye).length;
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {

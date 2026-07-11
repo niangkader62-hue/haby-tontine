@@ -1450,14 +1450,6 @@ THT - Tontine Habi Traore`;
           <button onClick={()=>saveVers(false)} disabled={!versAmt||Number(versAmt)<1} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#1B4332":"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:14,padding:"13px",color:!versAmt||Number(versAmt)<1?"#6B7280":"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>Enregistrer</button>
           <button onClick={()=>saveVers(true)} disabled={!versAmt||Number(versAmt)<1||recuBusy} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#1B4332":"#075E54",border:"none",borderRadius:14,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>{recuBusy?"⏳ Creation...":"🧾 Recu + Partager"}</button>
         </div>
-        <div style={{marginTop:16,paddingTop:16,borderTop:"1px solid #1B4332"}}>
-          <Fld label={`Montant personnalise pour ${versM.prenom} (laisser vide = montant standard de ${fmtFCFA(groupe.montant)})`}>
-            <div style={{display:"flex",gap:8}}>
-              <Inp value={versM.montantPerso||""} onChange={e=>setVersM(m=>({...m,montantPerso:e.target.value.replace(/[^0-9]/g,"")}))} placeholder="Ex: 25000" inputMode="numeric"/>
-              <button onClick={async()=>{const v=versM.montantPerso?Number(versM.montantPerso):null;const{error}=await supabase.from("membres").update({montant_perso:v}).eq("id",versM.id);if(error)return onToast("Erreur","error");setGroupe(g=>({...g,membres:g.membres.map(mm=>mm.id===versM.id?{...mm,montantPerso:v}:mm)}));onToast("Montant mis a jour");}} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"0 16px",color:"#D4A843",fontWeight:700,cursor:"pointer",fontSize:13}}>OK</button>
-            </div>
-          </Fld>
-        </div>
       </Modal>}
 
       {showHisto&&histoM&&<Modal onClose={()=>setShowHisto(false)}>

@@ -1788,10 +1788,30 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
   const [notifBusy,setNotifBusy]=useState(false);
-  const enableNotifications=async()=>{
+  const [notifOn,setNotifOn]=useState(false);
+  useEffect(()=>{
+    (async()=>{
+      if(!("serviceWorker" in navigator)||!("PushManager" in window))return;
+      try{
+        const reg=await navigator.serviceWorker.getRegistration("/sw.js");
+        const sub=reg&&await reg.pushManager.getSubscription();
+        setNotifOn(!!sub&&Notification.permission==="granted");
+      }catch{}
+    })();
+  },[]);
+  const toggleNotifications=async()=>{
     if(!("serviceWorker" in navigator)||!("PushManager" in window))return onToast("Notifications non supportees sur ce navigateur","error");
     setNotifBusy(true);
     try{
+      if(notifOn){
+        const reg=await navigator.serviceWorker.getRegistration("/sw.js");
+        const sub=reg&&await reg.pushManager.getSubscription();
+        if(sub)await sub.unsubscribe();
+        await supabase.from("push_subscriptions").delete().eq("user_id",user.id);
+        setNotifOn(false);setNotifBusy(false);
+        onToast("Notifications desactivees");
+        return;
+      }
       const perm=await Notification.requestPermission();
       if(perm!=="granted"){setNotifBusy(false);return onToast("Autorisation refusee","error");}
       const reg=await navigator.serviceWorker.register("/sw.js");
@@ -1800,9 +1820,9 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       const {error}=await supabase.from("push_subscriptions").upsert({user_id:user.id,subscription:sub.toJSON()},{onConflict:"user_id"});
       if(error){setNotifBusy(false);return onToast("Impossible d activer les notifications","error");}
       const {data,error:pushErr}=await supabase.functions.invoke("send-push",{body:{user_id:user.id,title:"HABY Tontine",body:"Notifications activees avec succes !"}});
-      setNotifBusy(false);
+      setNotifOn(true);setNotifBusy(false);
       if(pushErr||data?.error)return onToast("Active, mais l envoi test a echoue : "+(data?.error||pushErr?.message||"erreur"),"error");
-      onToast("Notifications activees ! Regarde ton telephone.");
+      onToast("Notifications activees ! Elles resteront actives jusqu a ce que tu les desactives.");
     }catch(e){setNotifBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
   };
   return(
@@ -1868,15 +1888,20 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         </div>}
         {[
           ...(user.role==="admin"?[{label:"ADMINISTRATION",items:[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]}]:[]),
-          {label:"NOTIFICATIONS",items:[{ic:"🔔",lb:notifBusy?"Activation...":t("notifications"),fn:enableNotifications}]},
+          {label:"NOTIFICATIONS",items:[{key:"notif",ic:"🔔",lb:t("notifications"),fn:toggleNotifications,toggle:notifOn,busy:notifBusy}]},
           {label:"COMPTE",items:[{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")}]},
           {label:"DONNEES ET AIDE",items:[{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}]},
         ].map(group=>(
           <div key={group.label} style={{marginBottom:18}}>
             <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>{group.label}</p>
             {group.items.map(item=>(
-              <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
-                <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
+              <div key={item.key||item.lb} onClick={item.toggle===undefined?item.fn:undefined} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:item.toggle===undefined?"pointer":"default",border:"1px solid #1B4332",opacity:item.busy?0.7:1}}>
+                <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p>
+                {item.toggle===undefined
+                  ?<span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
+                  :<div onClick={item.busy?undefined:item.fn} style={{marginLeft:"auto",width:46,height:26,borderRadius:99,background:item.toggle?"#D4A843":"#2D6A4F",position:"relative",cursor:"pointer",transition:"background .2s",flexShrink:0}}>
+                      <div style={{position:"absolute",top:3,left:item.toggle?23:3,width:20,height:20,borderRadius:"50%",background:"#FDF6EC",transition:"left .2s"}}/>
+                    </div>}
               </div>
             ))}
           </div>

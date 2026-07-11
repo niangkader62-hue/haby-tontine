@@ -343,6 +343,7 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
           <p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m.prenom}</p>
           <Badge score={m.score}/>
           {!m.paye&&<span style={{background:"#C1440E",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99}}>NON PAYE</span>}
+          {m.montantPerso&&<span style={{background:"#1B4332",color:"#D4A843",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #D4A843"}}>💰 {fmtFCFA(m.montantPerso)}/cycle</span>}
         </div>
         {m.quartier&&<p style={{margin:0,color:"#D4A843",fontSize:11,fontWeight:600}}>📍 {m.quartier}</p>}
         <p style={{margin:"1px 0 0",color:"#6B7280",fontSize:11}}>{m.tel}</p>

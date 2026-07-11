@@ -27,6 +27,14 @@ const uploadAudio = async (blob, groupeId) => {
   return data.publicUrl;
 };
 
+const notifyMessage = (recipientIds, senderName, isAudio) => {
+  const title = "HABY Tontine - Nouveau message";
+  const body = isAudio ? `${senderName} t'a envoye un message vocal` : `${senderName} : nouveau message`;
+  [...new Set((recipientIds||[]).filter(Boolean))].forEach(uid=>{
+    supabase.functions.invoke("send-push",{body:{user_id:uid,title,body}}).catch(()=>{});
+  });
+};
+
 function useAudioRecorder(){
   const [recording,setRecording]=useState(false);
   const mediaRef=useRef(null);
@@ -436,6 +444,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
+  const getRecipients=()=>thread?[thread.userId]:[groupe.createurUserId,...groupe.membres.map(m=>m.userId)].filter(uid=>uid&&uid!==user.id);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -443,6 +452,8 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte,destinataire_user_id:thread?.userId||null}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
+    notifyMessage(getRecipients(),user.prenom,false);
+    onToast("Message envoye !");
   };
   const toggleRecord=async()=>{
     if(recording){
@@ -454,6 +465,8 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
         const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
+        notifyMessage(getRecipients(),user.prenom,true);
+        onToast("Message vocal envoye !");
       }catch{onToast("Envoi du message vocal impossible","error");}
       setSendingAudio(false);
     }else{
@@ -875,6 +888,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
+  const getRecipients=()=>(thread?[thread.userId]:groupe.membres.map(m=>m.userId)).filter(uid=>uid&&uid!==user.id);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -882,6 +896,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte,destinataire_user_id:thread?.userId||null}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
+    notifyMessage(getRecipients(),user.prenom,false);
+    onToast("Message envoye !");
   };
   const toggleRecord=async()=>{
     if(recording){
@@ -893,6 +909,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
+        notifyMessage(getRecipients(),user.prenom,true);
+        onToast("Message vocal envoye !");
       }catch{onToast("Envoi du message vocal impossible","error");}
       setSendingAudio(false);
     }else{
@@ -2000,9 +2018,11 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     setBusy(true);
     const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
+    if(error){setBusy(false);return setErr("Erreur technique : "+(error.message||"inconnue"));}
+    const {data:moi}=await supabase.from("membres").insert({groupe_id:data.id,prenom:s(user.prenom)+" (moi)",tel:user.tel,quartier:"",photo_url:user.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:0,user_id:user.id}).select().single();
     setBusy(false);
-    if(error)return setErr("Erreur technique : "+(error.message||"inconnue"));
-    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,prochainTour:"-",membres:[],checklist:[],messages:[]});
+    const moiMembre=moi?{id:moi.id,userId:user.id,prenom:moi.prenom,tel:moi.tel,quartier:"",photo:moi.photo_url,paye:false,score:80,versements:0,cyclesPaies:0,cyclesTotal:12,evenement:null}:null;
+    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
     onClose();
   };
   if(limitReached)return <Modal onClose={onClose}>

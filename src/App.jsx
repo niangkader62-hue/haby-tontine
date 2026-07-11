@@ -931,8 +931,13 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       if(error.code==="23505")return onToast("Ce numero est deja membre de cette tontine !","error");
       return onToast("Ajout impossible : "+(error.message||"erreur inconnue"),"error");
     }
-    supabase.rpc("link_membre",{p_membre_id:data.id}).catch(()=>{});
-    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
+    supabase.rpc("link_membre",{p_membre_id:data.id}).then(async()=>{
+      const {data:linked}=await supabase.from("membres").select("user_id").eq("id",data.id).single();
+      if(linked?.user_id){
+        supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"HABY Tontine",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`}}).catch(()=>{});
+      }
+    }).catch(()=>{});
+    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
     setNewM({prenom:"",tel:"",quartier:"",photo:""});
     setShowAdd(false);
     onToast(`${data.prenom} a ete ajoute(e) !`);
@@ -2189,7 +2194,7 @@ export default function App() {
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} onBack={()=>setSelCagnotte(null)} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
         :selPart?<ParticipationScreen groupe={selPart} onBack={()=>setSelPart(null)} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
-        :sel?<GroupeScreen groupe={sel} onBack={()=>{setSel(null);loadGroupes(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
+        :sel?<GroupeScreen groupe={sel} onBack={()=>{setSel(null);loadGroupes(cu.id);loadParticipations(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
         :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={setSelPart} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={setSelCagnotte}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { registerUser, loginUser, getSession, logoutUser, verifyPin } from "./authService";
 import { supabase } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
+import heroTontine from "./assets/hero-tontine.jpg";
 import { jsPDF } from "jspdf";
 
 const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
@@ -215,7 +216,7 @@ const Btn = ({onClick,children,disabled}) => (
 const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0 12px",fontWeight:600,background:"#1A0800",padding:"8px 12px",borderRadius:8}}>{msg}</p>:null;
 
 const AuthScreen = ({onLogin}) => {
-  const [step,setStep]=useState("welcome");
+  const [step,setStep]=useState("intro");
   const [prenom,setPrenom]=useState("");
   const [tel,setTel]=useState("");
   const [pin,setPin]=useState("");
@@ -256,6 +257,22 @@ const AuthScreen = ({onLogin}) => {
 
   const W={minHeight:"100vh",background:"linear-gradient(160deg,#050F07,#1B4332)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"};
   const C={background:"#0F2419",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.6)"};
+
+  if(step==="intro") return(
+    <div style={{minHeight:"100vh",position:"relative",display:"flex",flexDirection:"column",justifyContent:"flex-end",overflow:"hidden",background:"#0A1A0F"}}>
+      <img src={heroTontine} alt="THT - Tontine Habi Traore" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(10,26,15,0.1) 0%,rgba(10,26,15,0.55) 55%,rgba(10,26,15,0.97) 100%)"}}/>
+      <div style={{position:"relative",padding:"0 24px 40px",textAlign:"center"}}>
+        <div style={{width:64,height:64,borderRadius:18,margin:"0 auto 16px",overflow:"hidden",boxShadow:"0 8px 24px rgba(212,168,67,0.35)"}}>
+          <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+        </div>
+        <h1 style={{color:"#FDF6EC",fontSize:26,fontWeight:900,margin:"0 0 6px",letterSpacing:1}}>THT</h1>
+        <p style={{color:"#D4A843",fontSize:14,margin:"0 0 4px",fontWeight:600}}>Tontine Habi Traore</p>
+        <p style={{color:"#9CA89F",fontSize:13,margin:"0 0 28px",lineHeight:1.6}}>La tontine digitale qui rassemble les familles et les communautes, en toute confiance.</p>
+        <Btn onClick={()=>go("welcome")}>Continuer</Btn>
+      </div>
+    </div>
+  );
 
   if(step==="welcome") return(
     <div style={W}><div style={C}>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { registerUser, loginUser, getSession, logoutUser, verifyPin } from "./authService";
-import { supabase } from "./supabaseClient";
+import { supabase, SUPABASE_URL } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
 import heroTontine from "./assets/hero-tontine.jpg";
 import { jsPDF } from "jspdf";
@@ -2077,6 +2077,101 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   );
 };
 
+const ContributionPubliqueScreen = ({cagnotteId}) => {
+  const [cagnotte,setCagnotte]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [loadErr,setLoadErr]=useState("");
+  const [prenom,setPrenom]=useState("");
+  const [nom,setNom]=useState("");
+  const [tel,setTel]=useState("");
+  const [montant,setMontant]=useState("");
+  const [err,setErr]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [succes,setSucces]=useState(null);
+  const [recuBusy,setRecuBusy]=useState(false);
+
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const res=await fetch(`${SUPABASE_URL}/functions/v1/cagnotte-contribute?id=${cagnotteId}`);
+        const data=await res.json();
+        if(!res.ok)throw new Error(data.error||"Cagnotte introuvable");
+        setCagnotte(data);
+      }catch(e){setLoadErr(e.message||"Cagnotte introuvable");}
+      setLoading(false);
+    })();
+  },[cagnotteId]);
+
+  const contribuer=async()=>{
+    if(!prenom.trim())return setErr("Ton prenom est requis");
+    if(!montant||Number(montant)<100)return setErr("Montant minimum : 100 FCFA");
+    setErr("");setBusy(true);
+    try{
+      const res=await fetch(`${SUPABASE_URL}/functions/v1/cagnotte-contribute`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cagnotte_id:cagnotteId,prenom:prenom.trim(),nom:nom.trim(),tel:tel.trim(),montant})});
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error||"Erreur d'enregistrement");
+      setSucces(data);
+    }catch(e){setErr(e.message||"Erreur d'enregistrement");}
+    setBusy(false);
+  };
+
+  const telechargerRecu=async()=>{
+    setRecuBusy(true);
+    try{
+      const now=new Date();
+      const blob=await genererRecuImage({
+        nomTontine:succes.titre,prenom:succes.contributeur,montantRecu:fmtFCFA(succes.montant),montantDu:"Contribution libre",
+        totalVerse:fmtFCFA(succes.nouveauTotal),statut:"CONTRIBUTION ENREGISTREE",cycle:"-",totalCycles:"-",
+        ref:`CAG-${now.getTime().toString().slice(-8)}`,date:now.toLocaleDateString("fr-FR")
+      });
+      await partagerImage(blob,"recu-contribution.png","Recu THT","Merci pour ta contribution !");
+    }catch{}
+    setRecuBusy(false);
+  };
+
+  if(loading)return <div style={{minHeight:"100vh",background:"#0A1A0F",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#D4A843"}}>Chargement...</p></div>;
+  if(loadErr)return <div style={{minHeight:"100vh",background:"#0A1A0F",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}><p style={{fontSize:40,margin:"0 0 10px"}}>😕</p><p style={{color:"#FDF6EC",fontWeight:700}}>{loadErr}</p><p style={{color:"#6B7280",fontSize:13,marginTop:8}}>Ce lien n'est peut-etre plus valide.</p></div>;
+
+  if(succes)return(
+    <div style={{minHeight:"100vh",background:"#0A1A0F",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
+      <div style={{width:70,height:70,borderRadius:"50%",background:"#1B4332",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:16}}>✅</div>
+      <h2 style={{color:"#FDF6EC",margin:"0 0 8px"}}>Merci {succes.contributeur} !</h2>
+      <p style={{color:"#D4A843",fontSize:20,fontWeight:900,margin:"0 0 4px"}}>{fmtFCFA(succes.montant)}</p>
+      <p style={{color:"#6B7280",fontSize:13,marginBottom:24}}>ajoute a "{succes.titre}"</p>
+      <button onClick={telechargerRecu} disabled={recuBusy} style={{background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:14,padding:"13px 24px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{recuBusy?"Creation...":"🧾 Telecharger mon recu"}</button>
+      <p style={{color:"#2D6A4F",fontSize:11}}>THT - Tontine Habi Traore</p>
+    </div>
+  );
+
+  const pct=Math.min(100,Math.round((cagnotte.montant_collecte/cagnotte.objectif)*100));
+  return(
+    <div style={{minHeight:"100vh",background:"#0A1A0F",padding:"32px 20px"}}>
+      <div style={{maxWidth:420,margin:"0 auto"}}>
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{width:56,height:56,borderRadius:16,margin:"0 auto 12px",overflow:"hidden"}}><img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+          <p style={{color:"#6B7280",fontSize:11,letterSpacing:1}}>THT - CAGNOTTE</p>
+        </div>
+        <div style={{background:"#0F2419",border:"1px solid #D4A843",borderRadius:16,padding:20,marginBottom:20}}>
+          <p style={{margin:0,color:"#FDF6EC",fontWeight:800,fontSize:18}}>{cagnotte.titre}</p>
+          {cagnotte.beneficiaire&&<p style={{margin:"4px 0 0",color:"#D4A843",fontSize:13}}>Pour {cagnotte.beneficiaire}</p>}
+          {cagnotte.description&&<p style={{margin:"10px 0 0",color:"#6B7280",fontSize:13,lineHeight:1.5}}>{cagnotte.description}</p>}
+          <div style={{margin:"16px 0 6px"}}><Bar pct={pct} c="#D4A843"/></div>
+          <p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{fmtFCFA(cagnotte.montant_collecte)} <span style={{color:"#6B7280"}}>/ {fmtFCFA(cagnotte.objectif)} ({pct}%)</span></p>
+        </div>
+        {cagnotte.statut!=="ouverte"?<p style={{color:"#EF4444",textAlign:"center",fontWeight:700}}>Cette cagnotte n'accepte plus de contributions</p>:<>
+          <Fld label="Ton prenom"><Inp value={prenom} onChange={e=>setPrenom(e.target.value)} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
+          <Fld label="Ton nom (optionnel)"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Diallo" maxLength={30}/></Fld>
+          <Fld label="Ton numero (optionnel)"><Inp value={tel} onChange={e=>setTel(e.target.value)} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
+          <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
+          <ErrBox msg={err}/>
+          <Btn onClick={contribuer} disabled={busy}>{busy?"Enregistrement...":"Confirmer ma contribution"}</Btn>
+          <p style={{color:"#6B7280",fontSize:11,textAlign:"center",marginTop:14,lineHeight:1.5}}>⚠️ Cette page enregistre ta contribution dans THT. Le versement de l'argent lui-meme (Orange Money, especes...) se fait separement, directement aupres de l'organisateur.</p>
+        </>}
+      </div>
+    </div>
+  );
+};
+
 const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
   const [cagnotte,setCagnotte]=useState(cInit);
   const [contributions,setContributions]=useState([]);
@@ -2126,7 +2221,8 @@ const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
   };
 
   const partager=()=>{
-    const msg=encodeURIComponent(`🎉 ${cagnotte.titre}\n\n${cagnotte.description||""}\n\nObjectif : ${fmtFCFA(cagnotte.objectif)}\nDeja collecte : ${fmtFCFA(cagnotte.montant_collecte)} (${pct}%)\n\nParticipe si tu peux, merci !`);
+    const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;
+    const msg=encodeURIComponent(`🎉 ${cagnotte.titre}\n\n${cagnotte.description||""}\n\nObjectif : ${fmtFCFA(cagnotte.objectif)}\nDeja collecte : ${fmtFCFA(cagnotte.montant_collecte)} (${pct}%)\n\nParticipe directement ici, ca prend 30 secondes :\n${lien}`);
     window.open(`https://wa.me/?text=${msg}`,"_blank");
   };
 
@@ -2148,6 +2244,7 @@ const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
         <button onClick={()=>setShowContrib(true)} style={{flex:1,background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"11px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Contribution</button>
         <button onClick={partager} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager WA</button>
       </div>}
+      {cagnotte.statut!=="cloturee"&&<button onClick={async()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;try{await navigator.clipboard.writeText(lien);onToast("Lien copie !");}catch{onToast(lien);}}} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"#1B4332",border:"1px solid #D4A843",borderRadius:10,padding:"10px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔗 Copier le lien de contribution</button>}
       {cagnotte.statut!=="cloturee"&&<button onClick={cloturer} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"transparent",border:"1px solid #2D6A4F",borderRadius:10,padding:"10px",color:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>Cloturer la cagnotte</button>}
       <div style={{padding:"20px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>CONTRIBUTIONS ({contributions.length})</p>
@@ -2411,6 +2508,9 @@ export default function App() {
     await logoutUser();
     setUser(null);setNav("home");setSel(null);
   };
+
+  const contribuerCagnotteId=new URLSearchParams(window.location.search).get("contribuer");
+  if(contribuerCagnotteId)return <ContributionPubliqueScreen cagnotteId={contribuerCagnotteId}/>;
 
   if(checking){
     return <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0A1A0F,#0F2419)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>

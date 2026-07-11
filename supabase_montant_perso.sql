@@ -13,6 +13,7 @@ alter table groupes add column if not exists montant_initial numeric default 0;
 -- CORRECTIF : la table cagnottes n'avait jamais la colonne montant_collecte,
 -- ce qui bloquait la creation de toute nouvelle cagnotte avec une erreur.
 alter table cagnottes add column if not exists montant_collecte numeric default 0;
+alter table cagnotte_contributions add column if not exists tel text;
 
 -- Active le "temps reel" sur les messages : necessaire pour que les notifications
 -- s'affichent aussi quand la personne est deja en train d'utiliser l'application

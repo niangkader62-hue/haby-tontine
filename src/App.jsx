@@ -259,10 +259,12 @@ const AuthScreen = ({onLogin}) => {
   const C={background:"#0F2419",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.6)"};
 
   if(step==="intro") return(
-    <div style={{minHeight:"100vh",position:"relative",display:"flex",flexDirection:"column",justifyContent:"flex-end",overflow:"hidden",background:"#0A1A0F"}}>
-      <img src={heroTontine} alt="THT - Tontine Habi Traore" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(10,26,15,0.1) 0%,rgba(10,26,15,0.55) 55%,rgba(10,26,15,0.97) 100%)"}}/>
-      <div style={{position:"relative",padding:"0 24px 40px",textAlign:"center"}}>
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#0A1A0F"}}>
+      <div style={{width:"100%",aspectRatio:"3/2",position:"relative",flexShrink:0}}>
+        <img src={heroTontine} alt="THT - Tontine Habi Traore" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(10,26,15,0) 70%,rgba(10,26,15,0.95) 100%)"}}/>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"20px 24px 40px",textAlign:"center"}}>
         <div style={{width:64,height:64,borderRadius:18,margin:"0 auto 16px",overflow:"hidden",boxShadow:"0 8px 24px rgba(212,168,67,0.35)"}}>
           <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         </div>

@@ -260,18 +260,23 @@ const AuthScreen = ({onLogin}) => {
 
   if(step==="intro") return(
     <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#0A1A0F"}}>
+      <style>{`
+        @keyframes introLogoIn { 0%{opacity:0;transform:scale(0.5) translateY(10px);} 60%{opacity:1;transform:scale(1.1) translateY(0);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+        @keyframes introGlow { 0%,100%{box-shadow:0 8px 24px rgba(212,168,67,0.35);} 50%{box-shadow:0 8px 36px rgba(212,168,67,0.6);} }
+        @keyframes introFadeUp { 0%{opacity:0;transform:translateY(10px);} 100%{opacity:1;transform:translateY(0);} }
+      `}</style>
       <div style={{width:"100%",aspectRatio:"3/2",position:"relative",flexShrink:0}}>
         <img src={heroTontine} alt="THT - Tontine Habi Traore" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
         <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(10,26,15,0) 70%,rgba(10,26,15,0.95) 100%)"}}/>
       </div>
       <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"20px 24px 40px",textAlign:"center"}}>
-        <div style={{width:64,height:64,borderRadius:18,margin:"0 auto 16px",overflow:"hidden",boxShadow:"0 8px 24px rgba(212,168,67,0.35)"}}>
+        <div style={{width:64,height:64,borderRadius:18,margin:"0 auto 16px",overflow:"hidden",opacity:0,animation:"introLogoIn 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards, introGlow 2.4s ease-in-out 0.7s infinite"}}>
           <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         </div>
-        <h1 style={{color:"#FDF6EC",fontSize:26,fontWeight:900,margin:"0 0 6px",letterSpacing:1}}>THT</h1>
-        <p style={{color:"#D4A843",fontSize:14,margin:"0 0 4px",fontWeight:600}}>Tontine Habi Traore</p>
-        <p style={{color:"#9CA89F",fontSize:13,margin:"0 0 28px",lineHeight:1.6}}>La tontine digitale qui rassemble les familles et les communautes, en toute confiance.</p>
-        <Btn onClick={()=>go("welcome")}>Continuer</Btn>
+        <h1 style={{color:"#FDF6EC",fontSize:26,fontWeight:900,margin:"0 0 6px",letterSpacing:1,opacity:0,animation:"introFadeUp 0.6s ease-out 0.35s forwards"}}>THT</h1>
+        <p style={{color:"#D4A843",fontSize:14,margin:"0 0 4px",fontWeight:600,opacity:0,animation:"introFadeUp 0.6s ease-out 0.5s forwards"}}>Tontine Habi Traore</p>
+        <p style={{color:"#9CA89F",fontSize:13,margin:"0 0 28px",lineHeight:1.6,opacity:0,animation:"introFadeUp 0.6s ease-out 0.65s forwards"}}>La tontine digitale qui rassemble les familles et les communautes, en toute confiance.</p>
+        <div style={{opacity:0,animation:"introFadeUp 0.6s ease-out 0.8s forwards"}}><Btn onClick={()=>go("welcome")}>Continuer</Btn></div>
       </div>
     </div>
   );

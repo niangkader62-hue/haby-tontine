@@ -4,6 +4,58 @@ import { supabase } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
 import heroTontine from "./assets/hero-tontine.jpg";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+
+const genererRecuImage=async({nomTontine,prenom,montantRecu,montantDu,totalVerse,statut,cycle,totalCycles,ref,date})=>{
+  const div=document.createElement("div");
+  div.style.cssText="position:fixed;top:-9999px;left:-9999px;width:600px;background:linear-gradient(160deg,#0A1A0F,#123322);padding:0;font-family:Georgia,'Times New Roman',serif;overflow:hidden;border-radius:24px;";
+  div.innerHTML=`
+    <div style="height:8px;background:linear-gradient(90deg,#D4A843,#E8B96A,#D4A843);"></div>
+    <div style="padding:36px 40px 30px;text-align:center;border-bottom:1px solid #1B4332;">
+      <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#D4A843,#E8B96A);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#0A1A0F;">H</div>
+      <p style="margin:0;color:#D4A843;font-size:22px;font-weight:900;letter-spacing:3px;">THT</p>
+      <p style="margin:4px 0 0;color:#6B7280;font-size:11px;letter-spacing:1px;">TONTINE HABI TRAORE</p>
+    </div>
+    <div style="padding:28px 40px;">
+      <p style="margin:0 0 4px;color:#FDF6EC;font-size:19px;font-weight:700;text-align:center;">Recu de paiement</p>
+      <p style="margin:0 0 24px;color:#6B7280;font-size:12px;text-align:center;">${date} - Ref ${ref}</p>
+      <div style="background:#0F2419;border:1px solid #1B4332;border-radius:16px;padding:20px 22px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1B4332;"><span style="color:#6B7280;font-size:13px;">Membre</span><span style="color:#FDF6EC;font-weight:700;font-size:13px;">${prenom}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1B4332;"><span style="color:#6B7280;font-size:13px;">Tontine</span><span style="color:#FDF6EC;font-weight:700;font-size:13px;">${nomTontine}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1B4332;"><span style="color:#6B7280;font-size:13px;">Cycle</span><span style="color:#FDF6EC;font-weight:700;font-size:13px;">${cycle} / ${totalCycles}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;"><span style="color:#6B7280;font-size:13px;">Montant du</span><span style="color:#FDF6EC;font-weight:700;font-size:13px;">${montantDu}</span></div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1B4332,#0F2419);border:1px solid #D4A843;border-radius:16px;padding:22px;text-align:center;margin-bottom:16px;">
+        <p style="margin:0;color:#9CA89F;font-size:11px;letter-spacing:1px;">MONTANT RECU</p>
+        <p style="margin:6px 0 0;color:#D4A843;font-size:32px;font-weight:900;">${montantRecu}</p>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6B7280;font-size:12px;">Total verse ce cycle</span><span style="color:#FDF6EC;font-size:12px;font-weight:700;">${totalVerse}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6B7280;font-size:12px;">Statut</span><span style="color:${statut.includes("PAYE")?"#22C55E":"#D4A843"};font-size:12px;font-weight:800;">${statut}</span></div>
+    </div>
+    <div style="padding:16px 40px 30px;text-align:center;border-top:1px solid #1B4332;">
+      <p style="margin:0;color:#6B7280;font-size:11px;">Merci ${prenom} pour votre confiance !</p>
+      <p style="margin:4px 0 0;color:#2D6A4F;font-size:10px;">THT - Tontine Habi Traore</p>
+    </div>
+  `;
+  document.body.appendChild(div);
+  const canvas=await html2canvas(div,{backgroundColor:"#0A1A0F",scale:2});
+  document.body.removeChild(div);
+  return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),"image/png"));
+};
+
+const partagerImage=async(blob,filename,titre,texte)=>{
+  try{
+    const file=new File([blob],filename,{type:"image/png"});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:titre,text:texte});
+      return true;
+    }
+  }catch(e){if(e.name==="AbortError")return true;}
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  return false;
+};
 
 const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
 const sPhone = (p) => String(p).replace(/[^\d+\s]/g, "").slice(0, 16);
@@ -683,6 +735,22 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [payBusy,setPayBusy]=useState(false);
   const [showUpgrade,setShowUpgrade]=useState(false);
   const [showVers,setShowVers]=useState(false);
+  const [showCaisse,setShowCaisse]=useState(false);
+  const [caisseAmt,setCaisseAmt]=useState("");
+  const [caisseBusy,setCaisseBusy]=useState(false);
+  const saveCaisse=async(sens)=>{
+    const amt=Number(caisseAmt);
+    if(!amt||amt<1)return;
+    const delta=sens==="ajouter"?amt:-amt;
+    const nouveauTotal=Math.max(0,(groupe.caisseSociale||0)+delta);
+    setCaisseBusy(true);
+    const {error}=await supabase.from("groupes").update({caisse_sociale:nouveauTotal}).eq("id",groupe.id);
+    setCaisseBusy(false);
+    if(error)return onToast("Erreur","error");
+    setGroupe(g=>({...g,caisseSociale:nouveauTotal}));
+    setCaisseAmt("");setShowCaisse(false);
+    onToast(sens==="ajouter"?"Ajoute a la caisse sociale !":"Retire de la caisse sociale");
+  };
   const [versM,setVersM]=useState(null);
   const [versAmt,setVersAmt]=useState("");
   const [showHisto,setShowHisto]=useState(false);
@@ -1050,12 +1118,12 @@ Merci ${m.prenom} pour votre confiance !
 THT - Tontine Habi Traore`;
   };
 
+  const [recuBusy,setRecuBusy]=useState(false);
   const saveVers=async(sendWA)=>{
     const amt=Number(versAmt);
     if(!amt||amt<1)return;
     const newVersements=(versM.versements||0)+amt;
     const paye=newVersements>=montantDu(versM);
-    const recu=buildRecu(versM,amt,paye);
     const newScore=Math.min(versM.score+(paye?5:2),100);
     const newCyclesPaies=paye?versM.cyclesPaies+1:versM.cyclesPaies;
     const {error:mErr}=await supabase.from("membres").update({versements:newVersements,paye,score:newScore,cycles_paies:newCyclesPaies}).eq("id",versM.id);
@@ -1066,8 +1134,19 @@ THT - Tontine Habi Traore`;
       membres:g.membres.map(m=>m.id===versM.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)
     }));
     if(sendWA){
-      const tel=versM.tel.replace(/[\s+]/g,"");
-      window.open("https://wa.me/"+tel+"?text="+encodeURIComponent(recu),"_blank");
+      setRecuBusy(true);
+      try{
+        const now=new Date();
+        const ref=`THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${versM.id.slice(-4).toUpperCase()}`;
+        const blob=await genererRecuImage({
+          nomTontine:groupe.nom,prenom:versM.prenom,montantRecu:fmtFCFA(amt),montantDu:fmtFCFA(montantDu(versM)),
+          totalVerse:fmtFCFA(newVersements),statut:paye?"PAYE CE CYCLE":"VERSEMENT PARTIEL",cycle:groupe.cycle,totalCycles:groupe.totalCycles,
+          ref,date:now.toLocaleDateString("fr-FR")
+        });
+        const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${versM.prenom} - ${groupe.nom}`);
+        onToast(shared?"Recu pret a partager !":"Recu telecharge ! Envoie-le depuis tes fichiers.");
+      }catch{onToast("Impossible de generer le recu","error");}
+      setRecuBusy(false);
     }
     setShowVers(false);setVersM(null);setVersAmt("");
     onToast(sendWA?"Versement enregistre + recu WhatsApp envoye !":"Versement enregistre !");
@@ -1116,9 +1195,9 @@ THT - Tontine Habi Traore`;
         <div style={{background:"linear-gradient(135deg,#0F2419,#1A2E1F)",border:"1px solid #D4A843",borderRadius:14,padding:14,marginBottom:12}}>
           <p style={{margin:"0 0 10px",color:"#D4A843",fontWeight:800,fontSize:13}}>Budget du groupe</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-            {[["Budget total cycle",fmtFCFA(cagnotteTour)],["Deja collecte",fmtFCFA(collecte)],["Reste a collecter",fmtFCFA(Math.max(0,cagnotteTour-collecte))],["Caisse sociale",fmtFCFA(groupe.caisseSociale)]].map(([l,v])=>(
-              <div key={l} style={{background:"#0A1A0F",borderRadius:10,padding:"8px 10px"}}>
-                <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}</p>
+            {[["Budget total cycle",fmtFCFA(cagnotteTour),null],["Deja collecte",fmtFCFA(collecte),null],["Reste a collecter",fmtFCFA(Math.max(0,cagnotteTour-collecte)),null],["Caisse sociale",fmtFCFA(groupe.caisseSociale),()=>setShowCaisse(true)]].map(([l,v,onClick])=>(
+              <div key={l} onClick={onClick} style={{background:"#0A1A0F",borderRadius:10,padding:"8px 10px",cursor:onClick?"pointer":"default",border:onClick?"1px solid #2D6A4F":"none"}}>
+                <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}{onClick?" ✏️":""}</p>
                 <p style={{margin:"3px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:12}}>{v}</p>
               </div>
             ))}
@@ -1333,6 +1412,20 @@ THT - Tontine Habi Traore`;
         <Btn onClick={exporterRapportPDF}>Exporter rapport PDF</Btn>
       </div>}
 
+      {showCaisse&&<Modal onClose={()=>setShowCaisse(false)}>
+        <MH title="Caisse sociale" onClose={()=>setShowCaisse(false)}/>
+        <div style={{background:"#0A1A0F",borderRadius:12,padding:14,marginBottom:16,textAlign:"center"}}>
+          <p style={{margin:0,color:"#6B7280",fontSize:12}}>Solde actuel</p>
+          <p style={{margin:"4px 0 0",color:"#D4A843",fontWeight:900,fontSize:24}}>{fmtFCFA(groupe.caisseSociale)}</p>
+        </div>
+        <Fld label="Montant (FCFA)"><Inp value={caisseAmt} onChange={e=>setCaisseAmt(e.target.value.replace(/[^0-9]/g,""))} placeholder="Ex: 5000" inputMode="numeric" autoFocus/></Fld>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>saveCaisse("ajouter")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:!caisseAmt?"#1B4332":"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:14,padding:"13px",color:!caisseAmt?"#6B7280":"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>+ Ajouter</button>
+          <button onClick={()=>saveCaisse("retirer")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:"#1B4332",border:"1px solid #C1440E",borderRadius:14,padding:"13px",color:"#EF4444",fontWeight:800,fontSize:14,cursor:"pointer"}}>- Retirer</button>
+        </div>
+        <p style={{color:"#6B7280",fontSize:11,margin:"12px 0 0",lineHeight:1.5}}>La caisse sociale est un fonds separe des cotisations, pour les imprevus, les evenements, ou l entraide entre membres.</p>
+      </Modal>}
+
       {showVers&&versM&&<Modal onClose={()=>setShowVers(false)}>
         <MH title={"+ Versement - "+versM.prenom} onClose={()=>setShowVers(false)}/>
         <div style={{background:"#0A1A0F",borderRadius:12,padding:14,marginBottom:16}}>
@@ -1355,7 +1448,7 @@ THT - Tontine Habi Traore`;
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>saveVers(false)} disabled={!versAmt||Number(versAmt)<1} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#1B4332":"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:14,padding:"13px",color:!versAmt||Number(versAmt)<1?"#6B7280":"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>Enregistrer</button>
-          <button onClick={()=>saveVers(true)} disabled={!versAmt||Number(versAmt)<1} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#1B4332":"#075E54",border:"none",borderRadius:14,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>+ Recu WA</button>
+          <button onClick={()=>saveVers(true)} disabled={!versAmt||Number(versAmt)<1||recuBusy} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#1B4332":"#075E54",border:"none",borderRadius:14,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>{recuBusy?"⏳ Creation...":"🧾 Recu + Partager"}</button>
         </div>
         <div style={{marginTop:16,paddingTop:16,borderTop:"1px solid #1B4332"}}>
           <Fld label={`Montant personnalise pour ${versM.prenom} (laisser vide = montant standard de ${fmtFCFA(groupe.montant)})`}>

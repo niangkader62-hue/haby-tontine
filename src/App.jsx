@@ -267,7 +267,7 @@ const AuthScreen = ({onLogin}) => {
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:40}}>
         <Btn onClick={()=>go("register")}>Creer mon compte gratuit</Btn>
-        <button onClick={()=>go("login")} style={{width:"100%",background:"transparent",border:"2px solid #1B4332",borderRadius:14,padding:"13px",color:"#FDF6EC",fontWeight:700,fontSize:15,cursor:"pointer"}}>Jai deja un compte</button>
+        <button onClick={()=>go("login")} style={{width:"100%",background:"transparent",border:"2px solid #1B4332",borderRadius:14,padding:"13px",color:"#FDF6EC",fontWeight:700,fontSize:15,cursor:"pointer"}}>J'ai deja un compte</button>
       </div>
       <p style={{color:"#2D6A4F",fontSize:11,textAlign:"center",marginTop:20}}>Sans email - Donnees chiffrees - 100% prive</p>
     </div></div>
@@ -2237,8 +2237,19 @@ export default function App() {
   };
 
   if(checking){
-    return <div style={{minHeight:"100vh",background:"#0A1A0F",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{width:60,height:60,background:"linear-gradient(135deg,#D4A843,#E8B96A)",borderRadius:18,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,fontWeight:900,color:"#0A1A0F"}}>H</div>
+    return <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0A1A0F,#0F2419)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+      <style>{`
+        @keyframes thtLogoIn { 0%{opacity:0;transform:scale(0.6);} 60%{opacity:1;transform:scale(1.08);} 100%{opacity:1;transform:scale(1);} }
+        @keyframes thtGlow { 0%,100%{box-shadow:0 0 20px 0 rgba(212,168,67,0.25);} 50%{box-shadow:0 0 40px 10px rgba(212,168,67,0.5);} }
+        @keyframes thtTextIn { 0%{opacity:0;transform:translateY(8px);} 100%{opacity:1;transform:translateY(0);} }
+        @keyframes thtBarFill { 0%{width:0%;margin-left:0%;} 50%{width:60%;margin-left:20%;} 100%{width:0%;margin-left:100%;} }
+      `}</style>
+      <div style={{width:84,height:84,borderRadius:22,background:"linear-gradient(135deg,#D4A843,#E8B96A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,fontWeight:900,color:"#0A1A0F",animation:"thtLogoIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards, thtGlow 2s ease-in-out 0.8s infinite"}}>H</div>
+      <p style={{color:"#FDF6EC",fontSize:20,fontWeight:900,letterSpacing:4,margin:"18px 0 4px",opacity:0,animation:"thtTextIn 0.6s ease-out 0.5s forwards"}}>THT</p>
+      <p style={{color:"#6B7280",fontSize:11,margin:0,opacity:0,animation:"thtTextIn 0.6s ease-out 0.7s forwards"}}>Tontine Habi Traore</p>
+      <div style={{width:120,height:2,background:"#1B4332",borderRadius:2,marginTop:26,overflow:"hidden"}}>
+        <div style={{height:"100%",background:"linear-gradient(90deg,#D4A843,#E8B96A)",animation:"thtBarFill 1.6s ease-in-out infinite"}}/>
+      </div>
     </div>;
   }
 

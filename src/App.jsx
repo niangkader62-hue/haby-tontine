@@ -27,7 +27,7 @@ const uploadAudio = async (blob, groupeId) => {
 };
 
 const notifyMessage = (recipientIds, senderName, isAudio, url) => {
-  const title = "HABY Tontine - Nouveau message";
+  const title = "THT - Nouveau message";
   const body = isAudio ? `${senderName} t'a envoye un message vocal` : `${senderName} : nouveau message`;
   [...new Set((recipientIds||[]).filter(Boolean))].forEach(uid=>{
     supabase.functions.invoke("send-push",{body:{user_id:uid,title,body,url:url||"/"}}).catch(()=>{});
@@ -262,8 +262,8 @@ const AuthScreen = ({onLogin}) => {
         <div style={{width:120,height:120,borderRadius:32,margin:"0 auto 18px",background:"linear-gradient(135deg,#D4A843,#E8B96A)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 24px rgba(212,168,67,0.3)"}}>
           <span style={{fontSize:56,fontWeight:900,color:"#0A1A0F"}}>H</span>
         </div>
-        <h1 style={{color:"#FDF6EC",fontSize:30,fontWeight:900,margin:"8px 0 4px",letterSpacing:2}}>HABY Tontine</h1>
-        <p style={{color:"#6B7280",fontSize:13,margin:0}}>Ta tontine. Digitale. Securisee.</p>
+        <h1 style={{color:"#FDF6EC",fontSize:30,fontWeight:900,margin:"8px 0 4px",letterSpacing:2}}>THT</h1>
+        <p style={{color:"#6B7280",fontSize:13,margin:0}}>Tontine Habi Traore - Digitale. Securisee.</p>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:40}}>
         <Btn onClick={()=>go("register")}>Creer mon compte gratuit</Btn>
@@ -825,7 +825,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const exporterRapportPDF=()=>{
     const doc=new jsPDF();
     let y=20;
-    doc.setFontSize(18);doc.text(`HABY Tontine - ${groupe.nom}`,14,y);y+=10;
+    doc.setFontSize(18);doc.text(`THT - ${groupe.nom}`,14,y);y+=10;
     doc.setFontSize(11);doc.text(`Genere le ${new Date().toLocaleDateString("fr-FR")}`,14,y);y+=12;
     doc.setFontSize(13);doc.text(`Bilan - Cycle ${groupe.cycle}/${groupe.totalCycles}`,14,y);y+=8;
     doc.setFontSize(10);
@@ -935,7 +935,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     supabase.rpc("link_membre",{p_membre_id:data.id}).then(async()=>{
       const {data:linked}=await supabase.from("membres").select("user_id").eq("id",data.id).single();
       if(linked?.user_id){
-        supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"HABY Tontine",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
+        supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"THT",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
       }
     }).catch(()=>{});
     setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
@@ -971,10 +971,10 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const now=new Date();
     const dateStr=now.toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
     const heureStr=now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-    return `HABY TONTINE - RECU DE PAIEMENT OFFICIEL
+    return `THT - RECU DE PAIEMENT OFFICIEL
 ================================
 Date : ${dateStr} a ${heureStr}
-Ref  : HABY-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${m.id.slice(-4).toUpperCase()}
+Ref  : THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${m.id.slice(-4).toUpperCase()}
 
 MEMBRE     : ${m.prenom}
 TONTINE    : ${groupe.nom}
@@ -989,7 +989,7 @@ Cycle en cours : ${groupe.cycle} sur ${groupe.totalCycles}
 Fiabilite      : ${m.score}% -> ${Math.min(m.score+(paye?5:2),100)}%
 
 Merci ${m.prenom} pour votre confiance !
-HABY Tontine - La tontine digitale africaine`;
+THT - Tontine Habi Traore`;
   };
 
   const saveVers=async(sendWA)=>{
@@ -1019,14 +1019,14 @@ HABY Tontine - La tontine digitale africaine`;
     const retardeurs=groupe.membres.filter(m=>!m.paye);
     if(retardeurs.length===0)return onToast("Tous les membres ont paye !");
     retardeurs.forEach(m=>{
-      const msg=`Bonjour ${m.prenom},\n\nRappel HABY Tontine - ${groupe.nom}\nDate d echeance : ${groupe.dateEcheance||"a venir"}\nMontant a payer : ${fmtFCFA(groupe.montant)}\n\nMerci de regler avant la date limite.\n\nHABY Tontine - Votre tontine digitale`;
+      const msg=`Bonjour ${m.prenom},\n\nRappel THT - ${groupe.nom}\nDate d echeance : ${groupe.dateEcheance||"a venir"}\nMontant a payer : ${fmtFCFA(groupe.montant)}\n\nMerci de regler avant la date limite.\n\nTHT - Votre tontine digitale`;
       const tel=m.tel.replace(/[\s+]/g,"");
       window.open("https://wa.me/"+tel+"?text="+encodeURIComponent(msg),"_blank");
     });
     onToast("Rappels envoyes a "+retardeurs.length+" membre(s) en retard");
   };
-  const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
-  const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
+  const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia THT`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
+  const sendWAG=()=>{const msg=encodeURIComponent(`Rappel THT - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
   const PRIMARY_TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["rapport",t("tabRapport")]];
   const SECONDARY_TABS=[["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")]];
@@ -1106,7 +1106,7 @@ HABY Tontine - La tontine digitale africaine`;
           );
         })}
         <div style={{margin:"14px 0 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
-          <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Seuls les membres ayant un compte HABY Tontine relie peuvent voter. Tu peux aussi attribuer un poste directement sans election.</p>
+          <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Seuls les membres ayant un compte THT relie peuvent voter. Tu peux aussi attribuer un poste directement sans election.</p>
         </div>
       </div>}
       {showElection&&<Modal onClose={()=>setShowElection(false)}>
@@ -1253,7 +1253,7 @@ HABY Tontine - La tontine digitale africaine`;
             <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#D4A843":"#0F2419",border:"1px solid "+(thread?.userId===m.userId?"#D4A843":"#1B4332"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
           ))}
         </div>
-        {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun autre membre n a encore de compte HABY relie pour recevoir un message prive.</p>}
+        {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun autre membre n a encore de compte THT relie pour recevoir un message prive.</p>}
         {thread&&<p style={{color:"#D4A843",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p>}</div></div>)}
@@ -1363,7 +1363,7 @@ HABY Tontine - La tontine digitale africaine`;
         <MH title="Limite atteinte" onClose={()=>setShowUpgrade(false)}/>
         <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
         <p style={{color:"#FDF6EC",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>15 membres, c'est le maximum en gratuit</p>
-        <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a HABY Premium pour ajouter des membres illimites dans cette tontine, et beneficier de toutes les autres fonctionnalites avancees.</p>
+        <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour ajouter des membres illimites dans cette tontine, et beneficier de toutes les autres fonctionnalites avancees.</p>
         <button onClick={async()=>{
           setPayBusy(true);
           const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
@@ -1373,8 +1373,8 @@ HABY Tontine - La tontine digitale africaine`;
         }} disabled={payBusy} style={{width:"100%",background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:12,padding:"13px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant - 1 000 FCFA"}</button>
         <p style={{color:"#6B7280",fontSize:11,textAlign:"center",margin:"0 0 12px"}}>OU manuellement via WhatsApp :</p>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Orange Money</button>
-          <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Wave</button>
+          <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20THT%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Orange Money</button>
+          <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20THT%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Wave</button>
         </div>
       </Modal>}
       {showEdit&&<Modal onClose={()=>setShowEdit(false)}>
@@ -1390,7 +1390,7 @@ HABY Tontine - La tontine digitale africaine`;
 };
 
 const HabyScreen = ({groupes}) => {
-  const [msgs,setMsgs]=useState([{role:"assistant",content:"Salut ! Je suis HABY, ton assistante HABY Tontine. Pose-moi tes questions sur ta tontine, ton epargne ou tes finances !"}]);
+  const [msgs,setMsgs]=useState([{role:"assistant",content:"Salut ! Je suis HABY, ton assistante THT. Pose-moi tes questions sur ta tontine, ton epargne ou tes finances !"}]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
   const bottomRef=useRef();
@@ -1406,12 +1406,12 @@ const HabyScreen = ({groupes}) => {
     setMsgs(newMsgs);
     const ctx=groupes.map(g=>`Tontine "${g.nom}": ${g.membres.length} membres, ${fmtFCFA(g.montant)}/cycle, cycle ${g.cycle}/${g.totalCycles}, ${g.membres.filter(m=>m.paye).length} payes.`).join("\n");
     try{
-      const system=`Tu es HABY, l assistante IA officielle de HABY Tontine, une application africaine de gestion de tontines, cagnottes et epargne.
+      const system=`Tu es HABY, l assistante IA officielle de THT (Tontine Habi Traore), une application africaine de gestion de tontines, cagnottes et epargne.
 
 Ton role :
 - Tu aides les utilisatrices a comprendre et gerer leurs tontines : calculs de cotisations, suivi des paiements, epargne, conseils financiers simples et concrets adaptes a leur contexte (Afrique de l Ouest francophone, FCFA).
 - Quand on te donne un calcul a faire (montant total, part par membre, nombre de cycles restants, etc.), fais-le toi-meme etape par etape mentalement et donne directement le resultat exact, jamais une estimation vague.
-- Si la question sort du cadre tontine/epargne/finances personnelles, tu peux quand meme repondre utilement mais brievement, sans jamais inventer d informations sur l app HABY Tontine elle-meme si tu ne les connais pas via le contexte fourni.
+- Si la question sort du cadre tontine/epargne/finances personnelles, tu peux quand meme repondre utilement mais brievement, sans jamais inventer d informations sur l app THT elle-meme si tu ne les connais pas via le contexte fourni.
 - Ne demande jamais d informations sensibles (PIN, mot de passe, numero de carte).
 
 Ton style :
@@ -1437,7 +1437,7 @@ Donnees reelles des tontines de l utilisatrice en ce moment : ${ctx||"aucune ton
     <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 78px)",background:"#0A1A0F"}}>
       <div style={{background:"#0F2419",padding:"44px 16px 14px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332",flexShrink:0}}>
         <div style={{width:46,height:46,background:"linear-gradient(135deg,#D4A843,#B8922E)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:20,color:"#0A1A0F",flexShrink:0}}>H</div>
-        <div><p style={{margin:0,color:"#FDF6EC",fontWeight:800,fontSize:16}}>HABY</p><p style={{margin:0,color:"#22C55E",fontSize:11}}>En ligne - Assistante HABY Tontine</p></div>
+        <div><p style={{margin:0,color:"#FDF6EC",fontWeight:800,fontSize:16}}>HABY</p><p style={{margin:0,color:"#22C55E",fontSize:11}}>En ligne - Assistante THT</p></div>
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"16px 16px 0"}}>
         {msgs.map((m,i)=>(
@@ -1563,7 +1563,7 @@ const SupportModal = ({onClose,onToast}) => {
   const {listening,toggle:toggleMic}=useVoiceInput(t=>setTxt(p=>p?`${p} ${t}`:t),onToast);
   const send=()=>{
     if(!txt.trim())return onToast("Ecris ou dicte ton message d abord","error");
-    window.open(`https://wa.me/22376908031?text=${encodeURIComponent("Support HABY Tontine : "+txt.trim())}`,"_blank");
+    window.open(`https://wa.me/22376908031?text=${encodeURIComponent("Support THT : "+txt.trim())}`,"_blank");
     onClose();
   };
   return(
@@ -1641,7 +1641,7 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
     setUsers(list=>list.map(x=>x.id===u.id?{...x,role:newRole}:x));
     onToast(newRole==="admin"?`${u.prenom} est maintenant co-administrateur !`:`${u.prenom} n est plus administrateur`);
     if(newRole==="admin"){
-      supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"HABY Tontine",body:"Tu es maintenant co-administrateur de la plateforme !"}}).catch(()=>{});
+      supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"THT",body:"Tu es maintenant co-administrateur de la plateforme !"}}).catch(()=>{});
     }
   };
   const togglePremium=async(u)=>{
@@ -1653,7 +1653,7 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
     setUsers(list=>list.map(x=>x.id===u.id?{...x,plan:newPlan}:x));
     onToast(newPlan==="premium"?`${u.prenom} est maintenant Premium !`:`${u.prenom} repasse en Gratuit`);
     if(newPlan==="premium"){
-      supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"HABY Tontine",body:"Ton compte est maintenant Premium ! Merci pour ta confiance."}}).catch(()=>{});
+      supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"THT",body:"Ton compte est maintenant Premium ! Merci pour ta confiance."}}).catch(()=>{});
     }
   };
   return(
@@ -1747,7 +1747,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
     })();
   },[user.id]);
   const partagerCode=()=>{
-    const msg=encodeURIComponent(`Rejoins-moi sur HABY Tontine pour gerer tes tontines simplement !\n\nUtilise mon code de parrainage a l inscription : ${user.parrainCode}\n\nhttps://haby-tontine.netlify.app`);
+    const msg=encodeURIComponent(`Rejoins-moi sur THT pour gerer tes tontines simplement !\n\nUtilise mon code de parrainage a l inscription : ${user.parrainCode}\n\nhttps://haby-tontine.netlify.app`);
     window.open(`https://wa.me/?text=${msg}`,"_blank");
   };
   const exporterDonnees=async()=>{
@@ -1818,7 +1818,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
       const {error}=await supabase.from("push_subscriptions").upsert({user_id:user.id,subscription:sub.toJSON()},{onConflict:"user_id"});
       if(error){setNotifBusy(false);return onToast("Impossible d activer les notifications","error");}
-      const {data,error:pushErr}=await supabase.functions.invoke("send-push",{body:{user_id:user.id,title:"HABY Tontine",body:"Notifications activees avec succes !"}});
+      const {data,error:pushErr}=await supabase.functions.invoke("send-push",{body:{user_id:user.id,title:"THT",body:"Notifications activees avec succes !"}});
       setNotifOn(true);setNotifBusy(false);
       if(pushErr||data?.error)return onToast("Active, mais l envoi test a echoue : "+(data?.error||pushErr?.message||"erreur"),"error");
       onToast("Notifications activees ! Elles resteront actives jusqu a ce que tu les desactives.");
@@ -1860,7 +1860,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           <button onClick={partagerCode} style={{width:"100%",background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager mon code sur WhatsApp</button>
         </div>
         {user.plan==="free"&&<div style={{background:"linear-gradient(135deg,#1A0800,#3D1500)",border:"1px solid #D4A843",borderRadius:18,padding:18,marginBottom:16}}>
-          <p style={{margin:"0 0 4px",color:"#D4A843",fontWeight:800,fontSize:16}}>Passer a HABY Premium</p>
+          <p style={{margin:"0 0 4px",color:"#D4A843",fontWeight:800,fontSize:16}}>Passer a THT Premium</p>
           <p style={{margin:"0 0 14px",color:"#FDF6EC",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
           <div style={{background:"#0A1A0F",borderRadius:12,padding:14,marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"flex-end",gap:20,marginBottom:8}}><span style={{color:"#6B7280",fontSize:11,fontWeight:700,width:70,textAlign:"center"}}>GRATUIT</span><span style={{color:"#D4A843",fontSize:11,fontWeight:800,width:80,textAlign:"center"}}>PREMIUM</span></div>
@@ -1879,8 +1879,8 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           <div style={{background:"#0A1A0F",borderRadius:12,padding:12}}>
             <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:11,fontWeight:700}}>OU MANUELLEMENT VIA WHATSAPP :</p>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"10px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Orange Money</button>
-              <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"10px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Wave</button>
+              <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20THT%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"10px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Orange Money</button>
+              <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20THT%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"10px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Wave</button>
             </div>
             <p style={{color:"#6B7280",fontSize:10,textAlign:"center",margin:"8px 0 0"}}>+223 76 90 80 31 (Orange) - +223 90 64 71 06 (Wave)</p>
           </div>
@@ -1910,7 +1910,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
             ?<button onClick={()=>setShowOut(true)} style={{width:"100%",background:"transparent",border:"1px solid #C1440E",borderRadius:14,padding:"14px",color:"#EF4444",fontWeight:700,fontSize:15,cursor:"pointer"}}>{t("deconnexion")}</button>
             :<div style={{background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:16}}><p style={{color:"#FDF6EC",fontWeight:700,margin:"0 0 14px",textAlign:"center"}}>Confirmer la deconnexion ?</p><div style={{display:"flex",gap:10}}><button onClick={()=>setShowOut(false)} style={{flex:1,background:"#1B4332",border:"none",borderRadius:12,padding:12,color:"#FDF6EC",fontWeight:700,cursor:"pointer"}}>Annuler</button><button onClick={onLogout} style={{flex:1,background:"#C1440E",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer"}}>Deconnecter</button></div></div>}
         </div>
-        <p style={{color:"#2D6A4F",fontSize:11,textAlign:"center",margin:"20px 0 10px"}}>HABY Tontine v2.1 - Fait avec amour pour l Afrique</p>
+        <p style={{color:"#2D6A4F",fontSize:11,textAlign:"center",margin:"20px 0 10px"}}>THT v2.1 - Fait avec amour pour l Afrique</p>
       </div>
       {showSupport&&<SupportModal onClose={()=>setShowSupport(false)} onToast={onToast}/>}
     </div>
@@ -2071,7 +2071,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <MH title="Limite atteinte" onClose={onClose}/>
     <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
     <p style={{color:"#FDF6EC",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>1 tontine geree, c'est le maximum en gratuit</p>
-    <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a HABY Premium pour gerer plusieurs tontines en meme temps.</p>
+    <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour gerer plusieurs tontines en meme temps.</p>
     <button onClick={async()=>{
       setPayBusy(true);
       const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
@@ -2081,8 +2081,8 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     }} disabled={payBusy} style={{width:"100%",background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:12,padding:"13px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant - 1 000 FCFA"}</button>
     <p style={{color:"#6B7280",fontSize:11,textAlign:"center",margin:"0 0 12px"}}>OU manuellement via WhatsApp :</p>
     <div style={{display:"flex",gap:10}}>
-      <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Orange Money</button>
-      <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20HABY%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Wave</button>
+      <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20THT%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Orange Money</button>
+      <button onClick={()=>window.open("https://wa.me/22390647106?text=Je%20veux%20THT%20Premium","_blank")} style={{flex:1,background:"#0066CC",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Wave</button>
     </div>
     <ErrBox msg={err}/>
   </Modal>;

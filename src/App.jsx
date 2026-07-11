@@ -466,6 +466,16 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
+  useEffect(()=>{
+    const ch=supabase.channel(`msgs-part-${groupe.id}-${thread?.userId||"g"}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
+      const m=payload.new;
+      const belongsHere=thread?((m.auteur_user_id===user.id&&m.destinataire_user_id===thread.userId)||(m.auteur_user_id===thread.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
+      if(!belongsHere)return;
+      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
+      if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
+    }).subscribe();
+    return()=>{supabase.removeChannel(ch);};
+  },[groupe.id,thread,user.id]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
   const getRecipients=()=>thread?[thread.userId]:[groupe.createurUserId,...groupe.membres.map(m=>m.userId)].filter(uid=>uid&&uid!==user.id);
@@ -651,7 +661,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [showMoreTabs,setShowMoreTabs]=useState(false);
   const [msgInput,setMsgInput]=useState("");
   const [showAdd,setShowAdd]=useState(false);
-  const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",photo:""});
+  const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",photo:"",montantPerso:""});
   const [pickerBusy,setPickerBusy]=useState(false);
   const pickerBusyRef=useRef(false);
   const [payBusy,setPayBusy]=useState(false);
@@ -841,10 +851,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setRemboM(null);setRemboAmt("");
   };
 
+  const montantDu=(m)=>m.montantPerso||groupe.montant;
   const aJour=groupe.membres.filter(m=>m.paye);
   const enRet=groupe.membres.filter(m=>!m.paye);
-  const collecte=aJour.length*groupe.montant;
-  const cagnotteTour=groupe.membres.length*groupe.montant;
+  const collecte=aJour.reduce((s,m)=>s+montantDu(m),0);
+  const cagnotteTour=groupe.membres.reduce((s,m)=>s+montantDu(m),0);
   const taux=groupe.membres.length>0?Math.round((aJour.length/groupe.membres.length)*100):0;
 
   const exporterRapportPDF=()=>{
@@ -871,7 +882,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {error}=await supabase.from("membres").update({paye:newPaye,score:newScore}).eq("id",mid);
     if(error)return onToast("Mise a jour impossible","error");
     if(newPaye){
-      await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:mid,montant:groupe.montant,cycle:groupe.cycle,statut:"paye"});
+      await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:mid,montant:montantDu(m),cycle:groupe.cycle,statut:"paye"});
     }
     setGroupe(g=>({...g,membres:g.membres.map(x=>x.id===mid?{...x,paye:newPaye,score:newScore}:x)}));
     onToast("Statut mis a jour");
@@ -912,10 +923,16 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
-  const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
-  const [sendingAudio,setSendingAudio]=useState(false);
-  const getRecipients=()=>(thread?[thread.userId]:groupe.membres.map(m=>m.userId)).filter(uid=>uid&&uid!==user.id);
-  const getDeepLink=()=>`/?g=${groupe.id}&tab=social`+(thread?`&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`:"");
+  useEffect(()=>{
+    const ch=supabase.channel(`msgs-grp-${groupe.id}-${thread?.userId||"g"}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
+      const m=payload.new;
+      const belongsHere=thread?((m.auteur_user_id===user.id&&m.destinataire_user_id===thread.userId)||(m.auteur_user_id===thread.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
+      if(!belongsHere)return;
+      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
+      if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
+    }).subscribe();
+    return()=>{supabase.removeChannel(ch);};
+  },[groupe.id,thread,user.id]);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -950,7 +967,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prenom et telephone requis","error");
     if(user.plan==="free"&&groupe.membres.length>=15){setShowAdd(false);setShowUpgrade(true);return;}
     pickerBusyRef.current=true;setPickerBusy(true);
-    const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length};
+    const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length,montant_perso:newM.montantPerso?Number(newM.montantPerso):null};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
     pickerBusyRef.current=false;setPickerBusy(false);
     if(error){
@@ -963,7 +980,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"THT",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
       }
     }).catch(()=>{});
-    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
+    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0,montantPerso:data.montant_perso?Number(data.montant_perso):null}]}));
     setNewM({prenom:"",tel:"",quartier:"",photo:""});
     setShowAdd(false);
     onToast(`${data.prenom} a ete ajoute(e) !`);
@@ -1004,7 +1021,7 @@ Ref  : THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${m.id
 MEMBRE     : ${m.prenom}
 TONTINE    : ${groupe.nom}
 FREQUENCE  : ${groupe.frequence}
-MONTANT DU : ${fmtFCFA(groupe.montant)}
+MONTANT DU : ${fmtFCFA(montantDu(m))}
 ================================
 MONTANT RECU    : ${fmtFCFA(amt)}
 TOTAL VERSE     : ${fmtFCFA((m.versements||0)+amt)}
@@ -1021,7 +1038,7 @@ THT - Tontine Habi Traore`;
     const amt=Number(versAmt);
     if(!amt||amt<1)return;
     const newVersements=(versM.versements||0)+amt;
-    const paye=newVersements>=groupe.montant;
+    const paye=newVersements>=montantDu(versM);
     const recu=buildRecu(versM,amt,paye);
     const newScore=Math.min(versM.score+(paye?5:2),100);
     const newCyclesPaies=paye?versM.cyclesPaies+1:versM.cyclesPaies;
@@ -1101,8 +1118,8 @@ THT - Tontine Habi Traore`;
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
           <button onClick={()=>{if(user.plan==="free"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:8,padding:"5px 12px",color:"#D4A843",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
-        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}
-        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={groupe.montant} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}</>}
+        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}
+        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto}/>)}</>}
       </div>}
 
       {tab==="bureau"&&<div style={{padding:"14px 16px 0"}}>
@@ -1293,10 +1310,10 @@ THT - Tontine Habi Traore`;
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>
         <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:16,padding:16,marginBottom:14}}>
           <p style={{color:"#D4A843",fontWeight:800,margin:"0 0 14px",fontSize:15}}>Bilan - Cycle {groupe.cycle}/{groupe.totalCycles}</p>
-          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Cagnotte du tour (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.length*groupe.montant*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #1B4332"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FDF6EC",fontWeight:700,fontSize:13}}>{v}</span></div>)}
+          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Cagnotte du tour (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #1B4332"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FDF6EC",fontWeight:700,fontSize:13}}>{v}</span></div>)}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
-        {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #1B4332"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*groupe.montant)}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles</p></div></div>)}
+        {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #1B4332"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
         <Btn onClick={exporterRapportPDF}>Exporter rapport PDF</Btn>
       </div>}
 
@@ -1309,20 +1326,28 @@ THT - Tontine Habi Traore`;
           </div>
           <div style={{display:"flex",justifyContent:"space-between"}}>
             <span style={{color:"#6B7280",fontSize:13}}>Cotisation du mois</span>
-            <span style={{color:"#FDF6EC",fontWeight:700}}>{fmtFCFA(groupe.montant)}</span>
+            <span style={{color:"#FDF6EC",fontWeight:700}}>{fmtFCFA(montantDu(versM))}</span>
           </div>
         </div>
         <Fld label="Montant recu (FCFA)">
-          <Inp value={versAmt} onChange={e=>setVersAmt(e.target.value.replace(/[^0-9]/g,""))} placeholder={"Ex: "+String(groupe.montant)} inputMode="numeric" autoFocus/>
+          <Inp value={versAmt} onChange={e=>setVersAmt(e.target.value.replace(/[^0-9]/g,""))} placeholder={"Ex: "+String(montantDu(versM))} inputMode="numeric" autoFocus/>
         </Fld>
         <div style={{display:"flex",gap:8,marginBottom:12}}>
-          {[groupe.montant,Math.round(groupe.montant/2),groupe.montant*2].map(v=>(
+          {[montantDu(versM),Math.round(montantDu(versM)/2),montantDu(versM)*2].map(v=>(
             <button key={v} onClick={()=>setVersAmt(String(v))} style={{flex:1,background:versAmt===String(v)?"#D4A843":"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 4px",color:versAmt===String(v)?"#0A1A0F":"#FDF6EC",fontSize:11,fontWeight:700,cursor:"pointer"}}>{fmtFCFA(v)}</button>
           ))}
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>saveVers(false)} disabled={!versAmt||Number(versAmt)<1} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#1B4332":"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:14,padding:"13px",color:!versAmt||Number(versAmt)<1?"#6B7280":"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>Enregistrer</button>
           <button onClick={()=>saveVers(true)} disabled={!versAmt||Number(versAmt)<1} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#1B4332":"#075E54",border:"none",borderRadius:14,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>+ Recu WA</button>
+        </div>
+        <div style={{marginTop:16,paddingTop:16,borderTop:"1px solid #1B4332"}}>
+          <Fld label={`Montant personnalise pour ${versM.prenom} (laisser vide = montant standard de ${fmtFCFA(groupe.montant)})`}>
+            <div style={{display:"flex",gap:8}}>
+              <Inp value={versM.montantPerso||""} onChange={e=>setVersM(m=>({...m,montantPerso:e.target.value.replace(/[^0-9]/g,"")}))} placeholder="Ex: 25000" inputMode="numeric"/>
+              <button onClick={async()=>{const v=versM.montantPerso?Number(versM.montantPerso):null;const{error}=await supabase.from("membres").update({montant_perso:v}).eq("id",versM.id);if(error)return onToast("Erreur","error");setGroupe(g=>({...g,membres:g.membres.map(mm=>mm.id===versM.id?{...mm,montantPerso:v}:mm)}));onToast("Montant mis a jour");}} style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"0 16px",color:"#D4A843",fontWeight:700,cursor:"pointer",fontSize:13}}>OK</button>
+            </div>
+          </Fld>
         </div>
       </Modal>}
 
@@ -1381,6 +1406,7 @@ THT - Tontine Habi Traore`;
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
+        <Fld label={`Montant personnalise (optionnel, sinon ${fmtFCFA(groupe.montant)} standard)`}><Inp value={newM.montantPerso} onChange={e=>setNewM(n=>({...n,montantPerso:e.target.value.replace(/[^0-9]/g,"")}))} placeholder="Ex: 25000" inputMode="numeric"/></Fld>
         </div>
         <Btn onClick={addM} disabled={pickerBusy}>{pickerBusy?"⏳ Ajout en cours...":"Ajouter ce membre"}</Btn>
       </Modal>}
@@ -2171,12 +2197,13 @@ export default function App() {
       const {data:createur}=await supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single();
       const moi=mine.find(m=>m.groupe_id===g.id);
       const aJourCount=(membres||[]).filter(m=>m.paye).length;
+      const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso?Number(m.montant_perso):(Number(g.montant)||0)),0);
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
-        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
+        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
-        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau})),
+        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau,montantPerso:m.montant_perso?Number(m.montant_perso):null})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
         elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),
@@ -2196,13 +2223,14 @@ export default function App() {
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
-      const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1}));
+      const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso?Number(m.montant_perso):null}));
       const aJourCount=mm.filter(m=>m.paye).length;
+      const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+(m.montantPerso||Number(g.montant)||0),0);
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,reglement:g.reglement||"",
-        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:aJourCount*(Number(g.montant)||0),
+        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,
         prochainTour:gagnant?gagnant.prenom:"A tirer au sort",
         membres:mm,
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
@@ -2230,6 +2258,18 @@ export default function App() {
 
   const userRef=useRef(null);
   useEffect(()=>{userRef.current=user;},[user]);
+
+  useEffect(()=>{
+    if(!user)return;
+    const channel=supabase.channel(`private-messages-${user.id}`)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`destinataire_user_id=eq.${user.id}`},(payload)=>{
+        const m=payload.new;
+        showToast(`💬 ${m.auteur_nom} : ${m.audio_url?"message vocal":(m.texte||"nouveau message")}`);
+      })
+      .subscribe();
+    return()=>{supabase.removeChannel(channel);};
+  },[user?.id]);
+
   useEffect(()=>{
     if(!("serviceWorker" in navigator))return;
     const handler=async(event)=>{

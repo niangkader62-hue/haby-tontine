@@ -2,8 +2,8 @@
 // Declenchee une fois par jour par une tache planifiee (pg_cron), jamais par le navigateur
 //
 // Logique des rappels (basee sur la vraie date d'echeance de chaque tontine) :
-//   - Echeance = demain      -> "Rappel : cotisation due demain"        (tout le monde)
-//   - Echeance = aujourd'hui -> "Rappel : cotisation due aujourd'hui"   (tout le monde)
+//   - Echeance = demain      -> "Rappel : cotisation due demain"        (tout le monde, montant personnalise si defini)
+//   - Echeance = aujourd'hui -> "Rappel : cotisation due aujourd'hui"   (tout le monde, montant personnalise si defini)
 //   - Echeance depassee      -> "Paiement en retard"                    (seulement les membres pas encore payes,
 //                                                                         renvoye tous les 3 jours pour ne pas spammer)
 
@@ -51,7 +51,8 @@ Deno.serve(async (req) => {
 
   let sent = 0;
 
-  // 1) TONTINES DONT L'ECHEANCE EST DEMAIN OU AUJOURD'HUI -> rappel a tout le monde
+  // 1) TONTINES DONT L'ECHEANCE EST DEMAIN OU AUJOURD'HUI -> rappel a tout le monde,
+  //    avec le montant personnalise de chacun si defini
   const { data: groupesDus } = await supabase
     .from("groupes")
     .select("id, nom, montant, user_id, date_echeance")
@@ -59,15 +60,26 @@ Deno.serve(async (req) => {
 
   for (const g of groupesDus || []) {
     const estAujourdhui = g.date_echeance === todayStr;
-    const { data: membres } = await supabase.from("membres").select("user_id").eq("groupe_id", g.id).not("user_id", "is", null);
-    const userIds = [...new Set([g.user_id, ...(membres || []).map((m) => m.user_id)])].filter(Boolean);
-    const title = "HABY Tontine - Rappel";
-    const body = estAujourdhui
-      ? `Cotisation "${g.nom}" due aujourd'hui (${g.montant} FCFA). Pense a preparer ton versement !`
-      : `Cotisation "${g.nom}" due demain (${g.montant} FCFA). Pense a preparer ton versement !`;
     const url = `/?g=${g.id}&tab=rapport`;
-    for (const uid of userIds) {
-      if (await sendTo(uid, title, body, url)) sent++;
+    const title = "THT - Rappel";
+    const { data: membres } = await supabase.from("membres").select("user_id, montant_perso").eq("groupe_id", g.id).not("user_id", "is", null);
+
+    const dejaNotifies = new Set();
+    for (const m of membres || []) {
+      if (dejaNotifies.has(m.user_id)) continue;
+      dejaNotifies.add(m.user_id);
+      const montant = m.montant_perso || g.montant;
+      const body = estAujourdhui
+        ? `Cotisation "${g.nom}" due aujourd'hui (${montant} FCFA). Pense a preparer ton versement !`
+        : `Cotisation "${g.nom}" due demain (${montant} FCFA). Pense a preparer ton versement !`;
+      if (await sendTo(m.user_id, title, body, url)) sent++;
+    }
+    // Filet de securite : si la creatrice n'a pas encore sa propre ligne membre (anciennes tontines), on la notifie quand meme
+    if (!dejaNotifies.has(g.user_id)) {
+      const body = estAujourdhui
+        ? `Cotisation "${g.nom}" due aujourd'hui (${g.montant} FCFA). Pense a preparer ton versement !`
+        : `Cotisation "${g.nom}" due demain (${g.montant} FCFA). Pense a preparer ton versement !`;
+      if (await sendTo(g.user_id, title, body, url)) sent++;
     }
   }
 
@@ -84,12 +96,13 @@ Deno.serve(async (req) => {
     if (joursRetard < 1 || (joursRetard - 1) % 3 !== 0) continue; // seulement jour+1, jour+4, jour+7...
 
     const url = `/?g=${g.id}&tab=rapport`;
-    const { data: membres } = await supabase.from("membres").select("id, prenom, user_id, paye").eq("groupe_id", g.id).eq("paye", false).not("user_id", "is", null);
+    const { data: membres } = await supabase.from("membres").select("id, prenom, user_id, paye, montant_perso").eq("groupe_id", g.id).eq("paye", false).not("user_id", "is", null);
     for (const m of membres || []) {
+      const montant = m.montant_perso || g.montant;
       const ok = await sendTo(
         m.user_id,
-        "HABY Tontine - Paiement en retard",
-        `Ta cotisation "${g.nom}" (${g.montant} FCFA) est en retard de ${joursRetard} jour(s). Merci de regulariser au plus vite.`,
+        "THT - Paiement en retard",
+        `Ta cotisation "${g.nom}" (${montant} FCFA) est en retard de ${joursRetard} jour(s). Merci de regulariser au plus vite.`,
         url
       );
       if (ok) sent++;
@@ -98,7 +111,7 @@ Deno.serve(async (req) => {
     if ((membres || []).length > 0) {
       const ok = await sendTo(
         g.user_id,
-        "HABY Tontine - Retards de paiement",
+        "THT - Retards de paiement",
         `${membres.length} membre(s) n'ont pas encore paye la cotisation "${g.nom}" (en retard de ${joursRetard} jour(s)).`,
         url
       );

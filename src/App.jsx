@@ -518,6 +518,10 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     onVoted&&onVoted();
   };
   const ROLES_LABELS={president:"Presidente",tresoriere:"Tresoriere",secretaire:"Secretaire"};
+  const budgetTotal=groupe.membres.reduce((s,m)=>s+(m.montantPerso||groupe.montant),0)+(groupe.montantInitial||0);
+  const resteACollecter=Math.max(0,budgetTotal-groupe.cagnotte);
+  const aJourP=groupe.membres.filter(m=>m.paye);
+  const enRetP=groupe.membres.filter(m=>!m.paye);
   return(
     <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
@@ -529,15 +533,18 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         <Bar pct={pct} c={groupe.couleur}/>
         <p style={{color:"#6B7280",fontSize:12,margin:"6px 0 0"}}>Cycle {groupe.cycle}/{groupe.totalCycles}</p>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"16px 16px 0"}}>
-        <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
-          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>CAGNOTTE DU CYCLE</p>
-          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:18,fontWeight:900}}>{fmtFCFA(groupe.cagnotte)}</p>
+      <div style={{margin:"16px 16px 0",background:"linear-gradient(135deg,#0F2419,#1A2E1F)",border:"1px solid #D4A843",borderRadius:14,padding:14}}>
+        <p style={{margin:"0 0 10px",color:"#D4A843",fontWeight:800,fontSize:13}}>Budget du groupe</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+          {[["Budget total cycle",fmtFCFA(budgetTotal)],["Deja collecte",fmtFCFA(groupe.cagnotte)],["Reste a collecter",fmtFCFA(resteACollecter)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)]].map(([l,v])=>(
+            <div key={l} style={{background:"#0A1A0F",borderRadius:10,padding:"8px 10px"}}>
+              <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}</p>
+              <p style={{margin:"3px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:12}}>{v}</p>
+            </div>
+          ))}
         </div>
-        <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:14,padding:14}}>
-          <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>CAISSE SOCIALE</p>
-          <p style={{margin:"4px 0 0",color:"#D4A843",fontSize:18,fontWeight:900}}>{fmtFCFA(groupe.caisseSociale)}</p>
-        </div>
+        <Bar pct={budgetTotal>0?Math.round((groupe.cagnotte/budgetTotal)*100):0} c="#D4A843"/>
+        <p style={{margin:"5px 0 0",color:"#6B7280",fontSize:11,textAlign:"right"}}>{budgetTotal>0?Math.round((groupe.cagnotte/budgetTotal)*100):0}% collecte ce cycle</p>
       </div>
       {groupe.moi&&<div style={{margin:"16px 16px 0",background:"#0F2419",border:"1px solid #D4A843",borderRadius:14,padding:16}}>
         <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:13}}>{t("maSituation")}</p>
@@ -548,14 +555,22 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         </div>
       </div>}
       <div style={{padding:"20px 16px 0"}}>
-        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>MEMBRES DU GROUPE ({groupe.membres.length})</p>
-        {groupe.membres.map(m=>(
+        <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>A JOUR ({aJourP.length})</p>
+        {aJourP.map(m=>(
           <div key={m.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
             <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
-            <div style={{flex:1}}><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)}</p></div>
-            <span style={{background:m.paye?"#1B4332":"#1A0800",color:m.paye?"#22C55E":"#EF4444",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{m.paye?"Paye":"En retard"}</span>
+            <div style={{flex:1}}><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA(m.montantPerso||groupe.montant)} du{m.montantPerso?" (montant personnalise)":""}</p></div>
+            <span style={{background:"#1B4332",color:"#22C55E",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>Paye</span>
           </div>
         ))}
+        {enRetP.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px",letterSpacing:.5}}>EN RETARD ({enRetP.length})</p>
+        {enRetP.map(m=>(
+          <div key={m.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
+            <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
+            <div style={{flex:1}}><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA(m.montantPerso||groupe.montant)} du{m.montantPerso?" (montant personnalise)":""}</p></div>
+            <span style={{background:"#1A0800",color:"#EF4444",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>En retard</span>
+          </div>
+        ))}</>}
       </div>
       {groupe.membres.some(m=>m.role_bureau)&&<div style={{padding:"16px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>BUREAU</p>

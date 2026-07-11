@@ -1733,6 +1733,14 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
   const [notifBusy,setNotifBusy]=useState(false);
+  const [testBusy,setTestBusy]=useState(false);
+  const testNotification=async()=>{
+    setTestBusy(true);
+    const {data,error}=await supabase.functions.invoke("send-push",{body:{user_id:user.id,title:"HABY Tontine - Test",body:"Si tu vois ceci, les notifications marchent !"}});
+    setTestBusy(false);
+    if(error||data?.error)return onToast("Echec : "+(data?.error||error?.message||"erreur inconnue"),"error");
+    onToast("Notification test envoyee ! Regarde ton telephone.");
+  };
   const enableNotifications=async()=>{
     if(!("serviceWorker" in navigator)||!("PushManager" in window))return onToast("Notifications non supportees sur ce navigateur","error");
     setNotifBusy(true);
@@ -1810,7 +1818,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           </div>
         </div>}
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>REGLAGES</p>
-        {[...(user.role==="admin"?[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}].map(item=>(
+        {[...(user.role==="admin"?[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"🧪",lb:testBusy?"Envoi...":"Tester les notifications",fn:testNotification},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}].map(item=>(
           <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
             <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
           </div>

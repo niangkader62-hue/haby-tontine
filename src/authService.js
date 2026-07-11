@@ -53,7 +53,9 @@ export async function registerUser(tel, pin, prenom, photoFile, parrainCode) {
     await supabase.from("parrainages").insert({ parrain_id: parraineParId, filleul_id: userId });
   }
 
-  return { ok: true, user: { id: userId, prenom, tel, photo: photoUrl, plan: "free", role: "user", langue: "fr" } };
+  const { count: linkedCount } = await supabase.from("membres").select("*", { count: "exact", head: true }).eq("user_id", userId);
+
+  return { ok: true, user: { id: userId, prenom, tel, photo: photoUrl, plan: "free", role: "user", langue: "fr", linkedCount: linkedCount || 0 } };
 }
 
 export async function loginUser(tel, pin) {

@@ -27,11 +27,11 @@ const uploadAudio = async (blob, groupeId) => {
   return data.publicUrl;
 };
 
-const notifyMessage = (recipientIds, senderName, isAudio) => {
+const notifyMessage = (recipientIds, senderName, isAudio, url) => {
   const title = "HABY Tontine - Nouveau message";
   const body = isAudio ? `${senderName} t'a envoye un message vocal` : `${senderName} : nouveau message`;
   [...new Set((recipientIds||[]).filter(Boolean))].forEach(uid=>{
-    supabase.functions.invoke("send-push",{body:{user_id:uid,title,body}}).catch(()=>{});
+    supabase.functions.invoke("send-push",{body:{user_id:uid,title,body,url:url||"/"}}).catch(()=>{});
   });
 };
 
@@ -429,12 +429,12 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
   );
 };
 
-const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
+const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
   const pct=Math.round((groupe.cycle/groupe.totalCycles)*100);
   const [voting,setVoting]=useState(null);
   const [messages,setMessages]=useState([]);
   const [msgInput,setMsgInput]=useState("");
-  const [thread,setThread]=useState(null);
+  const [thread,setThread]=useState(deepLink?.thread||null);
   const loadMessages=async()=>{
     let q=supabase.from("messages").select("*").eq("groupe_id",groupe.id);
     q=thread?q.or(`and(auteur_user_id.eq.${user.id},destinataire_user_id.eq.${thread.userId}),and(auteur_user_id.eq.${thread.userId},destinataire_user_id.eq.${user.id})`):q.is("destinataire_user_id",null);
@@ -445,6 +445,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
   const getRecipients=()=>thread?[thread.userId]:[groupe.createurUserId,...groupe.membres.map(m=>m.userId)].filter(uid=>uid&&uid!==user.id);
+  const getDeepLink=()=>`/?g=${groupe.id}&tab=social`+(thread?`&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`:"");
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -452,7 +453,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte,destinataire_user_id:thread?.userId||null}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
-    notifyMessage(getRecipients(),user.prenom,false);
+    notifyMessage(getRecipients(),user.prenom,false,getDeepLink());
     onToast("Message envoye !");
   };
   const toggleRecord=async()=>{
@@ -465,7 +466,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
         const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
-        notifyMessage(getRecipients(),user.prenom,true);
+        notifyMessage(getRecipients(),user.prenom,true,getDeepLink());
         onToast("Message vocal envoye !");
       }catch{onToast("Envoi du message vocal impossible","error");}
       setSendingAudio(false);
@@ -620,9 +621,9 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
   );
 };
 
-const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateGroupe}) => {
+const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateGroupe,deepLink}) => {
   const [groupe,setGroupe]=useState(gInit);
-  const [tab,setTab]=useState("membres");
+  const [tab,setTab]=useState(deepLink?.tab||"membres");
   const [showMoreTabs,setShowMoreTabs]=useState(false);
   const [msgInput,setMsgInput]=useState("");
   const [showAdd,setShowAdd]=useState(false);
@@ -879,7 +880,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setEvtM(null);setEvtTxt("");onToast(val?"Evenement enregistre !":"Evenement supprime");
   };
   const [messages,setMessages]=useState([]);
-  const [thread,setThread]=useState(null);
+  const [thread,setThread]=useState(deepLink?.thread||null);
   const loadMessages=async()=>{
     let q=supabase.from("messages").select("*").eq("groupe_id",groupe.id);
     q=thread?q.or(`and(auteur_user_id.eq.${user.id},destinataire_user_id.eq.${thread.userId}),and(auteur_user_id.eq.${thread.userId},destinataire_user_id.eq.${user.id})`):q.is("destinataire_user_id",null);
@@ -890,6 +891,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
   const getRecipients=()=>(thread?[thread.userId]:groupe.membres.map(m=>m.userId)).filter(uid=>uid&&uid!==user.id);
+  const getDeepLink=()=>`/?g=${groupe.id}&tab=social`+(thread?`&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`:"");
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -897,7 +899,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte,destinataire_user_id:thread?.userId||null}).select().single();
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
-    notifyMessage(getRecipients(),user.prenom,false);
+    notifyMessage(getRecipients(),user.prenom,false,getDeepLink());
     onToast("Message envoye !");
   };
   const toggleRecord=async()=>{
@@ -910,7 +912,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
-        notifyMessage(getRecipients(),user.prenom,true);
+        notifyMessage(getRecipients(),user.prenom,true,getDeepLink());
         onToast("Message vocal envoye !");
       }catch{onToast("Envoi du message vocal impossible","error");}
       setSendingAudio(false);
@@ -934,7 +936,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     supabase.rpc("link_membre",{p_membre_id:data.id}).then(async()=>{
       const {data:linked}=await supabase.from("membres").select("user_id").eq("id",data.id).single();
       if(linked?.user_id){
-        supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"HABY Tontine",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`}}).catch(()=>{});
+        supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"HABY Tontine",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
       }
     }).catch(()=>{});
     setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0}]}));
@@ -2088,6 +2090,7 @@ export default function App() {
   const [lang,setLang]=useState("fr");
   const [participations,setParticipations]=useState([]);
   const [selPart,setSelPart]=useState(null);
+  const [deepLink,setDeepLink]=useState(null);
   const [cagnottes,setCagnottes]=useState([]);
   const [selCagnotte,setSelCagnotte]=useState(null);
   const [showCagnotteModal,setShowCagnotteModal]=useState(false);
@@ -2140,6 +2143,7 @@ export default function App() {
       };
     }));
     setParticipations(full);
+    return full;
   },[]);
 
   const loadGroupes=useCallback(async(uid)=>{
@@ -2163,12 +2167,48 @@ export default function App() {
       };
     }));
     setGroupes(full);
+    return full;
   },[showToast]);
+
+  const openFromUrl=(search,gs,parts)=>{
+    const params=new URLSearchParams(search);
+    const gid=params.get("g");
+    if(!gid)return false;
+    const tab=params.get("tab")||undefined;
+    const dm=params.get("dm");
+    const dmName=params.get("dmName");
+    const thread=dm?{userId:dm,prenom:dmName?decodeURIComponent(dmName):"Contact"}:null;
+    const owned=(gs||[]).find(g=>g.id===gid);
+    if(owned){setDeepLink({tab,thread});setSel(owned);setNav("home");return true;}
+    const part=(parts||[]).find(g=>g.id===gid);
+    if(part){setDeepLink({tab,thread});setSelPart(part);setNav("home");return true;}
+    return false;
+  };
+
+  const userRef=useRef(null);
+  useEffect(()=>{userRef.current=user;},[user]);
+  useEffect(()=>{
+    if(!("serviceWorker" in navigator))return;
+    const handler=async(event)=>{
+      if(event.data?.type!=="NAVIGATE")return;
+      const u=userRef.current;
+      if(!u)return;
+      const [gs,parts]=await Promise.all([loadGroupes(u.id),loadParticipations(u.id)]);
+      const url=new URL(event.data.url,window.location.origin);
+      openFromUrl(url.search,gs,parts);
+    };
+    navigator.serviceWorker.addEventListener("message",handler);
+    return()=>navigator.serviceWorker.removeEventListener("message",handler);
+  },[]);
 
   useEffect(()=>{
     (async()=>{
       const sessionUser=await getSession();
-      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await Promise.all([loadGroupes(sessionUser.id),loadParticipations(sessionUser.id),loadCagnottes(sessionUser.id)]);}
+      if(sessionUser){
+        setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");
+        const [gs,parts]=await Promise.all([loadGroupes(sessionUser.id),loadParticipations(sessionUser.id),loadCagnottes(sessionUser.id)]);
+        openFromUrl(window.location.search,gs,parts);
+      }
       setChecking(false);
     })();
   },[]);
@@ -2184,7 +2224,7 @@ export default function App() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id)]);}}/>;
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id)]);if(u.linkedCount>0)showToast(`Bienvenue ! Tu as ete ajoute(e) a ${u.linkedCount} tontine(s) !`);}}/>;
   const cu={...user,groupesCount:groupes.length};
   const NAV=[["home","🏠",t("accueil")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
@@ -2193,9 +2233,9 @@ export default function App() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} onBack={()=>setSelCagnotte(null)} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
-        :selPart?<ParticipationScreen groupe={selPart} onBack={()=>setSelPart(null)} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
-        :sel?<GroupeScreen groupe={sel} onBack={()=>{setSel(null);loadGroupes(cu.id);loadParticipations(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
-        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={setSel} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={setSelPart} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={setSelCagnotte}/>
+        :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={()=>{setSelPart(null);setDeepLink(null);}} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
+        :sel?<GroupeScreen groupe={sel} deepLink={deepLink} onBack={()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
+        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);setSelPart(g);}} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={setSelCagnotte}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast} currentUserId={cu.id}/>

@@ -38,11 +38,11 @@ Deno.serve(async (req) => {
   // Repasse en gratuit les comptes Premium dont le mois offert par parrainage est expire
   await supabase.from("users").update({ plan: "free" }).lt("premium_expire_le", todayStr).eq("plan", "premium");
 
-  const sendTo = async (uid, title, body) => {
+  const sendTo = async (uid, title, body, url) => {
     const { data: sub } = await supabase.from("push_subscriptions").select("subscription").eq("user_id", uid).single();
     if (!sub) return false;
     try {
-      await webpush.sendNotification(sub.subscription, JSON.stringify({ title, body }));
+      await webpush.sendNotification(sub.subscription, JSON.stringify({ title, body, url: url || "/" }));
       return true;
     } catch (_e) {
       return false;
@@ -65,8 +65,9 @@ Deno.serve(async (req) => {
     const body = estAujourdhui
       ? `Cotisation "${g.nom}" due aujourd'hui (${g.montant} FCFA). Pense a preparer ton versement !`
       : `Cotisation "${g.nom}" due demain (${g.montant} FCFA). Pense a preparer ton versement !`;
+    const url = `/?g=${g.id}&tab=rapport`;
     for (const uid of userIds) {
-      if (await sendTo(uid, title, body)) sent++;
+      if (await sendTo(uid, title, body, url)) sent++;
     }
   }
 
@@ -82,12 +83,14 @@ Deno.serve(async (req) => {
     const joursRetard = Math.floor((todayDate.getTime() - echeance.getTime()) / 86400000);
     if (joursRetard < 1 || (joursRetard - 1) % 3 !== 0) continue; // seulement jour+1, jour+4, jour+7...
 
+    const url = `/?g=${g.id}&tab=rapport`;
     const { data: membres } = await supabase.from("membres").select("id, prenom, user_id, paye").eq("groupe_id", g.id).eq("paye", false).not("user_id", "is", null);
     for (const m of membres || []) {
       const ok = await sendTo(
         m.user_id,
         "HABY Tontine - Paiement en retard",
-        `Ta cotisation "${g.nom}" (${g.montant} FCFA) est en retard de ${joursRetard} jour(s). Merci de regulariser au plus vite.`
+        `Ta cotisation "${g.nom}" (${g.montant} FCFA) est en retard de ${joursRetard} jour(s). Merci de regulariser au plus vite.`,
+        url
       );
       if (ok) sent++;
     }
@@ -96,7 +99,8 @@ Deno.serve(async (req) => {
       const ok = await sendTo(
         g.user_id,
         "HABY Tontine - Retards de paiement",
-        `${membres.length} membre(s) n'ont pas encore paye la cotisation "${g.nom}" (en retard de ${joursRetard} jour(s)).`
+        `${membres.length} membre(s) n'ont pas encore paye la cotisation "${g.nom}" (en retard de ${joursRetard} jour(s)).`,
+        url
       );
       if (ok) sent++;
     }

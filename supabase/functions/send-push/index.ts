@@ -12,7 +12,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { user_id, title, body } = await req.json();
+    const { user_id, title, body, url } = await req.json();
     const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
     const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
     if (!publicKey || !privateKey) {
@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    await webpush.sendNotification(sub.subscription, JSON.stringify({ title, body }));
+    await webpush.sendNotification(sub.subscription, JSON.stringify({ title, body, url: url || "/" }));
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

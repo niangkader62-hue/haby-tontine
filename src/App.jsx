@@ -2102,7 +2102,7 @@ export default function App() {
   useEffect(()=>{
     (async()=>{
       const sessionUser=await getSession();
-      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await loadGroupes(sessionUser.id);await loadParticipations(sessionUser.id);await loadCagnottes(sessionUser.id);}
+      if(sessionUser){setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");await Promise.all([loadGroupes(sessionUser.id),loadParticipations(sessionUser.id),loadCagnottes(sessionUser.id)]);}
       setChecking(false);
     })();
   },[]);
@@ -2118,7 +2118,7 @@ export default function App() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await loadGroupes(u.id);await loadParticipations(u.id);await loadCagnottes(u.id);}}/>;
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id)]);}}/>;
   const cu={...user,groupesCount:groupes.length};
   const NAV=[["home","🏠",t("accueil")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 

@@ -1250,11 +1250,11 @@ HABY Tontine - La tontine digitale africaine`;
       {tab==="social"&&<div style={{padding:"14px 16px 100px"}}>
         <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10,marginBottom:6}}>
           <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#D4A843":"#0F2419",border:"1px solid "+(!thread?"#D4A843":"#1B4332"),borderRadius:99,padding:"7px 14px",color:!thread?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
-          {groupe.membres.filter(m=>m.userId).map(m=>(
+          {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).map(m=>(
             <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#D4A843":"#0F2419",border:"1px solid "+(thread?.userId===m.userId?"#D4A843":"#1B4332"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0A1A0F":"#FDF6EC",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
           ))}
         </div>
-        {groupe.membres.filter(m=>m.userId).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun membre n a encore de compte HABY relie pour recevoir un message prive.</p>}
+        {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun autre membre n a encore de compte HABY relie pour recevoir un message prive.</p>}
         {thread&&<p style={{color:"#D4A843",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FDF6EC",fontSize:14}}>{m.texte}</p>}</div></div>)}
@@ -1788,14 +1788,6 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
   const [notifBusy,setNotifBusy]=useState(false);
-  const [testBusy,setTestBusy]=useState(false);
-  const testNotification=async()=>{
-    setTestBusy(true);
-    const {data,error}=await supabase.functions.invoke("send-push",{body:{user_id:user.id,title:"HABY Tontine - Test",body:"Si tu vois ceci, les notifications marchent !"}});
-    setTestBusy(false);
-    if(error||data?.error)return onToast("Echec : "+(data?.error||error?.message||"erreur inconnue"),"error");
-    onToast("Notification test envoyee ! Regarde ton telephone.");
-  };
   const enableNotifications=async()=>{
     if(!("serviceWorker" in navigator)||!("PushManager" in window))return onToast("Notifications non supportees sur ce navigateur","error");
     setNotifBusy(true);
@@ -1806,9 +1798,11 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       await navigator.serviceWorker.ready;
       const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
       const {error}=await supabase.from("push_subscriptions").upsert({user_id:user.id,subscription:sub.toJSON()},{onConflict:"user_id"});
+      if(error){setNotifBusy(false);return onToast("Impossible d activer les notifications","error");}
+      const {data,error:pushErr}=await supabase.functions.invoke("send-push",{body:{user_id:user.id,title:"HABY Tontine",body:"Notifications activees avec succes !"}});
       setNotifBusy(false);
-      if(error)return onToast("Impossible d activer les notifications","error");
-      onToast("Notifications activees !");
+      if(pushErr||data?.error)return onToast("Active, mais l envoi test a echoue : "+(data?.error||pushErr?.message||"erreur"),"error");
+      onToast("Notifications activees ! Regarde ton telephone.");
     }catch(e){setNotifBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
   };
   return(
@@ -1874,7 +1868,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         </div>}
         {[
           ...(user.role==="admin"?[{label:"ADMINISTRATION",items:[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]}]:[]),
-          {label:"NOTIFICATIONS",items:[{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"🧪",lb:testBusy?"Envoi...":"Tester les notifications",fn:testNotification}]},
+          {label:"NOTIFICATIONS",items:[{ic:"🔔",lb:notifBusy?"Activation...":t("notifications"),fn:enableNotifications}]},
           {label:"COMPTE",items:[{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")}]},
           {label:"DONNEES ET AIDE",items:[{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}]},
         ].map(group=>(

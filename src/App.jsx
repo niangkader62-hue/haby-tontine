@@ -357,7 +357,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
           <p style={{color:"#D4A843",fontSize:13,margin:0,fontWeight:600}}>{t("bienvenue")}</p>
           <h2 style={{color:"#FDF6EC",margin:"2px 0 0",fontSize:24,fontWeight:900}}>{user.prenom}</h2>
           <span style={{background:user.plan==="premium"?"#D4A843":"#1B4332",color:user.plan==="premium"?"#0A1A0F":"#D4A843",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:99,marginTop:4,display:"inline-block"}}>
-            {user.plan==="premium"?"PREMIUM":`GRATUIT - ${groupes.length}/3 tontines`}
+            {user.plan==="premium"?"PREMIUM":`GRATUIT - ${groupes.length}/1 tontine`}
           </span>
         </div>
         <div onClick={onProfil} style={{cursor:"pointer"}}><Avatar prenom={user.prenom} photo={user.photo} size={50} gold/></div>
@@ -396,7 +396,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
           );
         })}
       </div>
-      {groupes.length>0&&<div style={{margin:"16px 16px 0",background:"#0A1A0F",border:"1px solid #D4A843",borderRadius:14,padding:"12px 16px",display:"flex",gap:12,alignItems:"center"}}><span style={{fontSize:22,color:"#D4A843"}}>🔔</span><div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:13}}>Rappel cotisation</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>Dans 3 jours - Tontine des Mamans</p></div></div>}
+
       {participations&&participations.length>0&&<div style={{padding:"22px 16px 0"}}>
         <h3 style={{color:"#FDF6EC",fontSize:16,fontWeight:800,margin:"0 0 14px"}}>Tontines ou je participe</h3>
         {participations.map(g=>(
@@ -623,6 +623,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted}) => {
 const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateGroupe}) => {
   const [groupe,setGroupe]=useState(gInit);
   const [tab,setTab]=useState("membres");
+  const [showMoreTabs,setShowMoreTabs]=useState(false);
   const [msgInput,setMsgInput]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",photo:""});
@@ -1021,7 +1022,9 @@ HABY Tontine - La tontine digitale africaine`;
   const sendWA=(m)=>{const msg=encodeURIComponent(`Bonjour ${m.prenom}\n\nRappel tontine "${groupe.nom}" :\nCotisation : ${fmtFCFA(groupe.montant)}\nMerci de regler.\nVia HABY Tontine`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");};
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel HABY Tontine - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
-  const TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")],["rapport",t("tabRapport")]];
+  const PRIMARY_TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["rapport",t("tabRapport")]];
+  const SECONDARY_TABS=[["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")]];
+  const inSecondary=SECONDARY_TABS.some(([id])=>id===tab);
   return(
     <div style={{paddingBottom:90}}>
       <div style={{background:"#0F2419",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1B4332"}}>
@@ -1036,9 +1039,14 @@ HABY Tontine - La tontine digitale africaine`;
         ))}
       </div>
       <div style={{margin:"12px 16px 0"}}><button onClick={sendWAG} style={{width:"100%",background:"#075E54",border:"none",borderRadius:12,padding:"12px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>Rappel WhatsApp au groupe complet</button></div>
-      <div style={{display:"flex",gap:6,padding:"14px 16px 0",overflowX:"auto"}}>
-        {TABS.map(([id,lbl])=><button key={id} onClick={()=>setTab(id)} style={{flexShrink:0,padding:"7px 12px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#D4A843":"#0F2419",color:tab===id?"#0A1A0F":"#6B7280",borderColor:tab===id?"#D4A843":"#1B4332"}}>{lbl}</button>)}
+      <div style={{display:"flex",gap:6,padding:"14px 16px 0"}}>
+        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#D4A843":"#0F2419",color:tab===id?"#0A1A0F":"#6B7280",borderColor:tab===id?"#D4A843":"#1B4332"}}>{lbl}</button>)}
+        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#D4A843":"#0F2419",color:inSecondary||showMoreTabs?"#0A1A0F":"#6B7280",borderColor:inSecondary||showMoreTabs?"#D4A843":"#1B4332"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
       </div>
+      {(showMoreTabs||inSecondary)&&<div style={{display:"flex",gap:6,padding:"8px 16px 0",overflowX:"auto"}}>
+        {SECONDARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>setTab(id)} style={{flexShrink:0,padding:"7px 12px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#D4A843":"#0A1A0F",color:tab===id?"#0A1A0F":"#6B7280",borderColor:tab===id?"#D4A843":"#1B4332"}}>{lbl}</button>)}
+      </div>}
+
 
       {tab==="membres"&&<div style={{padding:"14px 16px 0"}}>
         <div style={{background:"linear-gradient(135deg,#0F2419,#1A2E1F)",border:"1px solid #D4A843",borderRadius:14,padding:14,marginBottom:12}}>
@@ -1857,10 +1865,19 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
             <p style={{color:"#6B7280",fontSize:10,textAlign:"center",margin:"8px 0 0"}}>+223 76 90 80 31 (Orange) - +223 90 64 71 06 (Wave)</p>
           </div>
         </div>}
-        <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>REGLAGES</p>
-        {[...(user.role==="admin"?[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]:[]),{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"🧪",lb:testBusy?"Envoi...":"Tester les notifications",fn:testNotification},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")},{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}].map(item=>(
-          <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
-            <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
+        {[
+          ...(user.role==="admin"?[{label:"ADMINISTRATION",items:[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]}]:[]),
+          {label:"NOTIFICATIONS",items:[{ic:"🔔",lb:notifBusy?"...":t("notifications"),fn:enableNotifications},{ic:"🧪",lb:testBusy?"Envoi...":"Tester les notifications",fn:testNotification}]},
+          {label:"COMPTE",items:[{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")}]},
+          {label:"DONNEES ET AIDE",items:[{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}]},
+        ].map(group=>(
+          <div key={group.label} style={{marginBottom:18}}>
+            <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>{group.label}</p>
+            {group.items.map(item=>(
+              <div key={item.lb} onClick={item.fn} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,marginBottom:8,cursor:"pointer",border:"1px solid #1B4332"}}>
+                <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{item.lb}</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
+              </div>
+            ))}
           </div>
         ))}
         <div style={{marginTop:16}}>

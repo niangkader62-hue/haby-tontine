@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { registerUser, loginUser, getSession, logoutUser, verifyPin } from "./authService";
 import { supabase } from "./supabaseClient";
+import logoIcon from "./assets/logo-icon.png";
 import { jsPDF } from "jspdf";
 
 const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
@@ -259,15 +260,15 @@ const AuthScreen = ({onLogin}) => {
   if(step==="welcome") return(
     <div style={W}><div style={C}>
       <div style={{textAlign:"center",paddingBottom:8}}>
-        <div style={{width:120,height:120,borderRadius:32,margin:"0 auto 18px",background:"linear-gradient(135deg,#D4A843,#E8B96A)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 24px rgba(212,168,67,0.3)"}}>
-          <span style={{fontSize:56,fontWeight:900,color:"#0A1A0F"}}>H</span>
+        <div style={{width:120,height:120,borderRadius:32,margin:"0 auto 18px",overflow:"hidden",boxShadow:"0 8px 24px rgba(212,168,67,0.3)"}}>
+          <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         </div>
         <h1 style={{color:"#FDF6EC",fontSize:30,fontWeight:900,margin:"8px 0 4px",letterSpacing:2}}>THT</h1>
         <p style={{color:"#6B7280",fontSize:13,margin:0}}>Tontine Habi Traore - Digitale. Securisee.</p>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:40}}>
         <Btn onClick={()=>go("register")}>Creer mon compte gratuit</Btn>
-        <button onClick={()=>go("login")} style={{width:"100%",background:"transparent",border:"2px solid #1B4332",borderRadius:14,padding:"13px",color:"#FDF6EC",fontWeight:700,fontSize:15,cursor:"pointer"}}>J'ai deja un compte</button>
+        <button onClick={()=>go("login")} style={{width:"100%",background:"transparent",border:"2px solid #1B4332",borderRadius:14,padding:"13px",color:"#FDF6EC",fontWeight:700,fontSize:15,cursor:"pointer"}}>J'ai déjà un compte</button>
       </div>
       <p style={{color:"#2D6A4F",fontSize:11,textAlign:"center",marginTop:20}}>Sans email - Donnees chiffrees - 100% prive</p>
     </div></div>
@@ -2244,7 +2245,9 @@ export default function App() {
         @keyframes thtTextIn { 0%{opacity:0;transform:translateY(8px);} 100%{opacity:1;transform:translateY(0);} }
         @keyframes thtBarFill { 0%{width:0%;margin-left:0%;} 50%{width:60%;margin-left:20%;} 100%{width:0%;margin-left:100%;} }
       `}</style>
-      <div style={{width:84,height:84,borderRadius:22,background:"linear-gradient(135deg,#D4A843,#E8B96A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,fontWeight:900,color:"#0A1A0F",animation:"thtLogoIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards, thtGlow 2s ease-in-out 0.8s infinite"}}>H</div>
+      <div style={{width:84,height:84,borderRadius:22,overflow:"hidden",animation:"thtLogoIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards, thtGlow 2s ease-in-out 0.8s infinite"}}>
+        <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+      </div>
       <p style={{color:"#FDF6EC",fontSize:20,fontWeight:900,letterSpacing:4,margin:"18px 0 4px",opacity:0,animation:"thtTextIn 0.6s ease-out 0.5s forwards"}}>THT</p>
       <p style={{color:"#6B7280",fontSize:11,margin:0,opacity:0,animation:"thtTextIn 0.6s ease-out 0.7s forwards"}}>Tontine Habi Traore</p>
       <div style={{width:120,height:2,background:"#1B4332",borderRadius:2,marginTop:26,overflow:"hidden"}}>

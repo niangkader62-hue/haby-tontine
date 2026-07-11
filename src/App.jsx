@@ -854,8 +854,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const montantDu=(m)=>m.montantPerso||groupe.montant;
   const aJour=groupe.membres.filter(m=>m.paye);
   const enRet=groupe.membres.filter(m=>!m.paye);
-  const collecte=aJour.reduce((s,m)=>s+montantDu(m),0);
-  const cagnotteTour=groupe.membres.reduce((s,m)=>s+montantDu(m),0);
+  const collecte=aJour.reduce((s,m)=>s+montantDu(m),0)+(groupe.montantInitial||0);
+  const cagnotteTour=groupe.membres.reduce((s,m)=>s+montantDu(m),0)+(groupe.montantInitial||0);
   const taux=groupe.membres.length>0?Math.round((aJour.length/groupe.membres.length)*100):0;
 
   const exporterRapportPDF=()=>{
@@ -2100,6 +2100,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const [montant,setMontant]=useState("");
   const [freq,setFreq]=useState("Mensuel");
   const [echeance,setEcheance]=useState("");
+  const [montantInitial,setMontantInitial]=useState("");
   const [err,setErr]=useState("");
   const [busy,setBusy]=useState(false);
   const [limitReached,setLimitReached]=useState(false);
@@ -2109,13 +2110,13 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
     if(user.plan==="free"&&user.groupesCount>=1){setErr("");setLimitReached(true);return;}
     setBusy(true);
-    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0};
+    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#D4A843",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
     if(error){setBusy(false);return setErr("Erreur technique : "+(error.message||"inconnue"));}
     const {data:moi}=await supabase.from("membres").insert({groupe_id:data.id,prenom:s(user.prenom)+" (moi)",tel:user.tel,quartier:"",photo_url:user.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:0,user_id:user.id}).select().single();
     setBusy(false);
     const moiMembre=moi?{id:moi.id,userId:user.id,prenom:moi.prenom,tel:moi.tel,quartier:"",photo:moi.photo_url,paye:false,score:80,versements:0,cyclesPaies:0,cyclesTotal:12,evenement:null}:null;
-    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
+    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,montantInitial:Number(data.montant_initial)||0,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
     onClose();
   };
   if(limitReached)return <Modal onClose={onClose}>
@@ -2143,6 +2144,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <Fld label="Montant par cotisation (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 25000" inputMode="numeric"/></Fld>
     <Fld label="Date d echeance mensuelle"><Inp value={echeance} onChange={e=>setEcheance(e.target.value)} placeholder="Ex: 2026-07-01" type="date"/></Fld>
     <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#D4A843":"#1B4332",color:freq===f?"#0A1A0F":"#FDF6EC",borderColor:freq===f?"#D4A843":"#2D6A4F"}}>{f}</button>)}</div></Fld>
+    <Fld label="Argent deja collecte avant l'app (optionnel)"><Inp value={montantInitial} onChange={e=>setMontantInitial(e.target.value.replace(/\D/g,""))} placeholder="Ex: 50000 - laisser vide si aucun" inputMode="numeric"/></Fld>
     <ErrBox msg={err}/>
     <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer ma tontine"}</Btn>
   </Modal>;
@@ -2197,11 +2199,11 @@ export default function App() {
       const {data:createur}=await supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single();
       const moi=mine.find(m=>m.groupe_id===g.id);
       const aJourCount=(membres||[]).filter(m=>m.paye).length;
-      const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso?Number(m.montant_perso):(Number(g.montant)||0)),0);
+      const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso?Number(m.montant_perso):(Number(g.montant)||0)),0)+(Number(g.montant_initial)||0);
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
-        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,
+        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
         membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau,montantPerso:m.montant_perso?Number(m.montant_perso):null})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
@@ -2225,12 +2227,12 @@ export default function App() {
       const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
       const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso?Number(m.montant_perso):null}));
       const aJourCount=mm.filter(m=>m.paye).length;
-      const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+(m.montantPerso||Number(g.montant)||0),0);
+      const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+(m.montantPerso||Number(g.montant)||0),0)+(Number(g.montant_initial)||0);
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,reglement:g.reglement||"",
-        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,
+        caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         prochainTour:gagnant?gagnant.prenom:"A tirer au sort",
         membres:mm,
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),

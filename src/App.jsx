@@ -615,7 +615,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [evtM,setEvtM]=useState(null);
   const [evtTxt,setEvtTxt]=useState("");
   const [showEdit,setShowEdit]=useState(false);
-  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence});
+  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence,dateEcheance:gInit.dateEcheance||""});
   const [editBusy,setEditBusy]=useState(false);
   const [tirages,setTirages]=useState([]);
   const [tirageAnim,setTirageAnim]=useState(false);
@@ -651,11 +651,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!editG.nom.trim())return onToast("Le nom est requis","error");
     if(!editG.montant||Number(editG.montant)<500)return onToast("Montant minimum 500 FCFA","error");
     setEditBusy(true);
-    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence}).eq("id",groupe.id);
+    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null}).eq("id",groupe.id);
     setEditBusy(false);
     if(error)return onToast("Modification impossible","error");
-    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence}));
-    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence});
+    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null}));
+    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null});
     setShowEdit(false);onToast("Tontine modifiee !");
   };
 
@@ -1328,6 +1328,7 @@ HABY Tontine - La tontine digitale africaine`;
         <Fld label="Nom"><Inp value={editG.nom} onChange={e=>setEditG(g=>({...g,nom:e.target.value}))} placeholder="Nom de la tontine" maxLength={40} autoFocus/></Fld>
         <Fld label="Montant par cotisation (FCFA)"><Inp value={editG.montant} onChange={e=>setEditG(g=>({...g,montant:e.target.value.replace(/\D/g,"")}))} placeholder="25000" inputMode="numeric"/></Fld>
         <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setEditG(g=>({...g,frequence:f}))} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:editG.frequence===f?"#D4A843":"#1B4332",color:editG.frequence===f?"#0A1A0F":"#FDF6EC",borderColor:editG.frequence===f?"#D4A843":"#2D6A4F"}}>{f}</button>)}</div></Fld>
+        <Fld label="Date d'echeance (prochain versement)"><Inp value={editG.dateEcheance} onChange={e=>setEditG(g=>({...g,dateEcheance:e.target.value}))} type="date"/></Fld>
         <Btn onClick={saveEdit} disabled={editBusy}>{editBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
     </div>

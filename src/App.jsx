@@ -2038,7 +2038,7 @@ const SupportModal = ({onClose,onToast}) => {
   );
 };
 
-const AdminScreen = ({onBack,onToast,currentUserId}) => {
+const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
   const [users,setUsers]=useState([]);
   const [groupesCount,setGroupesCount]=useState(0);
   const [totalCollecte,setTotalCollecte]=useState(0);
@@ -2046,6 +2046,42 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
   const [tontinesList,setTontinesList]=useState([]);
   const [loading,setLoading]=useState(true);
   const [busyId,setBusyId]=useState(null);
+  const [showReset,setShowReset]=useState(false);
+  const [confirmReset,setConfirmReset]=useState("");
+  const [resetBusy,setResetBusy]=useState(false);
+  const [showChangePinAdmin,setShowChangePinAdmin]=useState(false);
+  const [oldPinA,setOldPinA]=useState("");
+  const [newPinA,setNewPinA]=useState("");
+  const [newPinA2,setNewPinA2]=useState("");
+  const [pinErrA,setPinErrA]=useState("");
+  const [pinBusyA,setPinBusyA]=useState(false);
+  const soumettreChangePinAdmin=async()=>{
+    setPinErrA("");
+    if(oldPinA.length!==4)return setPinErrA("PIN actuel : 4 chiffres requis");
+    if(newPinA.length!==4)return setPinErrA("Nouveau PIN : 4 chiffres requis");
+    if(newPinA!==newPinA2)return setPinErrA("Les deux nouveaux PIN ne correspondent pas");
+    if(newPinA===oldPinA)return setPinErrA("Le nouveau PIN doit etre different de l ancien");
+    setPinBusyA(true);
+    const res=await changePin(user.tel,oldPinA,newPinA);
+    setPinBusyA(false);
+    if(!res.ok)return setPinErrA(res.err);
+    setShowChangePinAdmin(false);setOldPinA("");setNewPinA("");setNewPinA2("");
+    onToast("PIN change avec succes !");
+  };
+  const executerReset=async()=>{
+    if(confirmReset!=="SUPPRIMER")return;
+    setResetBusy(true);
+    const {data:{session}}=await supabase.auth.getSession();
+    try{
+      const res=await fetch(`${SUPABASE_URL}/functions/v1/admin-reset-data`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${session.access_token}`}});
+      const data=await res.json();
+      setResetBusy(false);
+      if(!res.ok)return onToast(data.error||"Erreur lors de la remise a zero","error");
+      setShowReset(false);setConfirmReset("");
+      onToast(`Remise a zero terminee ! ${data.comptes_supprimes} compte(s) de test supprime(s).`);
+      window.location.href="/";
+    }catch(e){setResetBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
+  };
   useEffect(()=>{
     (async()=>{
       const [{data:us,error:e1},{data:gs},{data:txs,error:e3},{data:pmts}]=await Promise.all([
@@ -2182,6 +2218,37 @@ const AdminScreen = ({onBack,onToast,currentUserId}) => {
           </div>
         </div>)}
       </div>
+
+      <div style={{padding:"24px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>MON COMPTE</p>
+        <div onClick={()=>setShowChangePinAdmin(true)} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#0F2419",borderRadius:14,cursor:"pointer",border:"1px solid #1B4332"}}>
+          <span style={{fontSize:20}}>🔒</span><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>Changer mon PIN</p><span style={{marginLeft:"auto",color:"#2D6A4F",fontSize:18}}>›</span>
+        </div>
+      </div>
+
+      <div style={{padding:"24px 16px 40px"}}>
+        <p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>ZONE DANGEREUSE</p>
+        <div style={{background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:16}}>
+          <p style={{margin:"0 0 10px",color:"#FDF6EC",fontSize:13,lineHeight:1.6}}>Efface TOUTES les tontines, cagnottes, epargnes, messages et comptes de test. Tes 2 numeros admin sont toujours conserves. Action irreversible.</p>
+          <button onClick={()=>setShowReset(true)} style={{width:"100%",background:"transparent",border:"1px solid #EF4444",borderRadius:10,padding:"11px",color:"#EF4444",fontWeight:700,fontSize:13,cursor:"pointer"}}>🗑️ Remettre toutes les donnees a zero</button>
+        </div>
+      </div>
+
+      {showChangePinAdmin&&<Modal onClose={()=>setShowChangePinAdmin(false)}>
+        <MH title="Changer mon PIN" onClose={()=>setShowChangePinAdmin(false)}/>
+        <Fld label="PIN actuel"><Inp value={oldPinA} onChange={e=>setOldPinA(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4} autoFocus/></Fld>
+        <Fld label="Nouveau PIN"><Inp value={newPinA} onChange={e=>setNewPinA(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
+        <Fld label="Confirme le nouveau PIN"><Inp value={newPinA2} onChange={e=>setNewPinA2(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
+        <ErrBox msg={pinErrA}/>
+        <Btn onClick={soumettreChangePinAdmin} disabled={pinBusyA}>{pinBusyA?"Verification...":"Confirmer le changement"}</Btn>
+      </Modal>}
+
+      {showReset&&<Modal onClose={()=>setShowReset(false)}>
+        <MH title="Remise a zero complete" onClose={()=>setShowReset(false)}/>
+        <p style={{color:"#EF4444",fontSize:13,lineHeight:1.6,marginBottom:16}}>⚠️ Ceci va supprimer definitivement toutes les tontines, cagnottes, epargnes, messages et comptes de test. Seuls tes 2 numeros admin resteront. Cette action est irreversible.</p>
+        <Fld label='Tape "SUPPRIMER" pour confirmer'><Inp value={confirmReset} onChange={e=>setConfirmReset(e.target.value)} placeholder="SUPPRIMER" autoFocus/></Fld>
+        <button onClick={executerReset} disabled={confirmReset!=="SUPPRIMER"||resetBusy} style={{width:"100%",background:confirmReset==="SUPPRIMER"?"#C1440E":"#1B4332",border:"none",borderRadius:14,padding:"14px",color:confirmReset==="SUPPRIMER"?"#fff":"#6B7280",fontWeight:800,fontSize:14,cursor:confirmReset==="SUPPRIMER"?"pointer":"default"}}>{resetBusy?"Suppression en cours...":"Tout supprimer definitivement"}</button>
+      </Modal>}
     </div>
   );
 };
@@ -2967,7 +3034,7 @@ function AppInner() {
         :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(g);}} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
-        :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id}/>
+        :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id} user={cu}/>
         :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){pushBack(()=>setNav("profil"));setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang}/>:null}
       </div>
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#0F2419",borderTop:"1px solid #1B4332",display:"flex",padding:"8px 0 20px",zIndex:100}}>

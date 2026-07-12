@@ -1229,10 +1229,10 @@ THT - Tontine Habi Traore`;
     if(!amt||amt<1)return;
     const newVersements=(versM.versements||0)+amt;
     const paye=newVersements>=montantDu(versM);
-    const newScore=Math.min(versM.score+(paye?5:2),100);
+    const newScore=Math.min((versM.score||80)+(paye?5:2),100);
     const newCyclesPaies=paye?versM.cyclesPaies+1:versM.cyclesPaies;
     const {error:mErr}=await supabase.from("membres").update({versements:newVersements,paye,score:newScore,cycles_paies:newCyclesPaies}).eq("id",versM.id);
-    if(mErr)return onToast("Versement impossible","error");
+    if(mErr)return onToast("Versement impossible : "+(mErr.message||"erreur inconnue"),"error");
     let photoUrl=null;
     if(versPhoto){
       try{

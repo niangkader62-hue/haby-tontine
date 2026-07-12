@@ -38,7 +38,7 @@ create policy "caisse_mvt_insert" on caisse_sociale_mouvements for insert with c
   is_owner_of(groupe_id) or is_admin()
 );
 
-alter publication supabase_realtime add table messages;
+-- (la publication realtime sur "messages" est deja active depuis avant, pas besoin de la relancer)
 
 -- Fonction dediee pour le role collecteur (evite la boucle infinie)
 create or replace function is_collecteur_of(p_groupe_id uuid)

@@ -4,8 +4,8 @@
   "description": "Gestion de tontines, cagnottes et epargne pour l Afrique de l Ouest francophone",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A1A0F",
-  "theme_color": "#D4A843",
+  "background_color": "#0D0D0D",
+  "theme_color": "#FF6B00",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },

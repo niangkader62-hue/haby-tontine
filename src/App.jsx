@@ -737,19 +737,28 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [showVers,setShowVers]=useState(false);
   const [showCaisse,setShowCaisse]=useState(false);
   const [caisseAmt,setCaisseAmt]=useState("");
+  const [caisseMotif,setCaisseMotif]=useState("");
   const [caisseBusy,setCaisseBusy]=useState(false);
+  const [caisseMvts,setCaisseMvts]=useState([]);
+  const loadCaisseMvts=async()=>{
+    const {data}=await supabase.from("caisse_sociale_mouvements").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:false}).limit(20);
+    setCaisseMvts(data||[]);
+  };
   const saveCaisse=async(sens)=>{
     const amt=Number(caisseAmt);
     if(!amt||amt<1)return;
+    if(sens==="retirer"&&!caisseMotif.trim())return onToast("Indique le motif de la depense","error");
     const delta=sens==="ajouter"?amt:-amt;
     const nouveauTotal=Math.max(0,(groupe.caisseSociale||0)+delta);
     setCaisseBusy(true);
     const {error}=await supabase.from("groupes").update({caisse_sociale:nouveauTotal}).eq("id",groupe.id);
+    if(error){setCaisseBusy(false);return onToast("Erreur","error");}
+    await supabase.from("caisse_sociale_mouvements").insert({groupe_id:groupe.id,sens:sens==="ajouter"?"ajout":"retrait",montant:amt,motif:caisseMotif.trim()||null,auteur_nom:user.prenom});
     setCaisseBusy(false);
-    if(error)return onToast("Erreur","error");
     setGroupe(g=>({...g,caisseSociale:nouveauTotal}));
-    setCaisseAmt("");setShowCaisse(false);
-    onToast(sens==="ajouter"?"Ajoute a la caisse sociale !":"Retire de la caisse sociale");
+    setCaisseAmt("");setCaisseMotif("");
+    loadCaisseMvts();
+    onToast(sens==="ajouter"?"Ajoute a la caisse sociale !":"Depense enregistree");
   };
   const [versM,setVersM]=useState(null);
   const [versAmt,setVersAmt]=useState("");
@@ -949,7 +958,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     doc.setFontSize(11);doc.text(`Genere le ${new Date().toLocaleDateString("fr-FR")}`,14,y);y+=12;
     doc.setFontSize(13);doc.text(`Bilan - Cycle ${groupe.cycle}/${groupe.totalCycles}`,14,y);y+=8;
     doc.setFontSize(10);
-    [["Total collecte ce cycle",fmtFCFA(collecte)],["Cagnotte du tour",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",String(groupe.totalCycles-groupe.cycle)]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
+    [["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",String(groupe.totalCycles-groupe.cycle)]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
     y+=6;
     doc.setFontSize(13);doc.text("Suivi par membre",14,y);y+=8;
     doc.setFontSize(10);
@@ -1177,7 +1186,7 @@ THT - Tontine Habi Traore`;
         <button onClick={deleteGroupe} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:8,padding:"5px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Suppr.</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"14px 16px 0"}}>
-        {[["Collecte",fmtFCFA(collecte),"💰"],["Cagnotte tour",fmtFCFA(cagnotteTour),"🏆"],["Ponctualite",`${taux}%`,"📊"],["Caisse soc.",fmtFCFA(groupe.caisseSociale),"🏦"],["A jour",`${aJour.length}/${groupe.membres.length}`,"✅"],["En retard",`${enRet.length}`,"⚠️"]].map(([l,v,i])=>(
+        {[["Collecte",fmtFCFA(collecte),"💰"],["Cotisations",fmtFCFA(cagnotteTour),"🏆"],["Ponctualite",`${taux}%`,"📊"],["Caisse soc.",fmtFCFA(groupe.caisseSociale),"🏦"],["A jour",`${aJour.length}/${groupe.membres.length}`,"✅"],["En retard",`${enRet.length}`,"⚠️"]].map(([l,v,i])=>(
           <div key={l} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"10px 8px",textAlign:"center"}}><p style={{margin:0,fontSize:16}}>{i}</p><p style={{margin:"4px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:12}}>{v}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{l}</p></div>
         ))}
       </div>
@@ -1195,7 +1204,7 @@ THT - Tontine Habi Traore`;
         <div style={{background:"linear-gradient(135deg,#0F2419,#1A2E1F)",border:"1px solid #D4A843",borderRadius:14,padding:14,marginBottom:12}}>
           <p style={{margin:"0 0 10px",color:"#D4A843",fontWeight:800,fontSize:13}}>Budget du groupe</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-            {[["Budget total cycle",fmtFCFA(cagnotteTour),null],["Deja collecte",fmtFCFA(collecte),null],["Reste a collecter",fmtFCFA(Math.max(0,cagnotteTour-collecte)),null],["Caisse sociale",fmtFCFA(groupe.caisseSociale),()=>setShowCaisse(true)]].map(([l,v,onClick])=>(
+            {[["Budget total cycle",fmtFCFA(cagnotteTour),null],["Deja collecte",fmtFCFA(collecte),null],["Reste a collecter",fmtFCFA(Math.max(0,cagnotteTour-collecte)),null],["Caisse sociale",fmtFCFA(groupe.caisseSociale),()=>{setShowCaisse(true);loadCaisseMvts();}]].map(([l,v,onClick])=>(
               <div key={l} onClick={onClick} style={{background:"#0A1A0F",borderRadius:10,padding:"8px 10px",cursor:onClick?"pointer":"default",border:onClick?"1px solid #2D6A4F":"none"}}>
                 <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}{onClick?" ✏️":""}</p>
                 <p style={{margin:"3px 0 0",color:"#FDF6EC",fontWeight:800,fontSize:12}}>{v}</p>
@@ -1405,7 +1414,7 @@ THT - Tontine Habi Traore`;
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>
         <div style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:16,padding:16,marginBottom:14}}>
           <p style={{color:"#D4A843",fontWeight:800,margin:"0 0 14px",fontSize:15}}>Bilan - Cycle {groupe.cycle}/{groupe.totalCycles}</p>
-          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Cagnotte du tour (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #1B4332"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FDF6EC",fontWeight:700,fontSize:13}}>{v}</span></div>)}
+          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #1B4332"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FDF6EC",fontWeight:700,fontSize:13}}>{v}</span></div>)}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
         {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #1B4332"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FDF6EC",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#D4A843",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
@@ -1419,11 +1428,21 @@ THT - Tontine Habi Traore`;
           <p style={{margin:"4px 0 0",color:"#D4A843",fontWeight:900,fontSize:24}}>{fmtFCFA(groupe.caisseSociale)}</p>
         </div>
         <Fld label="Montant (FCFA)"><Inp value={caisseAmt} onChange={e=>setCaisseAmt(e.target.value.replace(/[^0-9]/g,""))} placeholder="Ex: 5000" inputMode="numeric" autoFocus/></Fld>
+        <Fld label="Motif (obligatoire pour un retrait)"><Inp value={caisseMotif} onChange={e=>setCaisseMotif(e.target.value)} placeholder="Ex: Aide funerailles famille Diallo" maxLength={80}/></Fld>
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>saveCaisse("ajouter")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:!caisseAmt?"#1B4332":"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:14,padding:"13px",color:!caisseAmt?"#6B7280":"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>+ Ajouter</button>
-          <button onClick={()=>saveCaisse("retirer")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:"#1B4332",border:"1px solid #C1440E",borderRadius:14,padding:"13px",color:"#EF4444",fontWeight:800,fontSize:14,cursor:"pointer"}}>- Retirer</button>
+          <button onClick={()=>saveCaisse("retirer")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:"#1B4332",border:"1px solid #C1440E",borderRadius:14,padding:"13px",color:"#EF4444",fontWeight:800,fontSize:14,cursor:"pointer"}}>- Retirer (depense)</button>
         </div>
-        <p style={{color:"#6B7280",fontSize:11,margin:"12px 0 0",lineHeight:1.5}}>La caisse sociale est un fonds separe des cotisations, pour les imprevus, les evenements, ou l entraide entre membres.</p>
+        <p style={{color:"#6B7280",fontSize:11,margin:"12px 0 16px",lineHeight:1.5}}>La caisse sociale est un fonds separe des cotisations, pour les imprevus, les evenements, ou l entraide entre membres.</p>
+        {caisseMvts.length>0&&<>
+          <p style={{color:"#6B7280",fontSize:11,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>HISTORIQUE</p>
+          {caisseMvts.map(m=>(
+            <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #1B4332"}}>
+              <div><p style={{margin:0,color:"#FDF6EC",fontSize:12}}>{m.motif||(m.sens==="ajout"?"Ajout":"Retrait")}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{new Date(m.created_at).toLocaleDateString("fr-FR")} - {m.auteur_nom}</p></div>
+              <p style={{margin:0,color:m.sens==="ajout"?"#22C55E":"#EF4444",fontWeight:700,fontSize:12}}>{m.sens==="ajout"?"+":"-"}{fmtFCFA(m.montant)}</p>
+            </div>
+          ))}
+        </>}
       </Modal>}
 
       {showVers&&versM&&<Modal onClose={()=>setShowVers(false)}>
@@ -2077,10 +2096,20 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
   const [nom,setNom]=useState("");
   const [tel,setTel]=useState("");
   const [montant,setMontant]=useState("");
+  const [preuve,setPreuve]=useState(null);
+  const [preuvePreview,setPreuvePreview]=useState(null);
   const [err,setErr]=useState("");
   const [busy,setBusy]=useState(false);
   const [succes,setSucces]=useState(null);
   const [recuBusy,setRecuBusy]=useState(false);
+
+  const choisirPreuve=(e)=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+    const reader=new FileReader();
+    reader.onload=()=>{setPreuve(reader.result);setPreuvePreview(reader.result);};
+    reader.readAsDataURL(f);
+  };
 
   useEffect(()=>{
     (async()=>{
@@ -2097,9 +2126,10 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
   const contribuer=async()=>{
     if(!prenom.trim())return setErr("Ton prenom est requis");
     if(!montant||Number(montant)<100)return setErr("Montant minimum : 100 FCFA");
+    if(!preuve)return setErr("Une photo de ton depot (Orange Money, Wave, especes...) est requise pour confirmer");
     setErr("");setBusy(true);
     try{
-      const res=await fetch(`${SUPABASE_URL}/functions/v1/cagnotte-contribute`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cagnotte_id:cagnotteId,prenom:prenom.trim(),nom:nom.trim(),tel:tel.trim(),montant})});
+      const res=await fetch(`${SUPABASE_URL}/functions/v1/cagnotte-contribute`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cagnotte_id:cagnotteId,prenom:prenom.trim(),nom:nom.trim(),tel:tel.trim(),montant,preuve_base64:preuve})});
       const data=await res.json();
       if(!res.ok)throw new Error(data.error||"Erreur d'enregistrement");
       setSucces(data);
@@ -2155,9 +2185,15 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
           <Fld label="Ton nom (optionnel)"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Diallo" maxLength={30}/></Fld>
           <Fld label="Ton numero (optionnel)"><Inp value={tel} onChange={e=>setTel(e.target.value)} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
+          <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
+            <label style={{display:"block",background:"#0F2419",border:"1px dashed #D4A843",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+              <input type="file" accept="image/*" capture="environment" onChange={choisirPreuve} style={{display:"none"}}/>
+              {preuvePreview?<img src={preuvePreview} alt="Preuve" style={{width:"100%",maxHeight:220,objectFit:"contain",display:"block"}}/>:<span style={{color:"#D4A843",fontSize:13,fontWeight:700}}>📷 Ajouter une photo</span>}
+            </label>
+          </Fld>
           <ErrBox msg={err}/>
           <Btn onClick={contribuer} disabled={busy}>{busy?"Enregistrement...":"Confirmer ma contribution"}</Btn>
-          <p style={{color:"#6B7280",fontSize:11,textAlign:"center",marginTop:14,lineHeight:1.5}}>⚠️ Cette page enregistre ta contribution dans THT. Le versement de l'argent lui-meme (Orange Money, especes...) se fait separement, directement aupres de l'organisateur.</p>
+          <p style={{color:"#6B7280",fontSize:11,textAlign:"center",marginTop:14,lineHeight:1.5}}>⚠️ Le versement de l'argent (Orange Money, especes...) se fait separement, directement aupres de l'organisateur. La photo sert a confirmer ton depot reel.</p>
         </>}
       </div>
     </div>
@@ -2242,9 +2278,12 @@ const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>CONTRIBUTIONS ({contributions.length})</p>
         {contributions.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucune contribution pour l instant</p>
         :contributions.map(c=>(
-          <div key={c.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={c.contributeur} size={32}/><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{c.contributeur}</p></div>
-            <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:14}}>{fmtFCFA(c.montant)}</p>
+          <div key={c.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={c.contributeur} size={32}/><div><p style={{margin:0,color:"#FDF6EC",fontSize:14,fontWeight:600}}>{c.contributeur}</p>{c.tel&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{c.tel}</p>}</div></div>
+              <p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:14}}>{fmtFCFA(c.montant)}</p>
+            </div>
+            {c.preuve_url&&<a href={c.preuve_url} target="_blank" rel="noreferrer" style={{display:"block",marginTop:10}}><img src={c.preuve_url} alt="Preuve de depot" style={{width:"100%",maxHeight:160,objectFit:"cover",borderRadius:8,border:"1px solid #2D6A4F"}}/></a>}
           </div>
         ))}
       </div>

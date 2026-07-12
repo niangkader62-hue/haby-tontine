@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "POST") {
-      const { cagnotte_id, prenom, nom, tel, montant } = await req.json();
+      const { cagnotte_id, prenom, nom, tel, montant, preuve_base64 } = await req.json();
       if (!cagnotte_id || !prenom?.trim() || !montant || Number(montant) < 100) {
         return new Response(JSON.stringify({ error: "Donnees invalides" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -46,11 +46,28 @@ Deno.serve(async (req) => {
       if (cErr || !cagnotte) return new Response(JSON.stringify({ error: "Cagnotte introuvable" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       if (cagnotte.statut !== "ouverte") return new Response(JSON.stringify({ error: "Cette cagnotte n'accepte plus de contributions" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+      let preuveUrl = null;
+      if (preuve_base64) {
+        try {
+          const matches = preuve_base64.match(/^data:(image\/\w+);base64,(.+)$/);
+          if (matches) {
+            const ext = matches[1].split("/")[1];
+            const bytes = Uint8Array.from(atob(matches[2]), (c) => c.charCodeAt(0));
+            const path = `preuves/${cagnotte_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+            const { error: upErr } = await supabase.storage.from("photos").upload(path, bytes, { contentType: matches[1], upsert: true });
+            if (!upErr) {
+              const { data: pub } = supabase.storage.from("photos").getPublicUrl(path);
+              preuveUrl = pub.publicUrl;
+            }
+          }
+        } catch (_e) { /* preuve optionnelle, on continue sans si ca echoue */ }
+      }
+
       const contributeur = `${prenom.trim()} ${(nom || "").trim()}`.trim();
       const montantNum = Number(montant);
 
       const { error: insErr } = await supabase.from("cagnotte_contributions").insert({
-        cagnotte_id, contributeur, tel: tel ? String(tel).trim() : null, montant: montantNum,
+        cagnotte_id, contributeur, tel: tel ? String(tel).trim() : null, montant: montantNum, preuve_url: preuveUrl,
       });
       if (insErr) return new Response(JSON.stringify({ error: "Enregistrement impossible" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 

@@ -248,6 +248,49 @@ const MH = ({title,onClose}) => (
   </div>
 );
 
+const PAYS_LISTE=[
+  {code:"+223",nom:"Mali",drapeau:"🇲🇱"},
+  {code:"+225",nom:"Cote d'Ivoire",drapeau:"🇨🇮"},
+  {code:"+221",nom:"Senegal",drapeau:"🇸🇳"},
+  {code:"+237",nom:"Cameroun",drapeau:"🇨🇲"},
+  {code:"+226",nom:"Burkina Faso",drapeau:"🇧🇫"},
+  {code:"+227",nom:"Niger",drapeau:"🇳🇪"},
+  {code:"+224",nom:"Guinee",drapeau:"🇬🇳"},
+  {code:"+228",nom:"Togo",drapeau:"🇹🇬"},
+];
+
+const PhoneInput = ({value,onChange,autoFocus}) => {
+  const [showPays,setShowPays]=useState(false);
+  const [rechPays,setRechPays]=useState("");
+  const currentPays=PAYS_LISTE.find(p=>value.startsWith(p.code))||PAYS_LISTE[0];
+  const numeroSeul=value.startsWith(currentPays.code)?value.slice(currentPays.code.length).replace(/^\s+/,""):value.replace(/^\+?\d*\s*/,"");
+  const choisirPays=(p)=>{onChange(`${p.code} ${numeroSeul}`.trim());setShowPays(false);setRechPays("");};
+  const changerNumero=(n)=>{onChange(`${currentPays.code} ${n.replace(/[^\d\s]/g,"")}`.trim());};
+  const paysFiltres=PAYS_LISTE.filter(p=>p.nom.toLowerCase().includes(rechPays.toLowerCase()));
+  return(
+    <div style={{display:"flex",gap:8}}>
+      <button type="button" onClick={()=>setShowPays(true)} style={{display:"flex",alignItems:"center",gap:4,background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:12,padding:"0 10px",color:"#FDF6EC",fontSize:14,cursor:"pointer",flexShrink:0}}>
+        <span style={{fontSize:18}}>{currentPays.drapeau}</span><span>{currentPays.code}</span><span style={{color:"#6B7280",fontSize:11}}>▾</span>
+      </button>
+      <input value={numeroSeul} onChange={e=>changerNumero(e.target.value)} placeholder="76 XX XX XX" type="tel" inputMode="tel" maxLength={12} autoFocus={autoFocus}
+        style={{flex:1,background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:12,padding:"13px 14px",color:"#FDF6EC",fontSize:15,outline:"none",minWidth:0}}/>
+      {showPays&&<Modal onClose={()=>{setShowPays(false);setRechPays("");}}>
+        <MH title="Choisir un pays" onClose={()=>{setShowPays(false);setRechPays("");}}/>
+        <Inp value={rechPays} onChange={e=>setRechPays(e.target.value)} placeholder="Rechercher un pays..." autoFocus/>
+        <div style={{marginTop:12}}>
+        {paysFiltres.map(p=>(
+          <div key={p.code} onClick={()=>choisirPays(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 4px",borderBottom:"1px solid #1B4332",cursor:"pointer"}}>
+            <span style={{color:"#FDF6EC",fontSize:15}}>{p.drapeau} {p.nom}</span>
+            <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{color:"#6B7280",fontSize:14}}>{p.code}</span>{p.code===currentPays.code&&<span style={{color:"#22C55E"}}>✓</span>}</div>
+          </div>
+        ))}
+        {paysFiltres.length===0&&<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:16}}>Aucun pays trouve</p>}
+        </div>
+      </Modal>}
+    </div>
+  );
+};
+
 const Fld = ({label,children}) => (
   <div style={{marginBottom:16}}>
     <label style={{display:"block",color:"#6B7280",fontSize:11,marginBottom:6,fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>{label}</label>
@@ -383,7 +426,7 @@ const AuthScreen = ({onLogin}) => {
     <div style={W}><div style={C}>
       <button onClick={()=>go("welcome")} style={{background:"none",border:"none",color:"#D4A843",cursor:"pointer",fontSize:14,padding:"0 0 16px",display:"block",fontWeight:600}}>← Retour</button>
       <h2 style={{color:"#FDF6EC",fontWeight:800,fontSize:22,margin:"0 0 20px"}}>Connexion</h2>
-      <Fld label="Numero de telephone"><Inp value={tel} onChange={e=>setTel(sPhone(e.target.value))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16} autoFocus/></Fld>
+      <Fld label="Numero de telephone"><PhoneInput value={tel} onChange={v=>setTel(sPhone(v))} autoFocus/></Fld>
       <Fld label="Code PIN (4 chiffres)"><Inp value={pin} onChange={e=>setPin(sPin(e.target.value))} placeholder="Code secret" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <ErrBox msg={err}/>
       <Btn onClick={doLogin} disabled={loading}>{loading?"Verification...":"Se connecter"}</Btn>
@@ -404,7 +447,7 @@ const AuthScreen = ({onLogin}) => {
         <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhoto}/>
       </div>
       <Fld label="Prenom"><Inp value={prenom} onChange={e=>setPrenom(s(e.target.value))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
-      <Fld label="Numero de telephone"><Inp value={tel} onChange={e=>setTel(sPhone(e.target.value))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
+      <Fld label="Numero de telephone"><PhoneInput value={tel} onChange={v=>setTel(sPhone(v))}/></Fld>
       <Fld label="Code PIN secret (4 chiffres)"><Inp value={pin} onChange={e=>setPin(sPin(e.target.value))} placeholder="Code secret" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <Fld label="Confirmer le PIN"><Inp value={pinC} onChange={e=>setPinC(sPin(e.target.value))} placeholder="Confirmer" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <Fld label="Code de parrainage (optionnel)"><Inp value={parrainCode} onChange={e=>setParrainCode(e.target.value.toUpperCase())} placeholder="Ex: A1B2C3D4" maxLength={12}/></Fld>
@@ -1389,7 +1432,7 @@ THT - Tontine Habi Traore`;
   const sendWAG=()=>{const msg=encodeURIComponent(`Rappel THT - ${groupe.nom}\n\nCotisation : ${fmtFCFA(groupe.montant)}\nEn retard : ${enRet.map(m=>m.prenom).join(", ")||"aucun"}\nA jour : ${aJour.map(m=>m.prenom).join(", ")}\n\nMerci a toutes !`);window.open(`https://wa.me/?text=${msg}`,"_blank");};
 
   const PRIMARY_TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["rapport",t("tabRapport")]];
-  const SECONDARY_TABS=[["suivi","Suivi"],["bureau",t("tabBureau")],["tirage",t("tabTirage")],["prets",t("tabPrets")],["reunions",t("tabReunions")],["events",t("tabEvenements")],["checklist",t("tabTaches")]];
+  const SECONDARY_TABS=[["suivi","Suivi","📋"],["bureau",t("tabBureau"),"🏛️"],["tirage",t("tabTirage"),"🎯"],["prets",t("tabPrets"),"💵"],["reunions",t("tabReunions"),"📝"],["events",t("tabEvenements"),"🎉"],["checklist",t("tabTaches"),"✅"]];
   const inSecondary=SECONDARY_TABS.some(([id])=>id===tab);
   return(
     <div style={{paddingBottom:90}}>
@@ -1409,8 +1452,16 @@ THT - Tontine Habi Traore`;
         {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#D4A843":"#0F2419",color:tab===id?"#0A1A0F":"#6B7280",borderColor:tab===id?"#D4A843":"#1B4332"}}>{lbl}</button>)}
         <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#D4A843":"#0F2419",color:inSecondary||showMoreTabs?"#0A1A0F":"#6B7280",borderColor:inSecondary||showMoreTabs?"#D4A843":"#1B4332"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
       </div>
-      {(showMoreTabs||inSecondary)&&<div style={{display:"flex",gap:6,padding:"8px 16px 0",overflowX:"auto"}}>
-        {SECONDARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>setTab(id)} style={{flexShrink:0,padding:"7px 12px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#D4A843":"#0A1A0F",color:tab===id?"#0A1A0F":"#6B7280",borderColor:tab===id?"#D4A843":"#1B4332"}}>{lbl}</button>)}
+      {(showMoreTabs||inSecondary)&&<div style={{padding:"14px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5,margin:"0 0 10px"}}>SECTIONS</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
+          {SECONDARY_TABS.map(([id,lbl,icon])=>(
+            <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0}}>
+              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#D4A843":"#0F2419",border:tab===id?"none":"1px solid #1B4332",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{icon}</div>
+              <span style={{color:tab===id?"#D4A843":"#9CA89F",fontSize:11,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{lbl}</span>
+            </button>
+          ))}
+        </div>
       </div>}
 
 
@@ -1817,7 +1868,7 @@ THT - Tontine Habi Traore`;
         }} style={{width:"100%",background:pickerBusy?"#0F2419":"#1B4332",border:"1px solid #D4A843",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#D4A843",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ouverture des contacts...":"📇 Choisir depuis mes contacts"}</button>}
         <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#1B4332",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"8px 14px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");try{const url=await uploadPhoto(f,"membres");setNewM(n=>({...n,photo:url}));}catch{onToast("Envoi de la photo impossible","error");}}}/></label></div></Fld>
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
-        <Fld label="Numero WhatsApp"><Inp value={newM.tel} onChange={e=>setNewM(n=>({...n,tel:sPhone(e.target.value)}))} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
+        <Fld label="Numero WhatsApp"><PhoneInput value={newM.tel} onChange={v=>setNewM(n=>({...n,tel:sPhone(v)}))}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
         <Fld label={`Montant personnalise (optionnel, sinon ${fmtFCFA(groupe.montant)} standard)`}><Inp value={newM.montantPerso} onChange={e=>setNewM(n=>({...n,montantPerso:e.target.value.replace(/[^0-9]/g,"")}))} placeholder="Ex: 25000" inputMode="numeric"/></Fld>
         </div>
@@ -2632,7 +2683,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
         {cagnotte.statut!=="ouverte"?<p style={{color:"#EF4444",textAlign:"center",fontWeight:700}}>Cette cagnotte n'accepte plus de contributions</p>:<>
           <Fld label="Ton prenom"><Inp value={prenom} onChange={e=>setPrenom(e.target.value)} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
           <Fld label="Ton nom (optionnel)"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Diallo" maxLength={30}/></Fld>
-          <Fld label="Ton numero (optionnel)"><Inp value={tel} onChange={e=>setTel(e.target.value)} placeholder="+223 76 XX XX XX" type="tel" maxLength={16}/></Fld>
+          <Fld label="Ton numero (optionnel)"><PhoneInput value={tel} onChange={setTel}/></Fld>
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
           <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
             <label style={{display:"block",background:"#0F2419",border:"1px dashed #D4A843",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
@@ -3076,7 +3127,7 @@ function AppInner() {
 
   return(
     <div style={{background:"#0A1A0F",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Inter',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} user={cu} onBack={backTap} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
         :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={backTap} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>

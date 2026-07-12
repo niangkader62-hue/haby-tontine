@@ -17,8 +17,32 @@
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ("serviceWorker" in navigator) {
+        let dejaRecharge = false;
+        // Si une nouvelle version prend le controle, on recharge la page UNE FOIS
+        // pour l'afficher immediatement, au lieu de rester bloque sur l'ancienne.
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (dejaRecharge) return;
+          dejaRecharge = true;
+          window.location.reload();
+        });
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js").catch(() => {});
+          navigator.serviceWorker.register("/sw.js").then((reg) => {
+            // Verifie s'il existe une nouvelle version des qu'on ouvre l'app
+            reg.update().catch(() => {});
+            reg.addEventListener("updatefound", () => {
+              const nouveauSW = reg.installing;
+              if (!nouveauSW) return;
+              nouveauSW.addEventListener("statechange", () => {
+                if (nouveauSW.state === "installed" && navigator.serviceWorker.controller) {
+                  // Une nouvelle version est prete : on l'active tout de suite
+                  nouveauSW.postMessage({ type: "SKIP_WAITING" });
+                }
+              });
+            });
+            // Revérifie regulièrement si une mise a jour existe (utile pour les PWA
+            // installees qui restent ouvertes longtemps sans jamais etre fermees)
+            setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+          }).catch(() => {});
         });
       }
     </script>

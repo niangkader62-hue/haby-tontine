@@ -1,4 +1,21 @@
-// Service Worker HABY Tontine - notifications push
+// Service Worker THT - notifications push + mise a jour automatique
+// (sans ca, une nouvelle version du code peut rester "en attente" indefiniment
+// et l'app continue d'afficher l'ancienne version meme apres avoir vide le cache)
+
+self.addEventListener('install', () => {
+  // Ne pas attendre : cette nouvelle version se prepare tout de suite
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  // Prend le controle de toutes les pages ouvertes immediatement, sans attendre
+  // qu'elles soient toutes fermees comme c'est le comportement par defaut
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
 self.addEventListener('push', (event) => {
   let data = { title: 'HABY Tontine', body: 'Nouvelle notification', url: '/' };

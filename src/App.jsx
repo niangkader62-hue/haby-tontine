@@ -2100,8 +2100,9 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
     onToast("PIN change avec succes !");
   };
   const executerReset=async()=>{
-    if(confirmReset!=="SUPPRIMER")return;
-    if(saisieCode1!==codeSecu1||saisieCode2!==codeSecu2)return onToast("Un des deux codes de securite est incorrect","error");
+    if(!saisieCode1.trim()||!saisieCode2.trim())return onToast("Entre tes 2 codes de securite","error");
+    if(confirmReset.trim().toUpperCase()!=="SUPPRIMER")return onToast("Tape SUPPRIMER pour confirmer","error");
+    if(saisieCode1.trim()!==codeSecu1||saisieCode2.trim()!==codeSecu2)return onToast("Un des deux codes de securite est incorrect","error");
     setResetBusy(true);
     const {data:{session}}=await supabase.auth.getSession();
     try{
@@ -2292,7 +2293,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         <Fld label="Code de securite 1"><Inp value={saisieCode1} onChange={e=>setSaisieCode1(e.target.value)} placeholder="Ton 1er code" autoFocus/></Fld>
         <Fld label="Code de securite 2"><Inp value={saisieCode2} onChange={e=>setSaisieCode2(e.target.value)} placeholder="Ton 2eme code"/></Fld>
         <Fld label='Tape "SUPPRIMER" pour confirmer'><Inp value={confirmReset} onChange={e=>setConfirmReset(e.target.value)} placeholder="SUPPRIMER"/></Fld>
-        <button onClick={executerReset} disabled={confirmReset!=="SUPPRIMER"||!saisieCode1||!saisieCode2||resetBusy} style={{width:"100%",background:confirmReset==="SUPPRIMER"&&saisieCode1&&saisieCode2?"#C1440E":"#1B4332",border:"none",borderRadius:14,padding:"14px",color:confirmReset==="SUPPRIMER"&&saisieCode1&&saisieCode2?"#fff":"#6B7280",fontWeight:800,fontSize:14,cursor:confirmReset==="SUPPRIMER"?"pointer":"default"}}>{resetBusy?"Suppression en cours...":"Tout supprimer definitivement"}</button>
+        <button onClick={executerReset} disabled={resetBusy} style={{width:"100%",background:"#C1440E",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>{resetBusy?"Suppression en cours...":"Tout supprimer definitivement"}</button>
       </Modal>}
     </div>
   );

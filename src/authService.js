@@ -106,3 +106,12 @@ export async function verifyPin(tel, pin) {
   const { error } = await tmp.auth.signInWithPassword({ email, password });
   return !error;
 }
+
+export async function changePin(tel, oldPin, newPin) {
+  const oldOk = await verifyPin(tel, oldPin);
+  if (!oldOk) return { ok: false, err: "Ton PIN actuel est incorrect." };
+  const newPassword = pinToPassword(newPin);
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) return { ok: false, err: "Erreur technique. Reessaie." };
+  return { ok: true };
+}

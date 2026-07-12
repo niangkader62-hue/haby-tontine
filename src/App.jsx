@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback, Component } from "react";
-import { registerUser, loginUser, getSession, logoutUser, verifyPin } from "./authService";
+import { registerUser, loginUser, getSession, logoutUser, verifyPin, changePin } from "./authService";
 import { supabase, SUPABASE_URL } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
 import heroTontine from "./assets/hero-tontine.jpg";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+// jsPDF et html2canvas sont volumineux et rarement utilises immediatement au demarrage :
+// on les charge a la demande (dynamic import) plutot qu'au chargement initial de l'app,
+// pour que l'app s'ouvre plus vite, surtout sur reseau mobile lent.
 
 const genererRecuImage=async({nomTontine,prenom,montantRecu,montantDu,totalVerse,statut,cycle,totalCycles,ref,date})=>{
   const div=document.createElement("div");
@@ -38,6 +39,7 @@ const genererRecuImage=async({nomTontine,prenom,montantRecu,montantDu,totalVerse
     </div>
   `;
   document.body.appendChild(div);
+  const {default:html2canvas}=await import("html2canvas");
   const canvas=await html2canvas(div,{backgroundColor:"#0A1A0F",scale:2});
   document.body.removeChild(div);
   return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),"image/png"));
@@ -269,6 +271,8 @@ const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0
 
 const AuthScreen = ({onLogin}) => {
   const [step,setStep]=useState("intro");
+  const [pendingUser,setPendingUser]=useState(null);
+  const [tutoStep,setTutoStep]=useState(0);
   const [prenom,setPrenom]=useState("");
   const [tel,setTel]=useState("");
   const [pin,setPin]=useState("");
@@ -304,11 +308,36 @@ const AuthScreen = ({onLogin}) => {
     const res=await registerUser(tel,pin,s(prenom.trim()),photoFile,parrainCode);
     setLoading(false);
     if(!res.ok)return setErr(res.err);
-    onLogin(res.user);
+    setPendingUser(res.user);
+    setStep("tutoriel");
   };
 
   const W={minHeight:"100vh",background:"linear-gradient(160deg,#050F07,#1B4332)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"};
   const C={background:"#0F2419",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.6)"};
+
+  if(step==="tutoriel"){
+    const slides=[
+      {ic:"🤝",titre:"Bienvenue sur THT",texte:"Gere tes tontines avec tes proches, en toute transparence. Chaque membre voit qui a paye, qui est en retard, et le budget complet — en temps reel."},
+      {ic:"💰",titre:"Cotisations et tirages",texte:"Cree une tontine, ajoute tes membres, suis les cotisations de chacun. Le tirage au sort designe automatiquement le gagnant de chaque tour."},
+      {ic:"🎉",titre:"Cagnottes solidaires",texte:"Mariage, sante, funerailles, etudes... cree une cagnotte et partage un lien : n'importe qui peut contribuer, meme sans compte THT."},
+      {ic:"🤖",titre:"HABY, ton assistante",texte:"Une question sur tes finances ou ta tontine ? HABY repond directement dans l'app, a tout moment."},
+    ];
+    const sl=slides[tutoStep];
+    return(
+      <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#050F07,#1B4332)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{width:88,height:88,borderRadius:24,background:"#0F2419",border:"1px solid #D4A843",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:24}}>{sl.ic}</div>
+        <h2 style={{color:"#FDF6EC",fontSize:21,fontWeight:800,textAlign:"center",margin:"0 0 12px"}}>{sl.titre}</h2>
+        <p style={{color:"#9CA89F",fontSize:14,textAlign:"center",lineHeight:1.6,maxWidth:340,marginBottom:32}}>{sl.texte}</p>
+        <div style={{display:"flex",gap:6,marginBottom:32}}>
+          {slides.map((_,i)=><div key={i} style={{width:i===tutoStep?22:8,height:8,borderRadius:99,background:i===tutoStep?"#D4A843":"#2D6A4F",transition:"width .2s"}}/>)}
+        </div>
+        <div style={{width:"100%",maxWidth:340}}>
+          <Btn onClick={()=>{if(tutoStep<slides.length-1)setTutoStep(t=>t+1);else onLogin(pendingUser);}}>{tutoStep<slides.length-1?"Suivant":"Commencer"}</Btn>
+          {tutoStep<slides.length-1&&<button onClick={()=>onLogin(pendingUser)} style={{width:"100%",background:"transparent",border:"none",color:"#6B7280",fontSize:13,padding:"14px 0 0",cursor:"pointer"}}>Passer</button>}
+        </div>
+      </div>
+    );
+  }
 
   if(step==="intro") return(
     <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#0A1A0F"}}>
@@ -954,7 +983,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const cagnotteTour=groupe.membres.reduce((s,m)=>s+montantDu(m),0)+(groupe.montantInitial||0);
   const taux=groupe.membres.length>0?Math.round((aJour.length/groupe.membres.length)*100):0;
 
-  const exporterRapportPDF=()=>{
+  const exporterRapportPDF=async()=>{
+    const {jsPDF}=await import("jspdf");
     const doc=new jsPDF();
     let y=20;
     doc.setFontSize(18);doc.text(`THT - ${groupe.nom}`,14,y);y+=10;
@@ -1958,6 +1988,25 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
     URL.revokeObjectURL(url);
     onToast("Donnees telechargees !");
   };
+  const exporterCSV=async()=>{
+    onToast("Preparation du fichier Excel...");
+    const {data:groupes}=await supabase.from("groupes").select("id,nom").eq("user_id",user.id);
+    const groupeIds=(groupes||[]).map(g=>g.id);
+    const {data:membres}=groupeIds.length>0?await supabase.from("membres").select("*").in("groupe_id",groupeIds):{data:[]};
+    const nomParGroupe=Object.fromEntries((groupes||[]).map(g=>[g.id,g.nom]));
+    const lignes=[["Tontine","Membre","Telephone","Quartier","Montant du (FCFA)","Verse (FCFA)","Statut","Cycles payes"]];
+    (membres||[]).forEach(m=>{
+      lignes.push([nomParGroupe[m.groupe_id]||"",m.prenom,m.tel,m.quartier||"",m.montant_perso||"",m.versements||0,m.paye?"Paye":"En retard",m.cycles_paies||0]);
+    });
+    const csv=lignes.map(l=>l.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob2=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    const url2=URL.createObjectURL(blob2);
+    const a2=document.createElement("a");
+    a2.href=url2;a2.download=`haby-tontine-membres-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a2);a2.click();a2.remove();
+    URL.revokeObjectURL(url2);
+    onToast("Fichier Excel telecharge !");
+  };
   const onPayCinetPay=async()=>{
     setPayBusy(true);
     const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
@@ -1967,6 +2016,25 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   };
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
+  const [showChangePin,setShowChangePin]=useState(false);
+  const [oldPin,setOldPin]=useState("");
+  const [newPin,setNewPin]=useState("");
+  const [newPin2,setNewPin2]=useState("");
+  const [pinErr,setPinErr]=useState("");
+  const [pinBusy,setPinBusy]=useState(false);
+  const soumettreChangePin=async()=>{
+    setPinErr("");
+    if(oldPin.length!==4)return setPinErr("PIN actuel : 4 chiffres requis");
+    if(newPin.length!==4)return setPinErr("Nouveau PIN : 4 chiffres requis");
+    if(newPin!==newPin2)return setPinErr("Les deux nouveaux PIN ne correspondent pas");
+    if(newPin===oldPin)return setPinErr("Le nouveau PIN doit etre different de l ancien");
+    setPinBusy(true);
+    const res=await changePin(user.tel,oldPin,newPin);
+    setPinBusy(false);
+    if(!res.ok)return setPinErr(res.err);
+    setShowChangePin(false);setOldPin("");setNewPin("");setNewPin2("");
+    onToast("PIN change avec succes !");
+  };
   const [notifBusy,setNotifBusy]=useState(false);
   const [notifOn,setNotifOn]=useState(false);
   useEffect(()=>{
@@ -2069,8 +2137,8 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         {[
           ...(user.role==="admin"?[{label:"ADMINISTRATION",items:[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]}]:[]),
           {label:"NOTIFICATIONS",items:[{key:"notif",ic:"🔔",lb:t("notifications"),fn:toggleNotifications,toggle:notifOn,busy:notifBusy}]},
-          {label:"COMPTE",items:[{ic:"🔒",lb:t("changerPin"),fn:()=>onToast("Bientot disponible")},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")}]},
-          {label:"DONNEES ET AIDE",items:[{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}]},
+          {label:"COMPTE",items:[{ic:"🔒",lb:t("changerPin"),fn:()=>setShowChangePin(true)},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")}]},
+          {label:"DONNEES ET AIDE",items:[{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"📊",lb:"Exporter en Excel (CSV)",fn:exporterCSV},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}]},
         ].map(group=>(
           <div key={group.label} style={{marginBottom:18}}>
             <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>{group.label}</p>
@@ -2094,6 +2162,14 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         <p style={{color:"#2D6A4F",fontSize:11,textAlign:"center",margin:"20px 0 10px"}}>THT v2.1 - Fait avec amour pour l Afrique</p>
       </div>
       {showSupport&&<SupportModal onClose={()=>setShowSupport(false)} onToast={onToast}/>}
+      {showChangePin&&<Modal onClose={()=>setShowChangePin(false)}>
+        <MH title="Changer mon PIN" onClose={()=>setShowChangePin(false)}/>
+        <Fld label="PIN actuel"><Inp value={oldPin} onChange={e=>setOldPin(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4} autoFocus/></Fld>
+        <Fld label="Nouveau PIN"><Inp value={newPin} onChange={e=>setNewPin(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
+        <Fld label="Confirme le nouveau PIN"><Inp value={newPin2} onChange={e=>setNewPin2(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
+        <ErrBox msg={pinErr}/>
+        <Btn onClick={soumettreChangePin} disabled={pinBusy}>{pinBusy?"Verification...":"Confirmer le changement"}</Btn>
+      </Modal>}
     </div>
   );
 };
@@ -2239,14 +2315,16 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
     setNotifBusy(true);
     const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;
     const linked=g.membres.filter(m=>m.user_id);
+    const echecs=[];
     let envoyes=0;
     for(const m of linked){
-      const {error}=await supabase.functions.invoke("send-push",{body:{user_id:m.user_id,title:"THT - Nouvelle cagnotte",body:`"${cagnotte.titre}" a besoin de votre participation !`,url:lien}});
-      if(!error)envoyes++;
+      const {data,error}=await supabase.functions.invoke("send-push",{body:{user_id:m.user_id,title:"THT - Nouvelle cagnotte",body:`"${cagnotte.titre}" a besoin de votre participation !`,url:lien}});
+      if(!error&&!data?.error)envoyes++;else echecs.push(m);
     }
     setNotifBusy(false);
     const nonLinked=g.membres.filter(m=>!m.user_id);
-    onToast(`${envoyes} membre(s) notifie(s) dans l app.${nonLinked.length>0?` ${nonLinked.length} sans compte : envoie-leur le lien via WhatsApp ci-dessous.`:""}`);
+    setMesGroupes(gs=>gs.map(x=>x.id===g.id?{...x,aFallback:[...nonLinked,...echecs]}:x));
+    onToast(`${envoyes} membre(s) notifie(s) dans l app.${(nonLinked.length+echecs.length)>0?` ${nonLinked.length+echecs.length} n ont pas reçu la notification (compte non lie ou notifications non activees) : envoie-leur le lien via WhatsApp ci-dessous.`:""}`);
   };
 
   const cloturer=async()=>{
@@ -2305,18 +2383,18 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
       </div>
       {showNotifier&&<Modal onClose={()=>setShowNotifier(false)}>
         <MH title="Notifier un groupe" onClose={()=>setShowNotifier(false)}/>
-        <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Choisis une tontine : les membres qui ont un compte THT relie recevront une notification automatique. Pour les autres, envoie le lien toi-meme sur WhatsApp.</p>
+        <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Choisis une tontine : les membres qui ont un compte THT relie ET les notifications activees recevront une notification automatique. Pour les autres, envoie le lien toi-meme sur WhatsApp.</p>
         {mesGroupes.length===0&&<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Chargement...</p>}
         {mesGroupes.map(g=>{
           const linked=g.membres.filter(m=>m.user_id);
-          const nonLinked=g.membres.filter(m=>!m.user_id);
+          const aAfficher=g.aFallback||g.membres.filter(m=>!m.user_id);
           return(
             <div key={g.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:nonLinked.length>0?10:0}}>
-                <div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{linked.length} avec compte - {nonLinked.length} sans compte</p></div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:aAfficher.length>0?10:0}}>
+                <div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{linked.length} avec compte - {g.membres.length-linked.length} sans compte</p></div>
                 <button onClick={()=>notifierGroupe(g)} disabled={notifBusy||linked.length===0} style={{background:linked.length===0?"#1B4332":"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:10,padding:"8px 14px",color:linked.length===0?"#6B7280":"#0A1A0F",fontWeight:700,fontSize:12,cursor:"pointer"}}>Notifier</button>
               </div>
-              {nonLinked.map(m=>(
+              {aAfficher.map(m=>(
                 <button key={m.id} onClick={()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;const msg=encodeURIComponent(`Salut ${m.prenom} ! Participe a la cagnotte "${cagnotte.titre}" ici :\n${lien}`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");}} style={{display:"flex",alignItems:"center",gap:8,width:"100%",background:"#0A1A0F",border:"1px solid #075E54",borderRadius:8,padding:"7px 10px",color:"#22C55E",fontSize:12,fontWeight:600,cursor:"pointer",marginTop:6}}>💬 Envoyer a {m.prenom} sur WhatsApp</button>
               ))}
             </div>

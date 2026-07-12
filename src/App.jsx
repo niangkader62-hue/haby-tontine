@@ -901,6 +901,9 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(error){setTirageAnim(false);return onToast("Tirage impossible","error");}
     setTirages(t=>[...t,data]);
     onToast(`${gagnant.prenom} remporte la cagnotte de ce cycle !`);
+    if(gagnant.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:gagnant.userId,title:"THT - Tu as gagne !",body:`Felicitations ! Tu remportes le tirage de "${groupe.nom}" (cycle ${groupe.cycle}) !`,url:`/?g=${groupe.id}&tab=tirage`}}).catch(()=>{});
+    }
     setTimeout(()=>setTirageAnim(false),2500);
   };
 
@@ -913,6 +916,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(membreId)await supabase.from("membres").update({role_bureau:role}).eq("id",membreId);
     setGroupe(g=>({...g,membres:g.membres.map(m=>({...m,role_bureau:m.id===membreId?role:(m.role_bureau===role?null:m.role_bureau)}))}));
     onToast("Bureau mis a jour !");
+    const nomme=membreId?groupe.membres.find(m=>m.id===membreId):null;
+    if(nomme?.userId){
+      const roleLabel=ROLES.find(([r])=>r===role)?.[1]||role;
+      supabase.functions.invoke("send-push",{body:{user_id:nomme.userId,title:"THT - Nouveau role",body:`Tu as ete nomme(e) ${roleLabel} du bureau de "${groupe.nom}" !`,url:`/?g=${groupe.id}&tab=bureau`}}).catch(()=>{});
+    }
   };
 
   const lancerElection=async()=>{
@@ -958,6 +966,9 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setRapports(r=>[data,...r]);
     setShowRapport(false);setNewRapport({titre:"",contenu:"",date:""});
     onToast("Rapport de reunion enregistre !");
+    groupe.membres.filter(m=>m.userId).forEach(m=>{
+      supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Nouveau compte-rendu",body:`"${s(newRapport.titre.trim())}" a ete publie pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=reunions`}}).catch(()=>{});
+    });
   };
 
   const supprimerRapport=async(id)=>{
@@ -1171,6 +1182,9 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(error)return onToast("Erreur","error");
     setGroupe(g=>({...g,membres:g.membres.map(mm=>mm.id===m.id?{...mm,roleCollecteur:nouveau}:mm)}));
     onToast(nouveau?`${m.prenom} peut maintenant enregistrer des versements !`:`${m.prenom} n est plus collecteur`);
+    if(nouveau&&m.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Nouveau role",body:`Tu es maintenant collecteur(trice) pour "${groupe.nom}" : tu peux enregistrer les versements des membres.`,url:`/?g=${groupe.id}&tab=membres`}}).catch(()=>{});
+    }
   };
   const updatePhoto=async(mid,e)=>{
     const f=e.target.files?.[0];if(!f)return;
@@ -1233,6 +1247,9 @@ THT - Tontine Habi Traore`;
       cagnotte:g.cagnotte+amt,
       membres:g.membres.map(m=>m.id===versM.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)
     }));
+    if(versM.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:versM.userId,title:"THT - Versement enregistre",body:`Ton versement de ${fmtFCFA(amt)} pour "${groupe.nom}" a ete enregistre. ${paye?"Tu es a jour !":"Il te reste un solde a payer."}`,url:`/?g=${groupe.id}&tab=membres`}}).catch(()=>{});
+    }
     if(sendWA){
       setRecuBusy(true);
       try{

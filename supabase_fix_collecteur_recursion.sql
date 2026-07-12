@@ -40,3 +40,9 @@ create policy "transactions_update" on transactions for update using (
 );
 
 select 'ok2' as test2;
+
+-- Codes de securite personnels pour la remise a zero (definis par l'utilisateur lui-meme)
+alter table users add column if not exists code_secu_1 text;
+alter table users add column if not exists code_secu_2 text;
+
+select 'ok3' as test3;

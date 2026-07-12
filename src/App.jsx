@@ -2056,6 +2056,30 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
   const [showReset,setShowReset]=useState(false);
   const [confirmReset,setConfirmReset]=useState("");
   const [resetBusy,setResetBusy]=useState(false);
+  const [codeSecu1,setCodeSecu1]=useState(null);
+  const [codeSecu2,setCodeSecu2]=useState(null);
+  const [showConfigCodes,setShowConfigCodes]=useState(false);
+  const [nc1,setNc1]=useState("");
+  const [nc2,setNc2]=useState("");
+  const [configBusy,setConfigBusy]=useState(false);
+  const [saisieCode1,setSaisieCode1]=useState("");
+  const [saisieCode2,setSaisieCode2]=useState("");
+  useEffect(()=>{
+    supabase.from("users").select("code_secu_1,code_secu_2").eq("id",currentUserId).single().then(({data})=>{
+      if(data){setCodeSecu1(data.code_secu_1||null);setCodeSecu2(data.code_secu_2||null);}
+    });
+  },[currentUserId]);
+  const enregistrerCodes=async()=>{
+    if(!nc1.trim()||!nc2.trim())return onToast("Les deux codes sont requis","error");
+    if(nc1.trim()===nc2.trim())return onToast("Les deux codes doivent etre differents","error");
+    setConfigBusy(true);
+    const {error}=await supabase.from("users").update({code_secu_1:nc1.trim(),code_secu_2:nc2.trim()}).eq("id",currentUserId);
+    setConfigBusy(false);
+    if(error)return onToast("Erreur","error");
+    setCodeSecu1(nc1.trim());setCodeSecu2(nc2.trim());
+    setShowConfigCodes(false);setNc1("");setNc2("");
+    onToast("Codes de securite enregistres !");
+  };
   const [showChangePinAdmin,setShowChangePinAdmin]=useState(false);
   const [oldPinA,setOldPinA]=useState("");
   const [newPinA,setNewPinA]=useState("");
@@ -2077,6 +2101,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
   };
   const executerReset=async()=>{
     if(confirmReset!=="SUPPRIMER")return;
+    if(saisieCode1!==codeSecu1||saisieCode2!==codeSecu2)return onToast("Un des deux codes de securite est incorrect","error");
     setResetBusy(true);
     const {data:{session}}=await supabase.auth.getSession();
     try{
@@ -2084,7 +2109,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
       const data=await res.json();
       setResetBusy(false);
       if(!res.ok)return onToast(data.error||"Erreur lors de la remise a zero","error");
-      setShowReset(false);setConfirmReset("");
+      setShowReset(false);setConfirmReset("");setSaisieCode1("");setSaisieCode2("");
       onToast(`Remise a zero terminee ! ${data.comptes_supprimes} compte(s) de test supprime(s).`);
       window.location.href="/";
     }catch(e){setResetBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
@@ -2237,7 +2262,10 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         <p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>ZONE DANGEREUSE</p>
         <div style={{background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:16}}>
           <p style={{margin:"0 0 10px",color:"#FDF6EC",fontSize:13,lineHeight:1.6}}>Efface TOUTES les tontines, cagnottes, epargnes, messages et comptes de test. Tes 2 numeros admin sont toujours conserves. Action irreversible.</p>
-          <button onClick={()=>setShowReset(true)} style={{width:"100%",background:"transparent",border:"1px solid #EF4444",borderRadius:10,padding:"11px",color:"#EF4444",fontWeight:700,fontSize:13,cursor:"pointer"}}>🗑️ Remettre toutes les donnees a zero</button>
+          {codeSecu1&&codeSecu2?<>
+            <button onClick={()=>setShowReset(true)} style={{width:"100%",background:"transparent",border:"1px solid #EF4444",borderRadius:10,padding:"11px",color:"#EF4444",fontWeight:700,fontSize:13,cursor:"pointer"}}>🗑️ Remettre toutes les donnees a zero</button>
+            <button onClick={()=>setShowConfigCodes(true)} style={{width:"100%",background:"transparent",border:"none",color:"#6B7280",fontSize:11,padding:"10px 0 0",cursor:"pointer"}}>🔑 Modifier mes 2 codes de securite</button>
+          </>:<button onClick={()=>setShowConfigCodes(true)} style={{width:"100%",background:"#1B4332",border:"1px solid #D4A843",borderRadius:10,padding:"11px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔑 Configurer mes 2 codes de securite d abord</button>}
         </div>
       </div>
 
@@ -2250,11 +2278,21 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         <Btn onClick={soumettreChangePinAdmin} disabled={pinBusyA}>{pinBusyA?"Verification...":"Confirmer le changement"}</Btn>
       </Modal>}
 
+      {showConfigCodes&&<Modal onClose={()=>setShowConfigCodes(false)}>
+        <MH title="Mes 2 codes de securite" onClose={()=>setShowConfigCodes(false)}/>
+        <p style={{color:"#6B7280",fontSize:12,marginBottom:16,lineHeight:1.5}}>Ces 2 codes te seront redemandes avant toute remise a zero complete. Choisis 2 codes differents que toi seul connais (ex: un mot et un chiffre).</p>
+        <Fld label="Code de securite 1"><Inp value={nc1} onChange={e=>setNc1(e.target.value)} placeholder="Ex: Bamako2026" autoFocus/></Fld>
+        <Fld label="Code de securite 2"><Inp value={nc2} onChange={e=>setNc2(e.target.value)} placeholder="Ex: 7690"/></Fld>
+        <Btn onClick={enregistrerCodes} disabled={configBusy}>{configBusy?"Enregistrement...":"Enregistrer mes codes"}</Btn>
+      </Modal>}
+
       {showReset&&<Modal onClose={()=>setShowReset(false)}>
         <MH title="Remise a zero complete" onClose={()=>setShowReset(false)}/>
         <p style={{color:"#EF4444",fontSize:13,lineHeight:1.6,marginBottom:16}}>⚠️ Ceci va supprimer definitivement toutes les tontines, cagnottes, epargnes, messages et comptes de test. Seuls tes 2 numeros admin resteront. Cette action est irreversible.</p>
-        <Fld label='Tape "SUPPRIMER" pour confirmer'><Inp value={confirmReset} onChange={e=>setConfirmReset(e.target.value)} placeholder="SUPPRIMER" autoFocus/></Fld>
-        <button onClick={executerReset} disabled={confirmReset!=="SUPPRIMER"||resetBusy} style={{width:"100%",background:confirmReset==="SUPPRIMER"?"#C1440E":"#1B4332",border:"none",borderRadius:14,padding:"14px",color:confirmReset==="SUPPRIMER"?"#fff":"#6B7280",fontWeight:800,fontSize:14,cursor:confirmReset==="SUPPRIMER"?"pointer":"default"}}>{resetBusy?"Suppression en cours...":"Tout supprimer definitivement"}</button>
+        <Fld label="Code de securite 1"><Inp value={saisieCode1} onChange={e=>setSaisieCode1(e.target.value)} placeholder="Ton 1er code" autoFocus/></Fld>
+        <Fld label="Code de securite 2"><Inp value={saisieCode2} onChange={e=>setSaisieCode2(e.target.value)} placeholder="Ton 2eme code"/></Fld>
+        <Fld label='Tape "SUPPRIMER" pour confirmer'><Inp value={confirmReset} onChange={e=>setConfirmReset(e.target.value)} placeholder="SUPPRIMER"/></Fld>
+        <button onClick={executerReset} disabled={confirmReset!=="SUPPRIMER"||!saisieCode1||!saisieCode2||resetBusy} style={{width:"100%",background:confirmReset==="SUPPRIMER"&&saisieCode1&&saisieCode2?"#C1440E":"#1B4332",border:"none",borderRadius:14,padding:"14px",color:confirmReset==="SUPPRIMER"&&saisieCode1&&saisieCode2?"#fff":"#6B7280",fontWeight:800,fontSize:14,cursor:confirmReset==="SUPPRIMER"?"pointer":"default"}}>{resetBusy?"Suppression en cours...":"Tout supprimer definitivement"}</button>
       </Modal>}
     </div>
   );

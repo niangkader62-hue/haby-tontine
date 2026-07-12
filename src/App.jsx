@@ -2099,21 +2099,21 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
     setShowChangePinAdmin(false);setOldPinA("");setNewPinA("");setNewPinA2("");
     onToast("PIN change avec succes !");
   };
+  const [resetJournal,setResetJournal]=useState(null);
   const executerReset=async()=>{
     if(!saisieCode1.trim()||!saisieCode2.trim())return onToast("Entre tes 2 codes de securite","error");
     if(confirmReset.trim().toUpperCase()!=="SUPPRIMER")return onToast("Tape SUPPRIMER pour confirmer","error");
     if(saisieCode1.trim()!==codeSecu1||saisieCode2.trim()!==codeSecu2)return onToast("Un des deux codes de securite est incorrect","error");
-    setResetBusy(true);
+    setResetBusy(true);setResetJournal(null);
     const {data:{session}}=await supabase.auth.getSession();
     try{
       const res=await fetch(`${SUPABASE_URL}/functions/v1/admin-reset-data`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${session.access_token}`}});
       const data=await res.json();
       setResetBusy(false);
+      setResetJournal(data.journal||[data.error||"Aucune information"]);
       if(!res.ok)return onToast(data.error||"Erreur lors de la remise a zero","error");
-      setShowReset(false);setConfirmReset("");setSaisieCode1("");setSaisieCode2("");
-      onToast(`Remise a zero terminee ! ${data.comptes_supprimes} compte(s) de test supprime(s).`);
-      window.location.href="/";
-    }catch(e){setResetBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
+      onToast(`Termine ! ${data.comptes_supprimes} compte(s) de test supprime(s). Regarde le journal en dessous.`);
+    }catch(e){setResetBusy(false);setResetJournal(["Exception cote app : "+(e.message||"inconnue")]);onToast("Erreur : "+(e.message||"inconnue"),"error");}
   };
   useEffect(()=>{
     (async()=>{
@@ -2294,6 +2294,10 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         <Fld label="Code de securite 2"><Inp value={saisieCode2} onChange={e=>setSaisieCode2(e.target.value)} placeholder="Ton 2eme code"/></Fld>
         <Fld label='Tape "SUPPRIMER" pour confirmer'><Inp value={confirmReset} onChange={e=>setConfirmReset(e.target.value)} placeholder="SUPPRIMER"/></Fld>
         <button onClick={executerReset} disabled={resetBusy} style={{width:"100%",background:"#C1440E",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>{resetBusy?"Suppression en cours...":"Tout supprimer definitivement"}</button>
+        {resetJournal&&<div style={{marginTop:16,background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:14}}>
+          <p style={{margin:"0 0 8px",color:"#D4A843",fontSize:11,fontWeight:700,letterSpacing:.5}}>JOURNAL DETAILLE</p>
+          {resetJournal.map((l,i)=><p key={i} style={{margin:"0 0 4px",color:l.includes("ERREUR")?"#EF4444":"#9CA89F",fontSize:11,fontFamily:"monospace"}}>{l}</p>)}
+        </div>}
       </Modal>}
     </div>
   );

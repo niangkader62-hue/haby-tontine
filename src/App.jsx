@@ -541,6 +541,23 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
   const pct=Math.round((groupe.cycle/groupe.totalCycles)*100);
   const [voting,setVoting]=useState(null);
   const [dernierVersement,setDernierVersement]=useState(null);
+  const [showDemandePret,setShowDemandePret]=useState(false);
+  const [pretMontant,setPretMontant]=useState("");
+  const [pretMotif,setPretMotif]=useState("");
+  const [pretBusy,setPretBusy]=useState(false);
+  const demanderPret=async()=>{
+    if(!groupe.moi?.id)return;
+    if(!pretMontant||Number(pretMontant)<500)return onToast("Montant minimum 500 FCFA","error");
+    setPretBusy(true);
+    const {error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:groupe.moi.id,montant:Number(pretMontant),motif:pretMotif.trim()||null,statut:"en_attente"});
+    setPretBusy(false);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    onToast("Demande envoyee ! La creatrice va l examiner.");
+    setShowDemandePret(false);setPretMontant("");setPretMotif("");
+    if(groupe.createurUserId){
+      supabase.functions.invoke("send-push",{body:{user_id:groupe.createurUserId,title:"THT - Demande de pret",body:`${user.prenom} demande un pret de ${fmtFCFA(Number(pretMontant))} pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
+    }
+  };
   useEffect(()=>{
     if(!groupe.moi?.id)return;
     supabase.from("transactions").select("*").eq("membre_id",groupe.moi.id).order("created_at",{ascending:false}).limit(1).maybeSingle().then(({data})=>{
@@ -716,18 +733,26 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
           </div>
         ))}
       </div>}
-      {groupe.prets&&groupe.prets.length>0&&<div style={{padding:"16px 16px 0"}}>
-        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>PRETS EN COURS</p>
-        {groupe.prets.map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;return(
+      <div style={{padding:"16px 16px 0"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <p style={{color:"#6B7280",fontSize:12,fontWeight:700,letterSpacing:.5,margin:0}}>PRETS</p>
+          <button onClick={()=>setShowDemandePret(true)} style={{background:"#1B4332",border:"1px solid #D4A843",borderRadius:8,padding:"5px 12px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Demander un pret</button>
+        </div>
+        {(!groupe.prets||groupe.prets.length===0)&&<p style={{color:"#6B7280",fontSize:12,textAlign:"center",padding:10}}>Aucun pret pour l instant</p>}
+        {groupe.prets&&groupe.prets.map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;
+          const labels={en_attente:["En attente","#D4A843"],en_cours:["En cours","#22C55E"],rembourse:["Rembourse","#22C55E"],refuse:["Refuse","#EF4444"]};
+          const [lbl,col]=labels[p.statut]||["En cours","#D4A843"];
+          return(
           <div key={p.id} style={{background:"#0F2419",border:`1px solid ${p.statut==="rembourse"?"#1B4332":"#D4A843"}`,borderRadius:12,padding:"12px 14px",marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={30}/><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:13}}>{m?.prenom||"?"}</p></div>
-              <span style={{background:p.statut==="rembourse"?"#1B4332":"#1A0800",color:p.statut==="rembourse"?"#22C55E":"#D4A843",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{p.statut==="rembourse"?"Rembourse":"En cours"}</span>
+              <span style={{background:"#1A0800",color:col,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{lbl}</span>
             </div>
-            <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(p.montant)} emprunte - {fmtFCFA(Math.max(0,reste))} restant</p>
+            <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(p.montant)} demande{p.statut==="en_cours"||p.statut==="rembourse"?` - ${fmtFCFA(Math.max(0,reste))} restant`:""}</p>
+            {p.motif&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11,fontStyle:"italic"}}>{p.motif}</p>}
           </div>
         );})}
-      </div>}
+      </div>
       {groupe.tirages&&groupe.tirages.length>0&&<div style={{padding:"8px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE DES TIRAGES AU SORT</p>
         {[...groupe.tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
@@ -769,6 +794,13 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       <div style={{margin:"16px 16px 0",background:"#0A1A0F",border:"1px solid #2D6A4F",borderRadius:12,padding:12}}>
         <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu vois toutes les donnees de cette tontine en toute transparence, comme tous les autres membres. Seule la creatrice peut modifier les informations. Pour signaler un paiement, contacte-la directement.</p>
       </div>
+      {showDemandePret&&<Modal onClose={()=>setShowDemandePret(false)}>
+        <MH title="Demander un pret" onClose={()=>setShowDemandePret(false)}/>
+        <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Ta demande sera envoyee a la creatrice de "{groupe.nom}" pour acceptation.</p>
+        <Fld label="Montant souhaite (FCFA)"><Inp value={pretMontant} onChange={e=>setPretMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 20000" inputMode="numeric" autoFocus/></Fld>
+        <Fld label="Motif (optionnel)"><Inp value={pretMotif} onChange={e=>setPretMotif(e.target.value)} placeholder="Ex: Frais medicaux" maxLength={80}/></Fld>
+        <Btn onClick={demanderPret} disabled={pretBusy}>{pretBusy?"Envoi...":"Envoyer la demande"}</Btn>
+      </Modal>}
     </div>
   );
 };
@@ -841,6 +873,16 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [prets,setPrets]=useState([]);
   const [showPret,setShowPret]=useState(false);
   const [newPret,setNewPret]=useState({membreId:"",montant:"",taux:"0",echeance:""});
+  const [pretPhoto,setPretPhoto]=useState(null);
+  const [pretPhotoPreview,setPretPhotoPreview]=useState(null);
+  const choisirPretPhoto=(e)=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+    const reader=new FileReader();
+    reader.onload=()=>{setPretPhoto(reader.result);setPretPhotoPreview(reader.result);};
+    reader.readAsDataURL(f);
+  };
+  const [accepterM,setAccepterM]=useState(null);
   const [pretBusy,setPretBusy]=useState(false);
   const [remboM,setRemboM]=useState(null);
   const [remboAmt,setRemboAmt]=useState("");
@@ -1002,12 +1044,60 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!newPret.membreId)return onToast("Choisis un membre emprunteur","error");
     if(!newPret.montant||Number(newPret.montant)<500)return onToast("Montant minimum 500 FCFA","error");
     setPretBusy(true);
-    const {data,error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:newPret.membreId,montant:Number(newPret.montant),taux_interet:Number(newPret.taux)||0,date_echeance:newPret.echeance||null}).select().single();
+    let photoUrl=null;
+    if(pretPhoto){
+      try{
+        const blobPhoto=await (await fetch(pretPhoto)).blob();
+        const path=`prets/${groupe.id}/${newPret.membreId}-${Date.now()}.jpg`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
+        if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
+      }catch{}
+    }
+    const {data,error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:newPret.membreId,montant:Number(newPret.montant),taux_interet:Number(newPret.taux)||0,date_echeance:newPret.echeance||null,statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString()}).select().single();
     setPretBusy(false);
     if(error)return onToast("Impossible de creer le pret","error");
     setPrets(p=>[data,...p]);
-    setShowPret(false);setNewPret({membreId:"",montant:"",taux:"0",echeance:""});
+    setShowPret(false);setNewPret({membreId:"",montant:"",taux:"0",echeance:""});setPretPhoto(null);setPretPhotoPreview(null);
     onToast("Pret enregistre !");
+    const emprunteur=groupe.membres.find(m=>m.id===newPret.membreId);
+    if(emprunteur?.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:emprunteur.userId,title:"THT - Pret verse",body:`Un pret de ${fmtFCFA(Number(newPret.montant))} t a ete verse pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
+    }
+  };
+
+  const accepterEtVerserPret=async()=>{
+    if(!accepterM)return;
+    setPretBusy(true);
+    let photoUrl=null;
+    if(pretPhoto){
+      try{
+        const blobPhoto=await (await fetch(pretPhoto)).blob();
+        const path=`prets/${groupe.id}/${accepterM.membre_id}-${Date.now()}.jpg`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
+        if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
+      }catch{}
+    }
+    const {error}=await supabase.from("prets").update({statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString()}).eq("id",accepterM.id);
+    setPretBusy(false);
+    if(error)return onToast("Erreur","error");
+    setPrets(p=>p.map(x=>x.id===accepterM.id?{...x,statut:"en_cours",photo_url:photoUrl}:x));
+    setAccepterM(null);setPretPhoto(null);setPretPhotoPreview(null);
+    onToast("Pret accepte et verse !");
+    const m=groupe.membres.find(mm=>mm.id===accepterM.membre_id);
+    if(m?.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Pret accepte !",body:`Ta demande de pret de ${fmtFCFA(accepterM.montant)} a ete acceptee et versee.`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
+    }
+  };
+
+  const refuserPret=async(p)=>{
+    const {error}=await supabase.from("prets").update({statut:"refuse"}).eq("id",p.id);
+    if(error)return onToast("Erreur","error");
+    setPrets(pr=>pr.map(x=>x.id===p.id?{...x,statut:"refuse"}:x));
+    onToast("Demande refusee");
+    const m=groupe.membres.find(mm=>mm.id===p.membre_id);
+    if(m?.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Demande de pret refusee",body:`Ta demande de pret de ${fmtFCFA(p.montant)} pour "${groupe.nom}" n a pas ete acceptee.`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
+    }
   };
 
   const rembourserPret=async()=>{
@@ -1443,28 +1533,63 @@ THT - Tontine Habi Traore`;
       </div>}
       {tab==="prets"&&<div style={{padding:"14px 16px 0"}}>
         <button onClick={()=>setShowPret(true)} style={{width:"100%",background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"10px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14}}>+ Nouveau pret</button>
-        {prets.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucun pret pour le moment</p>
-        :prets.map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;return(
+        {prets.filter(p=>p.statut==="en_attente").length>0&&<p style={{color:"#D4A843",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>DEMANDES EN ATTENTE ({prets.filter(p=>p.statut==="en_attente").length})</p>}
+        {prets.filter(p=>p.statut==="en_attente").map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);return(
+          <div key={p.id} style={{background:"#1A2E1F",border:"1px solid #D4A843",borderRadius:14,padding:16,marginBottom:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m?.prenom||"?"}</p><p style={{margin:0,color:"#D4A843",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div></div>
+            {p.motif&&<p style={{margin:"0 0 10px",color:"#6B7280",fontSize:12,fontStyle:"italic"}}>{p.motif}</p>}
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>{setAccepterM(p);setPretPhoto(null);setPretPhotoPreview(null);}} style={{flex:1,background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:10,padding:"9px",color:"#0A1A0F",fontWeight:800,fontSize:12,cursor:"pointer"}}>Accepter et verser</button>
+              <button onClick={()=>refuserPret(p)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"9px 14px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Refuser</button>
+            </div>
+          </div>
+        );})}
+        {prets.filter(p=>p.statut!=="en_attente").length===0&&prets.filter(p=>p.statut==="en_attente").length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucun pret pour le moment</p>
+        :prets.filter(p=>p.statut!=="en_attente").map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;
+          const labels={en_cours:["En cours","#D4A843"],rembourse:["Rembourse","#22C55E"],refuse:["Refuse","#EF4444"]};
+          const [lbl,col]=labels[p.statut]||["En cours","#D4A843"];
+          return(
           <div key={p.id} style={{background:"#0F2419",border:`1px solid ${p.statut==="rembourse"?"#1B4332":"#D4A843"}`,borderRadius:14,padding:16,marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m?.prenom||"Membre retire"}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans interet"}</p></div></div>
-              <span style={{background:p.statut==="rembourse"?"#1B4332":"#1A0800",color:p.statut==="rembourse"?"#22C55E":"#D4A843",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{p.statut==="rembourse"?"Rembourse":"En cours"}</span>
+              <span style={{background:"#1A0800",color:col,fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{lbl}</span>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",margin:"12px 0"}}>
+            {p.statut!=="refuse"&&<div style={{display:"flex",justifyContent:"space-between",margin:"12px 0"}}>
               <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Emprunte</p><p style={{margin:"2px 0 0",color:"#FDF6EC",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div>
               <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Rembourse</p><p style={{margin:"2px 0 0",color:"#22C55E",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant_rembourse)}</p></div>
               <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Reste</p><p style={{margin:"2px 0 0",color:"#D4A843",fontWeight:700,fontSize:13}}>{fmtFCFA(Math.max(0,reste))}</p></div>
-            </div>
-            {p.statut!=="rembourse"&&<button onClick={()=>{setRemboM(p);setRemboAmt("");}} style={{width:"100%",background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"9px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Remboursement</button>}
+            </div>}
+            {p.photo_url&&<a href={p.photo_url} target="_blank" rel="noreferrer"><img src={p.photo_url} alt="Preuve" style={{width:"100%",maxHeight:120,objectFit:"cover",borderRadius:8,border:"1px solid #2D6A4F",marginBottom:10}}/></a>}
+            {p.statut==="en_cours"&&<button onClick={()=>{setRemboM(p);setRemboAmt("");}} style={{width:"100%",background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"9px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Remboursement</button>}
           </div>
         );})}
       </div>}
+      {accepterM&&<Modal onClose={()=>setAccepterM(null)}>
+        <MH title="Accepter et verser le pret" onClose={()=>setAccepterM(null)}/>
+        <div style={{background:"#0A1A0F",borderRadius:12,padding:14,marginBottom:16,textAlign:"center"}}>
+          <p style={{margin:0,color:"#6B7280",fontSize:12}}>Montant a verser</p>
+          <p style={{margin:"4px 0 0",color:"#D4A843",fontWeight:900,fontSize:24}}>{fmtFCFA(accepterM.montant)}</p>
+        </div>
+        <Fld label="Photo de l'argent verse (recommande)">
+          <label style={{display:"block",background:"#0F2419",border:"1px dashed #D4A843",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+            <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
+            {pretPhotoPreview?<img src={pretPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#D4A843",fontSize:12,fontWeight:700}}>📷 Photo de l'argent remis</span>}
+          </label>
+        </Fld>
+        <Btn onClick={accepterEtVerserPret} disabled={pretBusy}>{pretBusy?"Enregistrement...":"Confirmer le versement"}</Btn>
+      </Modal>}
       {showPret&&<Modal onClose={()=>setShowPret(false)}>
         <MH title="Nouveau pret" onClose={()=>setShowPret(false)}/>
         <Fld label="Membre emprunteur"><select value={newPret.membreId} onChange={e=>setNewPret(p=>({...p,membreId:e.target.value}))} style={{width:"100%",background:"#1A2E1F",border:"1px solid #2D6A4F",borderRadius:12,padding:"13px 14px",color:"#FDF6EC",fontSize:14}}><option value="">Choisir...</option>{groupe.membres.map(m=><option key={m.id} value={m.id}>{m.prenom}</option>)}</select></Fld>
         <Fld label="Montant du pret (FCFA)"><Inp value={newPret.montant} onChange={e=>setNewPret(p=>({...p,montant:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
         <Fld label="Taux d interet (%, optionnel)"><Inp value={newPret.taux} onChange={e=>setNewPret(p=>({...p,taux:e.target.value.replace(/\D/g,"")}))} placeholder="0" inputMode="numeric"/></Fld>
         <Fld label="Date d echeance (optionnel)"><Inp value={newPret.echeance} onChange={e=>setNewPret(p=>({...p,echeance:e.target.value}))} type="date"/></Fld>
+        <Fld label="Photo de l'argent verse (recommande)">
+          <label style={{display:"block",background:"#0F2419",border:"1px dashed #D4A843",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+            <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
+            {pretPhotoPreview?<img src={pretPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#D4A843",fontSize:12,fontWeight:700}}>📷 Photo de l'argent remis</span>}
+          </label>
+        </Fld>
         <Btn onClick={creerPret} disabled={pretBusy}>{pretBusy?"Enregistrement...":"Enregistrer le pret"}</Btn>
       </Modal>}
       {remboM&&<Modal onClose={()=>setRemboM(null)}>

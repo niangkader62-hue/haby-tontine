@@ -519,16 +519,19 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
+  const threadRef=useRef(thread);
+  useEffect(()=>{threadRef.current=thread;},[thread]);
   useEffect(()=>{
-    const ch=supabase.channel(`msgs-part-${groupe.id}-${thread?.userId||"g"}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
+    const ch=supabase.channel(`msgs-part-${groupe.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
       const m=payload.new;
-      const belongsHere=thread?((m.auteur_user_id===user.id&&m.destinataire_user_id===thread.userId)||(m.auteur_user_id===thread.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
+      const th=threadRef.current;
+      const belongsHere=th?((m.auteur_user_id===user.id&&m.destinataire_user_id===th.userId)||(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
       if(!belongsHere)return;
       setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
       if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
     }).subscribe();
     return()=>{supabase.removeChannel(ch);};
-  },[groupe.id,thread,user.id]);
+  },[groupe.id,user.id]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
   const getRecipients=()=>thread?[thread.userId]:[groupe.createurUserId,...groupe.membres.map(m=>m.userId)].filter(uid=>uid&&uid!==user.id);
@@ -1016,16 +1019,19 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
+  const threadRef=useRef(thread);
+  useEffect(()=>{threadRef.current=thread;},[thread]);
   useEffect(()=>{
-    const ch=supabase.channel(`msgs-grp-${groupe.id}-${thread?.userId||"g"}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
+    const ch=supabase.channel(`msgs-grp-${groupe.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
       const m=payload.new;
-      const belongsHere=thread?((m.auteur_user_id===user.id&&m.destinataire_user_id===thread.userId)||(m.auteur_user_id===thread.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
+      const th=threadRef.current;
+      const belongsHere=th?((m.auteur_user_id===user.id&&m.destinataire_user_id===th.userId)||(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
       if(!belongsHere)return;
       setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
       if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
     }).subscribe();
     return()=>{supabase.removeChannel(ch);};
-  },[groupe.id,thread,user.id]);
+  },[groupe.id,user.id]);
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -2187,7 +2193,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
           <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
             <label style={{display:"block",background:"#0F2419",border:"1px dashed #D4A843",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
-              <input type="file" accept="image/*" capture="environment" onChange={choisirPreuve} style={{display:"none"}}/>
+              <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>
               {preuvePreview?<img src={preuvePreview} alt="Preuve" style={{width:"100%",maxHeight:220,objectFit:"contain",display:"block"}}/>:<span style={{color:"#D4A843",fontSize:13,fontWeight:700}}>📷 Ajouter une photo</span>}
             </label>
           </Fld>
@@ -2200,13 +2206,12 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
   );
 };
 
-const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
+const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) => {
   const [cagnotte,setCagnotte]=useState(cInit);
   const [contributions,setContributions]=useState([]);
-  const [showContrib,setShowContrib]=useState(false);
-  const [nom,setNom]=useState("");
-  const [montant,setMontant]=useState("");
-  const [busy,setBusy]=useState(false);
+  const [showNotifier,setShowNotifier]=useState(false);
+  const [mesGroupes,setMesGroupes]=useState([]);
+  const [notifBusy,setNotifBusy]=useState(false);
 
   const loadContribs=async()=>{
     const {data}=await supabase.from("cagnotte_contributions").select("*").eq("cagnotte_id",cagnotte.id).order("created_at",{ascending:false});
@@ -2216,21 +2221,28 @@ const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
 
   const pct=Math.min(100,Math.round((cagnotte.montant_collecte/cagnotte.objectif)*100));
 
-  const ajouterContribution=async()=>{
-    if(!nom.trim())return onToast("Nom du contributeur requis","error");
-    if(!montant||Number(montant)<1)return onToast("Montant invalide","error");
-    setBusy(true);
-    const amt=Number(montant);
-    const {data,error}=await supabase.from("cagnotte_contributions").insert({cagnotte_id:cagnotte.id,contributeur:s(nom.trim()),montant:amt}).select().single();
-    if(error){setBusy(false);return onToast("Ajout impossible","error");}
-    const nouveauTotal=cagnotte.montant_collecte+amt;
-    await supabase.from("cagnottes").update({montant_collecte:nouveauTotal}).eq("id",cagnotte.id);
-    setBusy(false);
-    setContributions(c=>[data,...c]);
-    setCagnotte(c=>({...c,montant_collecte:nouveauTotal}));
-    onUpdate(cagnotte.id,{montant_collecte:nouveauTotal});
-    setNom("");setMontant("");setShowContrib(false);
-    onToast("Contribution enregistree !");
+  const ouvrirNotifier=async()=>{
+    setShowNotifier(true);
+    const {data:groupes}=await supabase.from("groupes").select("id,nom").eq("user_id",user.id);
+    const groupesAvecMembres=await Promise.all((groupes||[]).map(async(g)=>{
+      const {data:membres}=await supabase.from("membres").select("id,prenom,tel,user_id").eq("groupe_id",g.id);
+      return {...g,membres:membres||[]};
+    }));
+    setMesGroupes(groupesAvecMembres);
+  };
+
+  const notifierGroupe=async(g)=>{
+    setNotifBusy(true);
+    const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;
+    const linked=g.membres.filter(m=>m.user_id);
+    let envoyes=0;
+    for(const m of linked){
+      const {error}=await supabase.functions.invoke("send-push",{body:{user_id:m.user_id,title:"THT - Nouvelle cagnotte",body:`"${cagnotte.titre}" a besoin de votre participation !`,url:lien}});
+      if(!error)envoyes++;
+    }
+    setNotifBusy(false);
+    const nonLinked=g.membres.filter(m=>!m.user_id);
+    onToast(`${envoyes} membre(s) notifie(s) dans l app.${nonLinked.length>0?` ${nonLinked.length} sans compte : envoie-leur le lien via WhatsApp ci-dessous.`:""}`);
   };
 
   const cloturer=async()=>{
@@ -2269,7 +2281,7 @@ const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
         <p style={{margin:"6px 0 0",color:"#6B7280",fontSize:11}}>Objectif : {fmtFCFA(cagnotte.objectif)} ({pct}%){cagnotte.date_limite?` - avant le ${new Date(cagnotte.date_limite).toLocaleDateString("fr-FR")}`:""}</p>
       </div>
       {cagnotte.statut!=="cloturee"&&<div style={{display:"flex",gap:10,padding:"14px 16px 0"}}>
-        <button onClick={()=>setShowContrib(true)} style={{flex:1,background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"11px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Contribution</button>
+        <button onClick={ouvrirNotifier} style={{flex:1,background:"#1B4332",border:"1px solid #2D6A4F",borderRadius:10,padding:"11px",color:"#D4A843",fontWeight:700,fontSize:13,cursor:"pointer"}}>📣 Notifier un groupe</button>
         <button onClick={partager} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager WA</button>
       </div>}
       {cagnotte.statut!=="cloturee"&&<button onClick={async()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;try{await navigator.clipboard.writeText(lien);onToast("Lien copie !");}catch{onToast(lien);}}} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"#1B4332",border:"1px solid #D4A843",borderRadius:10,padding:"10px",color:"#D4A843",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔗 Copier le lien de contribution</button>}
@@ -2287,11 +2299,25 @@ const CagnotteScreen = ({cagnotte:cInit,onBack,onToast,onUpdate,onDelete}) => {
           </div>
         ))}
       </div>
-      {showContrib&&<Modal onClose={()=>setShowContrib(false)}>
-        <MH title="Nouvelle contribution" onClose={()=>setShowContrib(false)}/>
-        <Fld label="Nom du contributeur"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Fatoumata" maxLength={40} autoFocus/></Fld>
-        <Fld label="Montant (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
-        <Btn onClick={ajouterContribution} disabled={busy}>{busy?"Enregistrement...":"Ajouter"}</Btn>
+      {showNotifier&&<Modal onClose={()=>setShowNotifier(false)}>
+        <MH title="Notifier un groupe" onClose={()=>setShowNotifier(false)}/>
+        <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Choisis une tontine : les membres qui ont un compte THT relie recevront une notification automatique. Pour les autres, envoie le lien toi-meme sur WhatsApp.</p>
+        {mesGroupes.length===0&&<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Chargement...</p>}
+        {mesGroupes.map(g=>{
+          const linked=g.membres.filter(m=>m.user_id);
+          const nonLinked=g.membres.filter(m=>!m.user_id);
+          return(
+            <div key={g.id} style={{background:"#0F2419",border:"1px solid #1B4332",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:nonLinked.length>0?10:0}}>
+                <div><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{linked.length} avec compte - {nonLinked.length} sans compte</p></div>
+                <button onClick={()=>notifierGroupe(g)} disabled={notifBusy||linked.length===0} style={{background:linked.length===0?"#1B4332":"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:10,padding:"8px 14px",color:linked.length===0?"#6B7280":"#0A1A0F",fontWeight:700,fontSize:12,cursor:"pointer"}}>Notifier</button>
+              </div>
+              {nonLinked.map(m=>(
+                <button key={m.id} onClick={()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;const msg=encodeURIComponent(`Salut ${m.prenom} ! Participe a la cagnotte "${cagnotte.titre}" ici :\n${lien}`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");}} style={{display:"flex",alignItems:"center",gap:8,width:"100%",background:"#0A1A0F",border:"1px solid #075E54",borderRadius:8,padding:"7px 10px",color:"#22C55E",fontSize:12,fontWeight:600,cursor:"pointer",marginTop:6}}>💬 Envoyer a {m.prenom} sur WhatsApp</button>
+              ))}
+            </div>
+          );
+        })}
       </Modal>}
     </div>
   );
@@ -2489,10 +2515,27 @@ export default function App() {
     const dmName=params.get("dmName");
     const thread=dm?{userId:dm,prenom:dmName?decodeURIComponent(dmName):"Contact"}:null;
     const owned=(gs||[]).find(g=>g.id===gid);
-    if(owned){setDeepLink({tab,thread});setSel(owned);setNav("home");return true;}
+    if(owned){setDeepLink({tab,thread});pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(userRef.current.id);loadParticipations(userRef.current.id);});setSel(owned);setNav("home");return true;}
     const part=(parts||[]).find(g=>g.id===gid);
-    if(part){setDeepLink({tab,thread});setSelPart(part);setNav("home");return true;}
+    if(part){setDeepLink({tab,thread});pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(part);setNav("home");return true;}
     return false;
+  };
+
+  const backStackRef=useRef([]);
+  useEffect(()=>{
+    const handler=()=>{
+      const fn=backStackRef.current.pop();
+      if(fn)fn();
+    };
+    window.addEventListener("popstate",handler);
+    return()=>window.removeEventListener("popstate",handler);
+  },[]);
+  const pushBack=(closeFn)=>{
+    window.history.pushState({thtScreen:true},"");
+    backStackRef.current.push(closeFn);
+  };
+  const backTap=()=>{
+    if(backStackRef.current.length>0)window.history.back();
   };
 
   const userRef=useRef(null);
@@ -2570,14 +2613,14 @@ export default function App() {
     <div style={{background:"#0A1A0F",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#2D6A4F;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
-        {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} onBack={()=>setSelCagnotte(null)} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
-        :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={()=>{setSelPart(null);setDeepLink(null);}} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
-        :sel?<GroupeScreen groupe={sel} deepLink={deepLink} onBack={()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);}} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
-        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);setSelPart(g);}} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={setSelCagnotte}/>
+        {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} user={cu} onBack={backTap} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
+        :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={backTap} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
+        :sel?<GroupeScreen groupe={sel} deepLink={deepLink} onBack={backTap} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
+        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(g);}} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
-        :nav==="admin"?<AdminScreen onBack={()=>setNav("profil")} onToast={showToast} currentUserId={cu.id}/>
-        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang}/>:null}
+        :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id}/>
+        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){pushBack(()=>setNav("profil"));setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang}/>:null}
       </div>
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#0F2419",borderTop:"1px solid #1B4332",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#D4A843":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}
@@ -2595,7 +2638,7 @@ export default function App() {
           const ok=await verifyPin(cu.tel,pinConfirm);
           setPinConfirmBusy(false);
           if(!ok)return setPinConfirmErr("PIN incorrect");
-          setAdminUnlocked(true);setShowPinConfirm(false);setNav("admin");
+          setAdminUnlocked(true);setShowPinConfirm(false);pushBack(()=>setNav("profil"));setNav("admin");
         }} disabled={pinConfirmBusy}>{pinConfirmBusy?"Verification...":"Confirmer"}</Btn>
       </Modal>}
       {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}

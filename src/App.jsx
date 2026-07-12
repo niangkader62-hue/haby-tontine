@@ -1001,6 +1001,12 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setSuivi(dernierParMembre);
   };
   useEffect(()=>{loadSuivi();},[groupe.id]);
+  const toggleSuiviItem=async(membreId,t,champ,val)=>{
+    const {error}=await supabase.from("transactions").update({[champ]:val}).eq("id",t.id);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    setSuivi(s=>({...s,[membreId]:{...s[membreId],[champ]:val}}));
+    onToast("Mis a jour !");
+  };
 
   const loadRapports=async()=>{
     const {data}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",groupe.id).order("date_reunion",{ascending:false});
@@ -1435,7 +1441,7 @@ THT - Tontine Habi Traore`;
       </div>}
 
       {tab==="suivi"&&<div style={{padding:"14px 16px 0"}}>
-        <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Vue d ensemble du dernier versement de chaque membre. Tape sur "Historique" dans l onglet Membres pour voir tous les paiements en detail.</p>
+        <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Vue d ensemble du dernier versement de chaque membre. Tape sur "Recu envoye" pour corriger, ou sur "Historique" dans l onglet Membres pour voir tous les paiements.</p>
         {groupe.membres.length===0&&<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:20}}>Aucun membre pour l instant</p>}
         {groupe.membres.map(m=>{
           const t=suivi[m.id];
@@ -1445,14 +1451,15 @@ THT - Tontine Habi Traore`;
                 <Avatar prenom={m.prenom} photo={m.photo} size={36}/>
                 <div style={{flex:1}}><p style={{margin:0,color:"#FDF6EC",fontWeight:700,fontSize:14}}>{m.prenom}</p>{t&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(t.montant)} - {new Date(t.created_at).toLocaleDateString("fr-FR")} a {new Date(t.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</p>}</div>
               </div>
-              {t?(
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {t?(<>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:!t.recu_envoye?8:0}}>
                   <span style={{background:"#1B4332",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
-                  <span style={{background:t.recu_envoye?"#1B4332":"#1A0800",color:t.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.recu_envoye?"✅":"❌"} Recu envoye</span>
+                  <span onClick={()=>toggleSuiviItem(m.id,t,"recu_envoye",!t.recu_envoye)} style={{cursor:"pointer",background:t.recu_envoye?"#1B4332":"#1A0800",color:t.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.recu_envoye?"✅":"❌"} Recu envoye</span>
                   <span style={{background:t.statut==="paye"?"#1B4332":"#1A0800",color:t.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
                   <span style={{background:t.photo_url?"#1B4332":"#1A0800",color:t.photo_url?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.photo_url?"✅":"❌"} Photo</span>
                 </div>
-              ):<p style={{margin:0,color:"#6B7280",fontSize:12}}>Aucun versement enregistre pour l instant</p>}
+                {!t.recu_envoye&&<button onClick={()=>toggleSuiviItem(m.id,t,"recu_envoye",true)} style={{width:"100%",background:"transparent",border:"1px solid #D4A843",borderRadius:8,padding:"7px",color:"#D4A843",fontSize:11,fontWeight:700,cursor:"pointer"}}>☑️ Tout est en ordre</button>}
+              </>):<p style={{margin:0,color:"#6B7280",fontSize:12}}>Aucun versement enregistre pour l instant</p>}
             </div>
           );
         })}

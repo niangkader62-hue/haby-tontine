@@ -32,3 +32,11 @@ create policy "transactions_write" on transactions for insert with check (
 
 -- Verification : cette requete doit reussir sans erreur
 select 'ok' as test;
+
+-- Les collecteurs peuvent aussi cocher la checklist (recu envoye, etc.)
+drop policy if exists "transactions_update" on transactions;
+create policy "transactions_update" on transactions for update using (
+  is_owner_of(groupe_id) or is_admin() or is_collecteur_of(groupe_id)
+);
+
+select 'ok2' as test2;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Component } from "react";
 import { registerUser, loginUser, getSession, logoutUser, verifyPin } from "./authService";
 import { supabase, SUPABASE_URL } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
@@ -2413,7 +2413,29 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   </Modal>;
 };
 
-export default function App() {
+class ErrorBoundary extends Component {
+  constructor(props){super(props);this.state={error:null};}
+  static getDerivedStateFromError(error){return {error};}
+  componentDidCatch(error,info){console.error("THT crash:",error,info);}
+  render(){
+    if(this.state.error){
+      return (
+        <div style={{minHeight:"100vh",background:"#0A1A0F",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
+          <p style={{fontSize:40,margin:"0 0 14px"}}>⚠️</p>
+          <p style={{color:"#FDF6EC",fontWeight:800,fontSize:16,margin:"0 0 10px"}}>Un probleme technique est survenu</p>
+          <div style={{background:"#0F2419",border:"1px solid #C1440E",borderRadius:12,padding:14,marginBottom:20,maxWidth:420,width:"100%"}}>
+            <p style={{color:"#EF4444",fontSize:12,fontFamily:"monospace",wordBreak:"break-word",margin:0,textAlign:"left"}}>{String(this.state.error?.message||this.state.error)}</p>
+          </div>
+          <button onClick={()=>{this.setState({error:null});window.location.href="/";}} style={{background:"linear-gradient(135deg,#D4A843,#B8922E)",border:"none",borderRadius:14,padding:"13px 28px",color:"#0A1A0F",fontWeight:800,fontSize:14,cursor:"pointer"}}>Retour a l accueil</button>
+          <p style={{color:"#6B7280",fontSize:11,marginTop:16}}>Envoie une capture de ce message a l assistance THT</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function AppInner() {
   const [user,setUser]=useState(null);
   const [checking,setChecking]=useState(true);
   const [nav,setNav]=useState("home");
@@ -2644,4 +2666,8 @@ export default function App() {
       {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
     </div>
   );
+}
+
+export default function App() {
+  return <ErrorBoundary><AppInner/></ErrorBoundary>;
 }

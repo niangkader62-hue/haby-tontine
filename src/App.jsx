@@ -1032,6 +1032,9 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     }).subscribe();
     return()=>{supabase.removeChannel(ch);};
   },[groupe.id,user.id]);
+  const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
+  const getRecipients=()=>(thread?[thread.userId]:groupe.membres.map(m=>m.userId)).filter(uid=>uid&&uid!==user.id);
+  const getDeepLink=()=>`/?g=${groupe.id}&tab=social`+(thread?`&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`:"");
   const sendMsg=async()=>{
     if(!msgInput.trim())return;
     const texte=s(msgInput.trim());
@@ -1042,6 +1045,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     notifyMessage(getRecipients(),user.prenom,false,getDeepLink());
     onToast("Message envoye !");
   };
+  const [sendingAudio,setSendingAudio]=useState(false);
   const toggleRecord=async()=>{
     if(recording){
       const blob=await stopRec();
@@ -2483,7 +2487,6 @@ function AppInner() {
       const {data:rapports}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",g.id).order("date_reunion",{ascending:false});
       const {data:createur}=await supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single();
       const moi=mine.find(m=>m.groupe_id===g.id);
-      const aJourCount=(membres||[]).filter(m=>m.paye).length;
       const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso?Number(m.montant_perso):(Number(g.montant)||0)),0)+(Number(g.montant_initial)||0);
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#D4A843",
@@ -2511,7 +2514,6 @@ function AppInner() {
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
       const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso?Number(m.montant_perso):null}));
-      const aJourCount=mm.filter(m=>m.paye).length;
       const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+(m.montantPerso||Number(g.montant)||0),0)+(Number(g.montant_initial)||0);
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {

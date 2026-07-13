@@ -628,6 +628,10 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     const {error}=await supabase.from("checklist").update({done:nouveauEtat}).eq("id",cid);
     if(error){setChecklistOverride(o=>({...o,[cid]:!nouveauEtat}));onToast("Erreur","error");}
   };
+  const [caisseMvtsMembre,setCaisseMvtsMembre]=useState([]);
+  useEffect(()=>{
+    supabase.from("caisse_sociale_mouvements").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:false}).limit(20).then(({data})=>setCaisseMvtsMembre(data||[]));
+  },[groupe.id]);
   const demanderPret=async()=>{
     if(!groupe.moi?.id)return;
     if(!pretMontant||Number(pretMontant)<500)return onToast("Montant minimum 500 FCFA","error");
@@ -740,6 +744,15 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         <Bar pct={budgetTotal>0?Math.round((groupe.cagnotte/budgetTotal)*100):0} c="#FF6B00"/>
         <p style={{margin:"5px 0 0",color:"#6B7280",fontSize:11,textAlign:"right"}}>{budgetTotal>0?Math.round((groupe.cagnotte/budgetTotal)*100):0}% collecte ce cycle</p>
       </div>
+      {caisseMvtsMembre.length>0&&<div style={{padding:"16px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE CAISSE SOCIALE</p>
+        {caisseMvtsMembre.map(m=>(
+          <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 12px",background:"#1A1A1A",borderRadius:10,marginBottom:6}}>
+            <div><p style={{margin:0,color:"#FFFFFF",fontSize:12}}>{m.motif||(m.sens==="ajout"?"Ajout":"Retrait")}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{new Date(m.created_at).toLocaleDateString("fr-FR")} - {m.auteur_nom}</p></div>
+            <p style={{margin:0,color:m.sens==="ajout"?"#22C55E":"#EF4444",fontWeight:700,fontSize:12}}>{m.sens==="ajout"?"+":"-"}{fmtFCFA(m.montant)}</p>
+          </div>
+        ))}
+      </div>}
       {groupe.moi&&<div style={{margin:"16px 16px 0",background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:16}}>
         <p style={{margin:0,color:"#FF6B00",fontWeight:700,fontSize:13}}>{t("maSituation")}</p>
         <div style={{display:"flex",justifyContent:"space-between",marginTop:10}}>
@@ -813,6 +826,15 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
             <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{r.titre}</p>
             <p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:11}}>{r.date_reunion?new Date(r.date_reunion).toLocaleDateString("fr-FR"):""}</p>
             {r.contenu&&<p style={{margin:"10px 0 0",color:"#6B7280",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{r.contenu}</p>}
+          </div>
+        ))}
+      </div>}
+      {groupe.membres.some(m=>m.evenement)&&<div style={{padding:"16px 16px 0"}}>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>EVENEMENTS</p>
+        {groupe.membres.filter(m=>m.evenement).map(m=>(
+          <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:"14px 16px",marginBottom:10,display:"flex",gap:12,alignItems:"center"}}>
+            <Avatar prenom={m.prenom} size={38}/>
+            <div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:13}}>{m.evenement}</p></div>
           </div>
         ))}
       </div>}

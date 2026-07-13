@@ -854,6 +854,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
               <span style={{background:"#1A0800",color:col,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{lbl}</span>
             </div>
             <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(p.montant)} demande{p.statut==="en_cours"||p.statut==="rembourse"?` - ${fmtFCFA(Math.max(0,reste))} restant`:""}</p>
+            {(p.statut==="en_cours"||p.statut==="rembourse")&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans interet"}{p.date_echeance?` - Echeance : ${new Date(p.date_echeance).toLocaleDateString("fr-FR")}`:""}</p>}
             {p.motif&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11,fontStyle:"italic"}}>{p.motif}</p>}
           </div>
         );})}
@@ -988,6 +989,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     reader.readAsDataURL(f);
   };
   const [accepterM,setAccepterM]=useState(null);
+  const [accepterTaux,setAccepterTaux]=useState("0");
+  const [accepterEcheance,setAccepterEcheance]=useState("");
   const [pretBusy,setPretBusy]=useState(false);
   const [remboM,setRemboM]=useState(null);
   const [remboAmt,setRemboAmt]=useState("");
@@ -1205,11 +1208,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
       }catch{}
     }
-    const {error}=await supabase.from("prets").update({statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString()}).eq("id",accepterM.id);
+    const {error}=await supabase.from("prets").update({statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString(),taux_interet:Number(accepterTaux)||0,date_echeance:accepterEcheance||null}).eq("id",accepterM.id);
     setPretBusy(false);
-    if(error)return onToast("Erreur","error");
-    setPrets(p=>p.map(x=>x.id===accepterM.id?{...x,statut:"en_cours",photo_url:photoUrl}:x));
-    setAccepterM(null);setPretPhoto(null);setPretPhotoPreview(null);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    setPrets(p=>p.map(x=>x.id===accepterM.id?{...x,statut:"en_cours",photo_url:photoUrl,taux_interet:Number(accepterTaux)||0,date_echeance:accepterEcheance||null}:x));
+    setAccepterM(null);setPretPhoto(null);setPretPhotoPreview(null);setAccepterTaux("0");setAccepterEcheance("");
     onToast("Pret accepte et verse !");
     const m=groupe.membres.find(mm=>mm.id===accepterM.membre_id);
     if(m?.userId){
@@ -1219,7 +1222,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
 
   const refuserPret=async(p)=>{
     const {error}=await supabase.from("prets").update({statut:"refuse"}).eq("id",p.id);
-    if(error)return onToast("Erreur","error");
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setPrets(pr=>pr.map(x=>x.id===p.id?{...x,statut:"refuse"}:x));
     onToast("Demande refusee");
     const m=groupe.membres.find(mm=>mm.id===p.membre_id);
@@ -1235,7 +1238,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const nouveauRembourse=remboM.montant_rembourse+amt;
     const statut=nouveauRembourse>=total?"rembourse":"en_cours";
     const {error}=await supabase.from("prets").update({montant_rembourse:nouveauRembourse,statut}).eq("id",remboM.id);
-    if(error)return onToast("Remboursement impossible","error");
+    if(error)return onToast("Remboursement impossible : "+(error.message||"inconnue"),"error");
     setPrets(ps=>ps.map(p=>p.id===remboM.id?{...p,montant_rembourse:nouveauRembourse,statut}:p));
     onToast(statut==="rembourse"?"Pret entierement rembourse !":"Remboursement enregistre !");
     setRemboM(null);setRemboAmt("");
@@ -1409,7 +1412,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const toggleCollecteur=async(m)=>{
     const nouveau=!m.roleCollecteur;
     const {error}=await supabase.from("membres").update({role_collecteur:nouveau}).eq("id",m.id);
-    if(error)return onToast("Erreur","error");
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setGroupe(g=>({...g,membres:g.membres.map(mm=>mm.id===m.id?{...mm,roleCollecteur:nouveau}:mm)}));
     onToast(nouveau?`${m.prenom} peut maintenant enregistrer des versements !`:`${m.prenom} n est plus collecteur`);
     if(nouveau&&m.userId){
@@ -1714,7 +1717,10 @@ THT - Tontine Habi Traore`;
         <div style={{background:"#0D0D0D",borderRadius:12,padding:14,marginBottom:16,textAlign:"center"}}>
           <p style={{margin:0,color:"#6B7280",fontSize:12}}>Montant a verser</p>
           <p style={{margin:"4px 0 0",color:"#FF6B00",fontWeight:900,fontSize:24}}>{fmtFCFA(accepterM.montant)}</p>
+          {accepterM.motif&&<p style={{margin:"6px 0 0",color:"#6B7280",fontSize:12,fontStyle:"italic"}}>{accepterM.motif}</p>}
         </div>
+        <Fld label="Taux d interet (%, optionnel)"><Inp value={accepterTaux} onChange={e=>setAccepterTaux(e.target.value.replace(/\D/g,""))} placeholder="0" inputMode="numeric"/></Fld>
+        <Fld label="Date d echeance du remboursement (optionnel)"><Inp value={accepterEcheance} onChange={e=>setAccepterEcheance(e.target.value)} type="date"/></Fld>
         <Fld label="Photo de l'argent verse (recommande)">
           <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
@@ -2227,7 +2233,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
     setConfigBusy(true);
     const {error}=await supabase.from("users").update({code_secu_1:nc1.trim(),code_secu_2:nc2.trim()}).eq("id",currentUserId);
     setConfigBusy(false);
-    if(error)return onToast("Erreur","error");
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setCodeSecu1(nc1.trim());setCodeSecu2(nc2.trim());
     setShowConfigCodes(false);setNc1("");setNc2("");
     onToast("Codes de securite enregistres !");

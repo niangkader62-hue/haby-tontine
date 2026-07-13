@@ -507,7 +507,7 @@ const Carousel = ({slides}) => {
     <div style={{margin:"18px 16px 0",position:"relative",overflow:"hidden",borderRadius:16,height:112}}>
       <div style={{display:"flex",height:"100%",transition:"transform .5s cubic-bezier(.4,0,.2,1)",transform:`translateX(-${idx*100}%)`}}>
         {slides.map((s,i)=>(
-          <div key={i} style={{minWidth:"100%",height:"100%",background:s.bg,display:"flex",alignItems:"center",padding:"0 20px",gap:14}}>
+          <div key={i} onClick={s.onClick} style={{minWidth:"100%",height:"100%",background:s.bg,display:"flex",alignItems:"center",padding:"0 20px",gap:14,cursor:s.onClick?"pointer":"default"}}>
             <div style={{flex:1}}>
               <p style={{margin:0,color:"#FFFFFF",fontWeight:800,fontSize:15}}>{s.titre}</p>
               <p style={{margin:"4px 0 0",color:"rgba(255,255,255,0.78)",fontSize:12,lineHeight:1.4}}>{s.texte}</p>
@@ -523,7 +523,7 @@ const Carousel = ({slides}) => {
   );
 };
 
-const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation,cagnottes,onCreerCagnotte,onSelectCagnotte}) => {
+const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation,cagnottes,onCreerCagnotte,onSelectCagnotte,onOpenHaby}) => {
   const totalEp=groupes.reduce((a,g)=>a+g.cagnotte,0);
   const totalCS=groupes.reduce((a,g)=>a+g.caisseSociale,0);
   const nbRet=groupes.reduce((a,g)=>a+g.membres.filter(m=>!m.paye).length,0);
@@ -550,9 +550,9 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
       </div>
       {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} {t("membresEnRetard")}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{t("cliquezTontine")}</p></div></div>}
       <Carousel slides={[
-        {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#2A2A2A,#3D3D3D)"},
-        {titre:"Cagnottes solidaires",texte:"Mariage, sante, etudes... cree un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)"},
-        {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#1A1A1A,#2A2A2A)"},
+        {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#2A2A2A,#3D3D3D)",onClick:onProfil},
+        {titre:"Cagnottes solidaires",texte:"Mariage, sante, etudes... cree un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onCreerCagnotte},
+        {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#1A1A1A,#2A2A2A)",onClick:onOpenHaby},
         {titre:"Versements securises",texte:"Photo de preuve a chaque cotisation enregistree",emoji:"📸",bg:"linear-gradient(135deg,#3D2B00,#6B4A00)"},
       ]}/>
       <div style={{padding:"20px 16px 0"}}>
@@ -620,6 +620,14 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
   const [pretMontant,setPretMontant]=useState("");
   const [pretMotif,setPretMotif]=useState("");
   const [pretBusy,setPretBusy]=useState(false);
+  const [checklistOverride,setChecklistOverride]=useState({});
+  const toggleCMembre=async(cid)=>{
+    const c=groupe.checklist.find(x=>x.id===cid);
+    const nouveauEtat=!(checklistOverride[cid]??c.done);
+    setChecklistOverride(o=>({...o,[cid]:nouveauEtat}));
+    const {error}=await supabase.from("checklist").update({done:nouveauEtat}).eq("id",cid);
+    if(error){setChecklistOverride(o=>({...o,[cid]:!nouveauEtat}));onToast("Erreur","error");}
+  };
   const demanderPret=async()=>{
     if(!groupe.moi?.id)return;
     if(!pretMontant||Number(pretMontant)<500)return onToast("Montant minimum 500 FCFA","error");
@@ -704,7 +712,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     onVoted&&onVoted();
   };
   const ROLES_LABELS={president:"Presidente",tresoriere:"Tresoriere",secretaire:"Secretaire"};
-  const budgetTotal=groupe.membres.reduce((s,m)=>s+(m.montantPerso||groupe.montant),0)+(groupe.montantInitial||0);
+  const budgetTotal=groupe.membres.reduce((s,m)=>s+((m.montantPerso??groupe.montant)),0)+(groupe.montantInitial||0);
   const resteACollecter=Math.max(0,budgetTotal-groupe.cagnotte);
   const aJourP=groupe.membres.filter(m=>m.paye);
   const enRetP=groupe.membres.filter(m=>!m.paye);
@@ -754,7 +762,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         {aJourP.map(m=>(
           <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
             <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
-            <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA(m.montantPerso||groupe.montant)} du{m.montantPerso?" (montant personnalise)":""}</p></div>
+            <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA((m.montantPerso??groupe.montant))} du{m.montantPerso!=null?" (montant personnalise)":""}</p></div>
             <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>Paye</span>
           </div>
         ))}
@@ -762,7 +770,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         {enRetP.map(m=>(
           <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
             <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
-            <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA(m.montantPerso||groupe.montant)} du{m.montantPerso?" (montant personnalise)":""}</p></div>
+            <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA((m.montantPerso??groupe.montant))} du{m.montantPerso!=null?" (montant personnalise)":""}</p></div>
             <span style={{background:"#1A0800",color:"#EF4444",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>En retard</span>
           </div>
         ))}</>}
@@ -840,12 +848,12 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       </div>}
       {groupe.checklist&&groupe.checklist.length>0&&<div style={{padding:"8px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>TACHES DU GROUPE</p>
-        {groupe.checklist.map(c=>(
-          <div key={c.id} style={{background:"#1A1A1A",border:`1px solid ${c.done?"#FF6B00":"#2A2A2A"}`,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
-            <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${c.done?"#FF6B00":"#3D3D3D"}`,background:c.done?"#FF6B00":"transparent",flexShrink:0}}/>
-            <p style={{margin:0,color:c.done?"#6B7280":"#FFFFFF",fontSize:13,textDecoration:c.done?"line-through":"none"}}>{c.label}</p>
+        {groupe.checklist.map(c=>{const done=checklistOverride[c.id]??c.done;return(
+          <div key={c.id} onClick={()=>toggleCMembre(c.id)} style={{background:"#1A1A1A",border:`1px solid ${done?"#FF6B00":"#2A2A2A"}`,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}>
+            <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${done?"#FF6B00":"#3D3D3D"}`,background:done?"#FF6B00":"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{done&&<span style={{color:"#0D0D0D",fontWeight:900,fontSize:12}}>v</span>}</div>
+            <p style={{margin:0,color:done?"#6B7280":"#FFFFFF",fontSize:13,textDecoration:done?"line-through":"none"}}>{c.label}</p>
           </div>
-        ))}
+        );})}
       </div>}
       <div style={{padding:"20px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>MESSAGES</p>
@@ -1024,6 +1032,23 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setTimeout(()=>setTirageAnim(false),2500);
   };
 
+  const [clotureBusy,setClotureBusy]=useState(false);
+  const cloturerCycle=async()=>{
+    if(!gagnantCycleActuel)return onToast("Fais d abord le tirage de ce cycle avant de cloturer","error");
+    if(groupe.cycle>=groupe.totalCycles)return onToast("C etait le dernier cycle de cette tontine !","error");
+    setClotureBusy(true);
+    const nouveauCycle=groupe.cycle+1;
+    const {error:e1}=await supabase.from("groupes").update({cycle:nouveauCycle}).eq("id",groupe.id);
+    const {error:e2}=await supabase.from("membres").update({paye:false}).eq("groupe_id",groupe.id);
+    setClotureBusy(false);
+    if(e1||e2)return onToast("Erreur lors de la cloture du cycle","error");
+    setGroupe(g=>({...g,cycle:nouveauCycle,membres:g.membres.map(m=>({...m,paye:false}))}));
+    onToast(`Cycle ${nouveauCycle}/${groupe.totalCycles} demarre !`);
+    groupe.membres.filter(m=>m.userId).forEach(m=>{
+      supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Nouveau cycle",body:`"${groupe.nom}" passe au cycle ${nouveauCycle}/${groupe.totalCycles}. Nouvelle cotisation a verser !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
+    });
+  };
+
   const ROLES=[["president","Presidente"],["tresoriere","Tresoriere"],["secretaire","Secretaire"]];
   const titulaire=(role)=>groupe.membres.find(m=>m.role_bureau===role);
   const electionActive=(role)=>elections.find(e=>e.role===role&&e.statut==="ouverte");
@@ -1194,7 +1219,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setRemboM(null);setRemboAmt("");
   };
 
-  const montantDu=(m)=>m.montantPerso||groupe.montant;
+  const montantDu=(m)=>(m.montantPerso??groupe.montant);
   const aJour=groupe.membres.filter(m=>m.paye);
   const enRet=groupe.membres.filter(m=>!m.paye);
   const collecte=aJour.reduce((s,m)=>s+montantDu(m),0)+(groupe.montantInitial||0);
@@ -1222,13 +1247,16 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const toggleP=async(mid)=>{
     const m=groupe.membres.find(x=>x.id===mid);
     const newPaye=!m.paye;
+    const montant=montantDu(m);
     const newScore=newPaye?Math.min(m.score+5,100):Math.max(m.score-10,0);
-    const {error}=await supabase.from("membres").update({paye:newPaye,score:newScore}).eq("id",mid);
+    const newVersements=newPaye?(m.versements||0)+montant:Math.max(0,(m.versements||0)-montant);
+    const newCyclesPaies=newPaye?(m.cyclesPaies||0)+1:Math.max(0,(m.cyclesPaies||0)-1);
+    const {error}=await supabase.from("membres").update({paye:newPaye,score:newScore,versements:newVersements,cycles_paies:newCyclesPaies}).eq("id",mid);
     if(error)return onToast("Mise a jour impossible","error");
     if(newPaye){
-      await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:mid,montant:montantDu(m),cycle:groupe.cycle,statut:"paye"});
+      await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:mid,montant,cycle:groupe.cycle,statut:"paye"});
     }
-    setGroupe(g=>({...g,membres:g.membres.map(x=>x.id===mid?{...x,paye:newPaye,score:newScore}:x)}));
+    setGroupe(g=>({...g,cagnotte:newPaye?g.cagnotte+montant:Math.max(0,g.cagnotte-montant),membres:g.membres.map(x=>x.id===mid?{...x,paye:newPaye,score:newScore,versements:newVersements,cyclesPaies:newCyclesPaies}:x)}));
     onToast("Statut mis a jour");
   };
   const toggleC=async(cid)=>{
@@ -1331,7 +1359,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"THT",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
       }
     }).catch(()=>{});
-    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0,montantPerso:data.montant_perso?Number(data.montant_perso):null}]}));
+    setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0,montantPerso:data.montant_perso!=null?Number(data.montant_perso):null}]}));
     setNewM({prenom:"",tel:"",quartier:"",photo:""});
     setShowAdd(false);
     onToast(`${data.prenom} a ete ajoute(e) !`);
@@ -1595,6 +1623,11 @@ THT - Tontine Habi Traore`;
             <div style={{margin:"12px auto 8px"}}><Avatar prenom={g?.prenom||"?"} photo={g?.photo} size={64}/></div>
             <p style={{margin:0,color:"#FF6B00",fontSize:20,fontWeight:900}}>{g?.prenom||"Membre retire"}</p>
             <p style={{margin:"4px 0 0",color:"#6B7280",fontSize:12}}>Tiree au sort le {new Date(gagnantCycleActuel.created_at).toLocaleDateString("fr-FR")}</p>
+            {groupe.cycle<groupe.totalCycles?(
+              <button onClick={cloturerCycle} disabled={clotureBusy} style={{marginTop:16,width:"100%",background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"12px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>{clotureBusy?"Cloture en cours...":`Cloturer le cycle ${groupe.cycle} et passer au cycle ${groupe.cycle+1}`}</button>
+            ):(
+              <p style={{marginTop:16,color:"#22C55E",fontWeight:700,fontSize:13}}>🎉 Dernier cycle de cette tontine termine !</p>
+            )}
           </div>
         );})():(
           <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
@@ -2190,7 +2223,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
     setResetBusy(true);setResetJournal(null);
     const {data:{session}}=await supabase.auth.getSession();
     try{
-      const res=await fetch(`${SUPABASE_URL}/functions/v1/admin-reset-data`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${session.access_token}`}});
+      const res=await fetch(`${SUPABASE_URL}/functions/v1/admin-reset-data`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${session.access_token}`},body:JSON.stringify({code_1:saisieCode1.trim(),code_2:saisieCode2.trim()})});
       const data=await res.json();
       setResetBusy(false);
       setResetJournal(data.journal||[data.error||"Aucune information"]);
@@ -3011,13 +3044,13 @@ function AppInner() {
       const {data:rapports}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",g.id).order("date_reunion",{ascending:false});
       const {data:createur}=await supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single();
       const moi=mine.find(m=>m.groupe_id===g.id);
-      const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso?Number(m.montant_perso):(Number(g.montant)||0)),0)+(Number(g.montant_initial)||0);
+      const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso!=null?Number(m.montant_perso):(Number(g.montant)||0)),0)+(Number(g.montant_initial)||0);
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
-        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau,montantPerso:m.montant_perso?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur})),
+        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
         elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),
@@ -3037,8 +3070,8 @@ function AppInner() {
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
-      const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur}));
-      const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+(m.montantPerso||Number(g.montant)||0),0)+(Number(g.montant_initial)||0);
+      const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur}));
+      const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+((m.montantPerso??Number(g.montant)??0)),0)+(Number(g.montant_initial)||0);
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",
@@ -3164,7 +3197,7 @@ function AppInner() {
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} user={cu} onBack={backTap} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
         :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={backTap} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
         :sel?<GroupeScreen groupe={sel} deepLink={deepLink} onBack={backTap} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
-        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(g);}} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}}/>
+        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(g);}} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}} onOpenHaby={()=>setNav("haby")}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id} user={cu}/>

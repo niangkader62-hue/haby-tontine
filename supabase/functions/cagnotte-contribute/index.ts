@@ -71,8 +71,8 @@ Deno.serve(async (req) => {
       });
       if (insErr) return new Response(JSON.stringify({ error: "Enregistrement impossible" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-      const nouveauTotal = Number(cagnotte.montant_collecte || 0) + montantNum;
-      await supabase.from("cagnottes").update({ montant_collecte: nouveauTotal }).eq("id", cagnotte_id);
+      const { data: nouveauTotal, error: incErr } = await supabase.rpc("increment_cagnotte", { p_cagnotte_id: cagnotte_id, p_montant: montantNum });
+      if (incErr) return new Response(JSON.stringify({ error: "Mise a jour du total impossible : " + incErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
       // Notifie la creatrice de la cagnotte
       if (cagnotte.user_id) {

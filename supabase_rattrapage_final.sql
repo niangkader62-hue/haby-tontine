@@ -74,3 +74,30 @@ create policy "prets_write" on prets for insert with check (
 );
 
 select 'tout est en place' as resultat;
+
+-- Ajouts issus de l'audit Claude Code (12/07) :
+drop policy if exists "checklist_update" on checklist;
+create policy "checklist_update" on checklist for update using (
+  is_owner_of(groupe_id) or is_admin() or is_membre_of(groupe_id)
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'tirages_un_par_cycle') then
+    alter table tirages add constraint tirages_un_par_cycle unique (groupe_id, cycle);
+  end if;
+end $$;
+
+create or replace function increment_cagnotte(p_cagnotte_id uuid, p_montant numeric)
+returns numeric
+language plpgsql
+as $$
+declare
+  v_total numeric;
+begin
+  update cagnottes set montant_collecte = coalesce(montant_collecte,0) + p_montant
+  where id = p_cagnotte_id
+  returning montant_collecte into v_total;
+  return v_total;
+end;
+$$;

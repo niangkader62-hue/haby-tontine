@@ -34,12 +34,25 @@ Deno.serve(async (req) => {
     if (authErr || !caller) return new Response(JSON.stringify({ error: "Session invalide : " + (authErr?.message || ""), journal }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     journal.push(`appelant identifie : ${caller.id}`);
 
-    const { data: profil, error: profilErr } = await supabase.from("users").select("role, telephone").eq("id", caller.id).single();
+    const { data: profil, error: profilErr } = await supabase.from("users").select("role, telephone, code_secu_1, code_secu_2").eq("id", caller.id).single();
     if (profilErr) journal.push(`erreur lecture profil : ${profilErr.message}`);
     if (!profil || profil.role !== "admin") {
       return new Response(JSON.stringify({ error: "Reserve aux administrateurs (role actuel : " + (profil?.role || "inconnu") + ")", journal }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     journal.push(`role admin confirme pour ${profil.telephone}`);
+
+    // Verification des 2 codes de securite COTE SERVEUR (avant : seulement verifie dans l'app,
+    // ce qui pouvait etre contourne en appelant directement cette fonction).
+    let bodyRecu = {};
+    try { bodyRecu = await req.json(); } catch (_e) { /* pas de corps envoye */ }
+    const { code_1, code_2 } = bodyRecu;
+    if (!profil.code_secu_1 || !profil.code_secu_2) {
+      return new Response(JSON.stringify({ error: "Configure d abord tes 2 codes de securite avant de pouvoir utiliser cette fonction", journal }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (code_1 !== profil.code_secu_1 || code_2 !== profil.code_secu_2) {
+      return new Response(JSON.stringify({ error: "Code de securite incorrect", journal }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    journal.push("codes de securite verifies et corrects");
 
     const numerosProteges = ["76908031", "90647106"];
     const estProtege = (tel) => numerosProteges.some((n) => (tel || "").includes(n));

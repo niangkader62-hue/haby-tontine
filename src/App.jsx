@@ -716,6 +716,39 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
   </div>
 );
 
+// Meme alignement visuel que MembreRow (avatar, nom, badges, ligne quartier/telephone,
+// pastille de statut, bloc de stats), mais en LECTURE SEULE : aucun bouton d'action,
+// car un membre participant voit tout mais ne peut rien modifier.
+const MembreRowLecture = ({m,montant}) => (
+  <div style={{background:"#1A1A1A",border:`1px solid ${m.paye?"#2A2A2A":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
+    <div style={{display:"flex",alignItems:"center",gap:10}}>
+      <Avatar prenom={m.prenom} photo={m.photo} size={46}/>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2,flexWrap:"wrap"}}>
+          <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p>
+          <Badge score={m.score}/>
+          {!m.paye&&<span style={{background:"#C1440E",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99}}>NON PAYE</span>}
+          {m.montantPerso&&<span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #FF6B00"}}>💰 {fmtFCFA(m.montantPerso)}/cycle</span>}
+          {m.roleCollecteur&&<span style={{background:"#2A2A2A",color:"#22C55E",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #22C55E"}}>🤝 Collecteur</span>}
+        </div>
+        {m.quartier&&<p style={{margin:0,color:"#FF6B00",fontSize:11,fontWeight:600}}>📍 {m.quartier}</p>}
+        <p style={{margin:"1px 0 0",color:"#6B7280",fontSize:11}}>{m.tel}</p>
+      </div>
+      <div style={{width:30,height:30,borderRadius:"50%",background:m.paye?"#22C55E":"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14,color:"#fff",fontWeight:900}}>{m.paye?"v":"x"}</div>
+    </div>
+    <div style={{margin:"8px 0 0",padding:"9px 10px",background:"#0D0D0D",borderRadius:8}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+        <span style={{color:"#6B7280",fontSize:12}}>Cotisations payees</span>
+        <span style={{color:"#FF6B00",fontWeight:700,fontSize:12}}>{fmtFCFA((m.cyclesPaies||0)*(montant||0))}</span>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between"}}>
+        <span style={{color:"#6B7280",fontSize:12}}>Versements recus</span>
+        <span style={{color:"#22C55E",fontWeight:700,fontSize:12}}>{fmtFCFA(m.versements||0)}</span>
+      </div>
+    </div>
+  </div>
+);
+
 const Carousel = ({slides}) => {
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
@@ -999,21 +1032,9 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       </div>}
       <div style={{padding:"20px 16px 0"}}>
         <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>A JOUR ({aJourP.length})</p>
-        {aJourP.map(m=>(
-          <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
-            <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
-            <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA((m.montantPerso??groupe.montant))} du{m.montantPerso!=null?" (montant personnalise)":""}</p></div>
-            <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>Paye</span>
-          </div>
-        ))}
+        {aJourP.map(m=><MembreRowLecture key={m.id} m={m} montant={(m.montantPerso??groupe.montant)}/>)}
         {enRetP.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px",letterSpacing:.5}}>EN RETARD ({enRetP.length})</p>
-        {enRetP.map(m=>(
-          <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}>
-            <Avatar prenom={m.prenom} photo={m.photo} size={38}/>
-            <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Verse : {fmtFCFA(m.versements)} / {fmtFCFA((m.montantPerso??groupe.montant))} du{m.montantPerso!=null?" (montant personnalise)":""}</p></div>
-            <span style={{background:"#1A0800",color:"#EF4444",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>En retard</span>
-          </div>
-        ))}</>}
+        {enRetP.map(m=><MembreRowLecture key={m.id} m={m} montant={(m.montantPerso??groupe.montant)}/>)}</>}
       </div>
       {groupe.membres.some(m=>m.role_bureau)&&<div style={{padding:"16px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>BUREAU</p>
@@ -3401,7 +3422,7 @@ function AppInner() {
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
-        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur})),
+        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,score:m.score||80,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
         elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),

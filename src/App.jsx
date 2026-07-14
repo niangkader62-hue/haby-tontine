@@ -123,19 +123,19 @@ function useAudioRecorder(){
 const I18N={
   fr:{
     connexion:"Connexion",inscription:"Inscription",bienvenue:"Bienvenue",
-    accueil:"Accueil",epargne:"Epargne",profil:"Profil",
-    mesTontines:"Mes Tontines",creer:"Creer",ajouter:"Ajouter",modifier:"Modifier",supprimer:"Supprimer",
+    accueil:"Accueil",epargne:"Épargne",profil:"Profil",
+    mesTontines:"Mes Tontines",creer:"Créer",ajouter:"Ajouter",modifier:"Modifier",supprimer:"Supprimer",
     enregistrer:"Enregistrer",annuler:"Annuler",gratuit:"GRATUIT",premium:"PREMIUM",
     notifications:"Activer les notifications",lierWA:"Lier WhatsApp",changerPin:"Changer mon PIN",
-    exporterDonnees:"Exporter mes donnees",contacterSupport:"Contacter le support",deconnexion:"Deconnexion",
+    exporterDonnees:"Exporter mes données",contacterSupport:"Contacter le support",deconnexion:"Déconnexion",
     panneauAdmin:"Panneau Administrateur",langue:"Langue",
-    mesEpargnes:"Mes epargnes",caisseSociale:"Caisse sociale",
+    mesEpargnes:"Mes épargnes",caisseSociale:"Caisse sociale",
     membresEnRetard:"membre(s) en retard",cliquezTontine:"Cliquez sur une tontine",
-    tabMembres:"Membres",tabBureau:"Bureau",tabTirage:"Tirage",tabPrets:"Prets",tabReunions:"Reunions",
-    tabEvenements:"Evenements",tabTaches:"Taches",tabSocial:"Message",tabRapport:"Rapport",
+    tabMembres:"Membres",tabBureau:"Bureau",tabTirage:"Tirage",tabPrets:"Prêts",tabReunions:"Réunions",
+    tabEvenements:"Événements",tabTaches:"Tâches",tabSocial:"Message",tabRapport:"Rapport",
     mesCagnottes:"Mes Cagnottes",cagnottesNav:"Cagnottes",lectureSeule:"Lecture seule",maSituation:"Ma situation",
-    statut:"Statut",aJour:"A jour",enRetard:"En retard",membresGroupe:"Membres du groupe",
-    ecrisAHaby:"Ecris a HABY...",panneauUtilisatrices:"Utilisatrices inscrites",
+    statut:"Statut",aJour:"À jour",enRetard:"En retard",membresGroupe:"Membres du groupe",
+    ecrisAHaby:"Écris à HABY...",panneauUtilisatrices:"Utilisatrices inscrites",
   },
   en:{
     connexion:"Log in",inscription:"Sign up",bienvenue:"Welcome",
@@ -550,7 +550,7 @@ const AuthScreen = ({onLogin}) => {
 
   const doLogin=async()=>{
     setErr("");
-    if(tel.replace(/\D/g,"").length<8)return setErr("Numero invalide");
+    if(tel.replace(/\D/g,"").length<8)return setErr("Numéro invalide");
     if(pin.length!==4)return setErr("Le PIN doit faire 4 chiffres");
     setLoading(true);
     const res=await loginUser(tel,pin);
@@ -562,7 +562,7 @@ const AuthScreen = ({onLogin}) => {
   const doRegister=async()=>{
     setErr("");
     if(!prenom.trim()||prenom.trim().length<2)return setErr("Prenom trop court");
-    if(tel.replace(/\D/g,"").length<8)return setErr("Numero invalide");
+    if(tel.replace(/\D/g,"").length<8)return setErr("Numéro invalide");
     if(pin.length!==4)return setErr("Le PIN doit faire 4 chiffres");
     if(pin!==pinC)return setErr("Les deux PIN ne correspondent pas");
     setLoading(true);
@@ -579,8 +579,8 @@ const AuthScreen = ({onLogin}) => {
   if(step==="tutoriel"){
     const slides=[
       {ic:"🤝",titre:"Bienvenue sur THT",texte:"Gere tes tontines avec tes proches, en toute transparence. Chaque membre voit qui a paye, qui est en retard, et le budget complet — en temps reel."},
-      {ic:"💰",titre:"Cotisations et tirages",texte:"Cree une tontine, ajoute tes membres, suis les cotisations de chacun. Le tirage au sort designe automatiquement le gagnant de chaque tour."},
-      {ic:"🎉",titre:"Cagnottes solidaires",texte:"Mariage, sante, funerailles, etudes... cree une cagnotte et partage un lien : n'importe qui peut contribuer, meme sans compte THT."},
+      {ic:"💰",titre:"Cotisations et tirages",texte:"Crée une tontine, ajoute tes membres, suis les cotisations de chacun. Le tirage au sort désigne automatiquement le gagnant de chaque tour."},
+      {ic:"🎉",titre:"Cagnottes solidaires",texte:"Mariage, santé, funérailles, études... crée une cagnotte et partage un lien : n'importe qui peut contribuer, même sans compte THT."},
       {ic:"🤖",titre:"HABY, ton assistante",texte:"Une question sur tes finances ou ta tontine ? HABY repond directement dans l'app, a tout moment."},
     ];
     const sl=slides[tutoStep];
@@ -604,7 +604,7 @@ const AuthScreen = ({onLogin}) => {
     <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#0D0D0D"}}>
       <style>{`
         @keyframes introLogoIn { 0%{opacity:0;transform:scale(0.5) translateY(10px);} 60%{opacity:1;transform:scale(1.1) translateY(0);} 100%{opacity:1;transform:scale(1) translateY(0);} }
-        @keyframes introGlow { 0%,100%{box-shadow:0 8px 24px rgba(212,168,67,0.35);} 50%{box-shadow:0 8px 36px rgba(212,168,67,0.6);} }
+        @keyframes introGlow { 0%,100%{box-shadow:0 8px 24px rgba(255,107,0,0.35);} 50%{box-shadow:0 8px 36px rgba(255,107,0,0.6);} }
         @keyframes introFadeUp { 0%{opacity:0;transform:translateY(10px);} 100%{opacity:1;transform:translateY(0);} }
       `}</style>
       <div style={{width:"100%",aspectRatio:"3/2",position:"relative",flexShrink:0}}>
@@ -626,7 +626,7 @@ const AuthScreen = ({onLogin}) => {
   if(step==="welcome") return(
     <div style={W}><div style={C}>
       <div style={{textAlign:"center",paddingBottom:8}}>
-        <div style={{width:120,height:120,borderRadius:32,margin:"0 auto 18px",overflow:"hidden",boxShadow:"0 8px 24px rgba(212,168,67,0.3)"}}>
+        <div style={{width:120,height:120,borderRadius:32,margin:"0 auto 18px",overflow:"hidden",boxShadow:"0 8px 24px rgba(255,107,0,0.3)"}}>
           <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         </div>
         <h1 style={{color:"#FFFFFF",fontSize:30,fontWeight:900,margin:"8px 0 4px",letterSpacing:2}}>THT</h1>
@@ -644,10 +644,10 @@ const AuthScreen = ({onLogin}) => {
     <div style={W}><div style={C}>
       <button onClick={()=>go("welcome")} style={{background:"none",border:"none",color:"#FF6B00",cursor:"pointer",fontSize:14,padding:"0 0 16px",display:"block",fontWeight:600}}>← Retour</button>
       <h2 style={{color:"#FFFFFF",fontWeight:800,fontSize:22,margin:"0 0 20px"}}>Connexion</h2>
-      <Fld label="Numero de telephone"><PhoneInput value={tel} onChange={v=>setTel(sPhone(v))} autoFocus/></Fld>
+      <Fld label="Numéro de téléphone"><PhoneInput value={tel} onChange={v=>setTel(sPhone(v))} autoFocus/></Fld>
       <Fld label="Code PIN (4 chiffres)"><Inp value={pin} onChange={e=>setPin(sPin(e.target.value))} placeholder="Code secret" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <ErrBox msg={err}/>
-      <Btn onClick={doLogin} disabled={loading}>{loading?"Verification...":"Se connecter"}</Btn>
+      <Btn onClick={doLogin} disabled={loading}>{loading?"Vérification...":"Se connecter"}</Btn>
       <p style={{color:"#6B7280",fontSize:12,textAlign:"center",marginTop:16,cursor:"pointer"}} onClick={()=>go("register")}>Pas encore inscrit ? <span style={{color:"#FF6B00",fontWeight:700}}>Creer un compte</span></p>
     </div></div>
   );
@@ -665,7 +665,7 @@ const AuthScreen = ({onLogin}) => {
         <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhoto}/>
       </div>
       <Fld label="Prenom"><Inp value={prenom} onChange={e=>setPrenom(s(e.target.value))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
-      <Fld label="Numero de telephone"><PhoneInput value={tel} onChange={v=>setTel(sPhone(v))}/></Fld>
+      <Fld label="Numéro de téléphone"><PhoneInput value={tel} onChange={v=>setTel(sPhone(v))}/></Fld>
       <Fld label="Code PIN secret (4 chiffres)"><Inp value={pin} onChange={e=>setPin(sPin(e.target.value))} placeholder="Code secret" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <Fld label="Confirmer le PIN"><Inp value={pinC} onChange={e=>setPinC(sPin(e.target.value))} placeholder="Confirmer" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <Fld label="Code de parrainage (optionnel)"><Inp value={parrainCode} onChange={e=>setParrainCode(e.target.value.toUpperCase())} placeholder="Ex: A1B2C3D4" maxLength={12}/></Fld>
@@ -676,7 +676,7 @@ const AuthScreen = ({onLogin}) => {
   );
 };
 
-const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,onPhoto,onToggleCollecteur}) => (
+const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,onPhoto,onToggleCollecteur,onEdit}) => (
   <div style={{background:"#1A1A1A",border:`1px solid ${m.paye?"#2A2A2A":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
       <Avatar prenom={m.prenom} photo={m.photo} size={46}/>
@@ -708,6 +708,7 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
       <button onClick={()=>onVersement(m)} style={{flex:1,background:"#212121",border:"1px solid #FF6B00",borderRadius:10,padding:"8px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>+ Versement</button>
       <button onClick={()=>onHistorique(m)} style={{flex:1,background:"#212121",border:"1px solid #6B7280",borderRadius:10,padding:"8px",color:"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>Historique</button>
       <label style={{background:"#212121",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"center"}}>📷<input type="file" accept="image/*" hidden onChange={e=>onPhoto(m.id,e)}/></label>
+      {onEdit&&<button onClick={()=>onEdit(m)} style={{background:"#212121",border:"1px solid #6B7280",borderRadius:10,padding:"8px 10px",color:"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer"}}>✏️ Modifier</button>}
       <button onClick={()=>onDelete(m.id)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"8px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Retirer</button>
     </div>
     {!m.paye&&<button onClick={onToggle} style={{width:"100%",background:"#2A2A2A",border:"1px solid #22C55E",borderRadius:10,padding:"8px",color:"#22C55E",fontSize:12,fontWeight:700,cursor:"pointer",marginTop:6}}>Marquer paye ce cycle</button>}
@@ -769,7 +770,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
       {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} {t("membresEnRetard")}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{t("cliquezTontine")}</p></div></div>}
       <Carousel slides={[
         {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#2A2A2A,#3D3D3D)",onClick:onProfil},
-        {titre:"Cagnottes solidaires",texte:"Mariage, sante, etudes... cree un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onOpenCagnottes},
+        {titre:"Cagnottes solidaires",texte:"Mariage, santé, études... crée un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onOpenCagnottes},
         {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#1A1A1A,#2A2A2A)",onClick:onOpenHaby},
         {titre:"Versements securises",texte:"Photo de preuve a chaque cotisation enregistree",emoji:"📸",bg:"linear-gradient(135deg,#3D2B00,#6B4A00)"},
       ]}/>
@@ -912,7 +913,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
     notifyMessage(getRecipients(),user.prenom,false,getDeepLink());
-    onToast("Message envoye !");
+    onToast("Message envoyé !");
   };
   const toggleRecord=async()=>{
     if(recording){
@@ -925,23 +926,23 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
         notifyMessage(getRecipients(),user.prenom,true,getDeepLink());
-        onToast("Message vocal envoye !");
+        onToast("Message vocal envoyé !");
       }catch{onToast("Envoi du message vocal impossible","error");}
       setSendingAudio(false);
     }else{
       const ok=await startRec();
-      if(!ok)onToast("Micro indisponible ou refuse","error");
+      if(!ok)onToast("Micro indisponible ou refusé","error");
     }
   };
   const voter=async(election,candidateId)=>{
     setVoting(election.id);
     const {error}=await supabase.from("votes").insert({election_id:election.id,voter_user_id:user.id,candidate_membre_id:candidateId});
     setVoting(null);
-    if(error)return onToast("Vote impossible (peut-etre deja vote ?)","error");
+    if(error)return onToast("Vote impossible (peut-être déjà voté ?)","error");
     onToast("Vote enregistre !");
     onVoted&&onVoted();
   };
-  const ROLES_LABELS={president:"Presidente",tresoriere:"Tresoriere",secretaire:"Secretaire"};
+  const ROLES_LABELS={president:"Présidente",tresoriere:"Trésorière",secretaire:"Secrétaire"};
   const budgetTotal=groupe.membres.reduce((s,m)=>s+((m.montantPerso??groupe.montant)),0)+(groupe.montantInitial||0);
   const resteACollecter=Math.max(0,budgetTotal-groupe.cagnotte);
   const aJourP=groupe.membres.filter(m=>m.paye);
@@ -960,7 +961,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       <div style={{margin:"16px 16px 0",background:"linear-gradient(135deg,#1A1A1A,#212121)",border:"1px solid #FF6B00",borderRadius:14,padding:14}}>
         <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>Budget du groupe</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-          {[["Budget total cycle",fmtFCFA(budgetTotal)],["Deja collecte",fmtFCFA(groupe.cagnotte)],["Reste a collecter",fmtFCFA(resteACollecter)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)]].map(([l,v])=>(
+          {[["Budget total cycle",fmtFCFA(budgetTotal)],["Déjà collecté",fmtFCFA(groupe.cagnotte)],["Reste à collecter",fmtFCFA(resteACollecter)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)]].map(([l,v])=>(
             <div key={l} style={{background:"#0D0D0D",borderRadius:10,padding:"8px 10px"}}>
               <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}</p>
               <p style={{margin:"3px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:12}}>{v}</p>
@@ -1080,7 +1081,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
               <span style={{background:"#1A0800",color:col,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{lbl}</span>
             </div>
             <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(p.montant)} demande{p.statut==="en_cours"||p.statut==="rembourse"?` - ${fmtFCFA(Math.max(0,reste))} restant`:""}</p>
-            {(p.statut==="en_cours"||p.statut==="rembourse")&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans interet"}{p.date_echeance?` - Echeance : ${new Date(p.date_echeance).toLocaleDateString("fr-FR")}`:""}</p>}
+            {(p.statut==="en_cours"||p.statut==="rembourse")&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans intérêt"}{p.date_echeance?` - Echeance : ${new Date(p.date_echeance).toLocaleDateString("fr-FR")}`:""}</p>}
             {p.motif&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11,fontStyle:"italic"}}>{p.motif}</p>}
           </div>
         );})}
@@ -1090,7 +1091,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         {[...groupe.tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
           <div key={t.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
             <span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {t.cycle}</span>
-            <p style={{margin:0,color:"#FFFFFF",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retire"}</p>
+            <p style={{margin:0,color:"#FFFFFF",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retiré"}</p>
             <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</p>
           </div>
         );})}
@@ -1118,7 +1119,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#FF6B00",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FFFFFF",fontSize:13}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
           <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:12,width:44,height:44,color:recording?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
-          <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder={thread?`Message prive a ${thread.prenom}...`:"Ecrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",color:"#FFFFFF",fontSize:14,outline:"none"}}/>
+          <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder={thread?`Message prive a ${thread.prenom}...`:"Écrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",color:"#FFFFFF",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#FF6B00",border:"none",borderRadius:12,padding:"0 16px",color:"#0D0D0D",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
         {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
@@ -1127,7 +1128,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu vois toutes les donnees de cette tontine en toute transparence, comme tous les autres membres. Seule la creatrice peut modifier les informations. Pour signaler un paiement, contacte-la directement.</p>
       </div>
       {showDemandePret&&<Modal onClose={()=>setShowDemandePret(false)}>
-        <MH title="Demander un pret" onClose={()=>setShowDemandePret(false)}/>
+        <MH title="Demander un prêt" onClose={()=>setShowDemandePret(false)}/>
         <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Ta demande sera envoyee a la creatrice de "{groupe.nom}" pour acceptation.</p>
         <Fld label="Montant souhaite (FCFA)"><Inp value={pretMontant} onChange={e=>setPretMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 20000" inputMode="numeric" autoFocus/></Fld>
         <Fld label="Motif (optionnel)"><Inp value={pretMotif} onChange={e=>setPretMotif(e.target.value)} placeholder="Ex: Frais medicaux" maxLength={80}/></Fld>
@@ -1144,6 +1145,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [msgInput,setMsgInput]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [newM,setNewM]=useState({prenom:"",tel:"",quartier:"",photo:"",montantPerso:""});
+  const [editMembre,setEditMembre]=useState(null);
+  const [editMBusy,setEditMBusy]=useState(false);
   const [pickerBusy,setPickerBusy]=useState(false);
   const pickerBusyRef=useRef(false);
   const [payBusy,setPayBusy]=useState(false);
@@ -1233,7 +1236,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {error}=await supabase.from("groupes").delete().eq("id",groupe.id);
     if(error)return onToast("Suppression impossible","error");
     onDeleteGroupe(groupe.id);
-    onToast("Tontine supprimee");
+    onToast("Tontine supprimée");
   };
   const saveEdit=async()=>{
     if(!editG.nom.trim())return onToast("Le nom est requis","error");
@@ -1244,7 +1247,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(error)return onToast("Modification impossible","error");
     setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null}));
     onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null});
-    setShowEdit(false);onToast("Tontine modifiee !");
+    setShowEdit(false);onToast("Tontine modifiée !");
   };
 
   const loadTirages=async()=>{
@@ -1267,8 +1270,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const gagnantCycleActuel=tirages.find(t=>t.cycle===groupe.cycle);
 
   const lancerTirage=async()=>{
-    if(eligibles.length===0)return onToast("Tout le monde a deja recu la cagnotte dans cette rotation","error");
-    if(gagnantCycleActuel)return onToast("Le tirage a deja ete fait pour ce cycle","error");
+    if(eligibles.length===0)return onToast("Tout le monde a déjà reçu la cagnotte dans cette rotation","error");
+    if(gagnantCycleActuel)return onToast("Le tirage a déjà été fait pour ce cycle","error");
     setTirageBusy(true);setTirageAnim(true);
     await new Promise(r=>setTimeout(r,1800));
     const gagnant=eligibles[Math.floor(Math.random()*eligibles.length)];
@@ -1300,7 +1303,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     });
   };
 
-  const ROLES=[["president","Presidente"],["tresoriere","Tresoriere"],["secretaire","Secretaire"]];
+  const ROLES=[["president","Présidente"],["tresoriere","Trésorière"],["secretaire","Secrétaire"]];
   const titulaire=(role)=>groupe.membres.find(m=>m.role_bureau===role);
   const electionActive=(role)=>elections.find(e=>e.role===role&&e.statut==="ouverte");
 
@@ -1324,7 +1327,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(error)return onToast("Impossible de lancer l election","error");
     setElections(e=>[data,...e]);
     setShowElection(false);setElectionCands([]);
-    onToast("Election lancee ! Les membres lies peuvent voter.");
+    onToast("Élection lancée ! Les membres liés peuvent voter.");
   };
 
   const cloturerElection=async(election)=>{
@@ -1373,9 +1376,9 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(error)return onToast("Impossible d enregistrer le rapport","error");
     setRapports(r=>[data,...r]);
     setShowRapport(false);setNewRapport({titre:"",contenu:"",date:""});
-    onToast("Rapport de reunion enregistre !");
+    onToast("Rapport de réunion enregistré !");
     groupe.membres.filter(m=>m.userId).forEach(m=>{
-      supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Nouveau compte-rendu",body:`"${s(newRapport.titre.trim())}" a ete publie pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=reunions`}}).catch(()=>{});
+      supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Nouveau compte-rendu",body:`"${s(newRapport.titre.trim())}" a été publié pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=reunions`}}).catch(()=>{});
     });
   };
 
@@ -1412,7 +1415,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     }
     const {data,error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:newPret.membreId,montant:Number(newPret.montant),taux_interet:Number(newPret.taux)||0,date_echeance:newPret.echeance||null,statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString()}).select().single();
     setPretBusy(false);
-    if(error)return onToast("Impossible de creer le pret","error");
+    if(error)return onToast("Impossible de créer le prêt","error");
     setPrets(p=>[data,...p]);
     setShowPret(false);setNewPret({membreId:"",montant:"",taux:"0",echeance:""});setPretPhoto(null);setPretPhotoPreview(null);
     onToast("Pret enregistre !");
@@ -1466,7 +1469,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {error}=await supabase.from("prets").update({montant_rembourse:nouveauRembourse,statut}).eq("id",remboM.id);
     if(error)return onToast("Remboursement impossible : "+(error.message||"inconnue"),"error");
     setPrets(ps=>ps.map(p=>p.id===remboM.id?{...p,montant_rembourse:nouveauRembourse,statut}:p));
-    onToast(statut==="rembourse"?"Pret entierement rembourse !":"Remboursement enregistre !");
+    onToast(statut==="rembourse"?"Prêt entièrement remboursé !":"Remboursement enregistre !");
     setRemboM(null);setRemboAmt("");
   };
 
@@ -1485,7 +1488,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     doc.setFontSize(11);doc.text(`Genere le ${new Date().toLocaleDateString("fr-FR")}`,14,y);y+=12;
     doc.setFontSize(13);doc.text(`Bilan - Cycle ${groupe.cycle}/${groupe.totalCycles}`,14,y);y+=8;
     doc.setFontSize(10);
-    [["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",String(groupe.totalCycles-groupe.cycle)]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
+    [["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",String(groupe.totalCycles-groupe.cycle)]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
     y+=6;
     doc.setFontSize(13);doc.text("Suivi par membre",14,y);y+=8;
     doc.setFontSize(10);
@@ -1503,7 +1506,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const newVersements=newPaye?(m.versements||0)+montant:Math.max(0,(m.versements||0)-montant);
     const newCyclesPaies=newPaye?(m.cyclesPaies||0)+1:Math.max(0,(m.cyclesPaies||0)-1);
     const {error}=await supabase.from("membres").update({paye:newPaye,score:newScore,versements:newVersements,cycles_paies:newCyclesPaies}).eq("id",mid);
-    if(error)return onToast("Mise a jour impossible","error");
+    if(error)return onToast("Mise à jour impossible","error");
     if(newPaye){
       await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:mid,montant,cycle:groupe.cycle,statut:"paye"});
     }
@@ -1513,7 +1516,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const toggleC=async(cid)=>{
     const c=groupe.checklist.find(x=>x.id===cid);
     const {error}=await supabase.from("checklist").update({done:!c.done}).eq("id",cid);
-    if(error)return onToast("Mise a jour impossible","error");
+    if(error)return onToast("Mise à jour impossible","error");
     setGroupe(g=>({...g,checklist:g.checklist.map(c=>c.id===cid?{...c,done:!c.done}:c)}));
   };
   const addTask=async()=>{
@@ -1521,19 +1524,19 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {data,error}=await supabase.from("checklist").insert({groupe_id:groupe.id,label:s(newTask.trim()),done:false}).select().single();
     if(error)return onToast("Ajout impossible","error");
     setGroupe(g=>({...g,checklist:[...g.checklist,{id:data.id,label:data.label,done:false}]}));
-    setNewTask("");onToast("Tache ajoutee !");
+    setNewTask("");onToast("Tâche ajoutée !");
   };
   const delTask=async(cid)=>{
     const {error}=await supabase.from("checklist").delete().eq("id",cid);
     if(error)return onToast("Suppression impossible","error");
     setGroupe(g=>({...g,checklist:g.checklist.filter(c=>c.id!==cid)}));
-    onToast("Tache supprimee");
+    onToast("Tâche supprimée");
   };
   const openEvt=(m)=>{setEvtM(m);setEvtTxt(m.evenement||"");};
   const saveEvt=async()=>{
     const val=evtTxt.trim()?s(evtTxt.trim()):null;
     const {error}=await supabase.from("membres").update({evenement:val}).eq("id",evtM.id);
-    if(error)return onToast("Mise a jour impossible","error");
+    if(error)return onToast("Mise à jour impossible","error");
     setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===evtM.id?{...m,evenement:val}:m)}));
     setEvtM(null);setEvtTxt("");onToast(val?"Evenement enregistre !":"Evenement supprime");
   };
@@ -1570,7 +1573,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:data.texte,time:"maintenant"}]);
     notifyMessage(getRecipients(),user.prenom,false,getDeepLink());
-    onToast("Message envoye !");
+    onToast("Message envoyé !");
   };
   const [sendingAudio,setSendingAudio]=useState(false);
   const toggleRecord=async()=>{
@@ -1584,24 +1587,24 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         if(error)throw error;
         setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
         notifyMessage(getRecipients(),user.prenom,true,getDeepLink());
-        onToast("Message vocal envoye !");
+        onToast("Message vocal envoyé !");
       }catch{onToast("Envoi du message vocal impossible","error");}
       setSendingAudio(false);
     }else{
       const ok=await startRec();
-      if(!ok)onToast("Micro indisponible ou refuse","error");
+      if(!ok)onToast("Micro indisponible ou refusé","error");
     }
   };
   const addM=async()=>{
     if(pickerBusyRef.current)return;
-    if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prenom et telephone requis","error");
+    if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prénom et téléphone requis","error");
     if(user.plan==="free"&&groupe.membres.length>=15){setShowAdd(false);setShowUpgrade(true);return;}
     pickerBusyRef.current=true;setPickerBusy(true);
     const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length,montant_perso:newM.montantPerso?Number(newM.montantPerso):null};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
     pickerBusyRef.current=false;setPickerBusy(false);
     if(error){
-      if(error.code==="23505")return onToast("Ce numero est deja membre de cette tontine !","error");
+      if(error.code==="23505")return onToast("Ce numéro est déjà membre de cette tontine !","error");
       return onToast("Ajout impossible : "+(error.message||"erreur inconnue"),"error");
     }
     supabase.rpc("link_membre",{p_membre_id:data.id}).then(async()=>{
@@ -1623,7 +1626,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       .map(c=>({prenom:(c.name?.[0]||"").split(" ")[0]||"",tel:c.tel?.[0]?sPhone(c.tel[0]):""}))
       .filter(c=>c.prenom.trim()&&c.tel.replace(/\D/g,"").length>=8)
       .filter(c=>{if(dejaTels.has(c.tel)||vus.has(c.tel))return false;vus.add(c.tel);return true;});
-    if(candidats.length===0)return onToast("Aucun contact valide (nom + numero) dans la selection","error");
+    if(candidats.length===0)return onToast("Aucun contact valide (nom + numéro) dans la sélection","error");
     const placesRestantes=user.plan==="free"?Math.max(0,15-groupe.membres.length):candidats.length;
     if(placesRestantes===0){setShowAdd(false);setShowUpgrade(true);return;}
     const aTraiter=candidats.slice(0,placesRestantes);
@@ -1657,13 +1660,28 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const {error}=await supabase.from("membres").delete().eq("id",mid);
     if(error)return onToast("Suppression impossible","error");
     setGroupe(g=>({...g,membres:g.membres.filter(m=>m.id!==mid)}));
-    onToast("Membre retire");
+    onToast("Membre retiré");
+  };
+  const saveEditMembre=async()=>{
+    if(!editMembre)return;
+    if(!editMembre.prenom.trim()||editMembre.tel.replace(/\D/g,"").length<8)return onToast("Prénom et téléphone requis","error");
+    setEditMBusy(true);
+    const payload={prenom:s(editMembre.prenom.trim()),tel:sPhone(editMembre.tel),quartier:s(editMembre.quartier||""),montant_perso:editMembre.montantPerso?Number(editMembre.montantPerso):null};
+    const {error}=await supabase.from("membres").update(payload).eq("id",editMembre.id);
+    setEditMBusy(false);
+    if(error){
+      if(error.code==="23505")return onToast("Ce numéro est déjà utilisé par un autre membre de cette tontine !","error");
+      return onToast("Modification impossible : "+(error.message||"erreur inconnue"),"error");
+    }
+    setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===editMembre.id?{...m,prenom:payload.prenom,tel:payload.tel,quartier:payload.quartier,montantPerso:payload.montant_perso}:m)}));
+    onToast(`${payload.prenom} a ete modifie(e) !`);
+    setEditMembre(null);
   };
   const openVers=(m)=>{setVersM(m);setVersAmt("");setShowVers(true);};
   const openHisto=async(m)=>{
     setHistoM({...m,historique:[]});setShowHisto(true);
     const {data,error}=await supabase.from("transactions").select("*").eq("membre_id",m.id).order("created_at",{ascending:false});
-    if(!error)setHistoM(h=>h&&h.id===m.id?{...h,historique:(data||[]).map(t=>({id:t.id,mois:new Date(t.created_at).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}),heure:new Date(t.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),montant:Number(t.montant),statut:t.statut,date:t.created_at?.split("T")[0],photoUrl:t.photo_url,recuEnvoye:t.recu_envoye}))}:h);
+    if(!error)setHistoM(h=>h&&h.id===m.id?{...h,historique:(data||[]).map(t=>({id:t.id,mois:new Date(t.created_at).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}),heure:new Date(t.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),montant:Number(t.montant),statut:t.statut,date:t.created_at?.split("T")[0],photoUrl:t.photo_url,recuEnvoye:t.recu_envoye,cycle:t.cycle}))}:h);
   };
   const toggleChecklistItem=async(t,champ,val)=>{
     await supabase.from("transactions").update({[champ]:val}).eq("id",t.id);
@@ -1671,7 +1689,23 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   };
   const toutEstEnOrdre=(t)=>{
     toggleChecklistItem(t,"recu_envoye",true);
-    onToast("Marque comme regle !");
+    onToast("Marqué comme réglé !");
+  };
+  const voirRecu=async(h)=>{
+    setRecuBusy(true);
+    try{
+      const d=new Date(h.date||Date.now());
+      const ref=`THT-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${(h.id||"").slice(-4).toUpperCase()}`;
+      const blob=await genererRecuImage({
+        nomTontine:groupe.nom,prenom:histoM.prenom,montantRecu:fmtFCFA(h.montant),montantDu:fmtFCFA(montantDu(histoM)),
+        totalVerse:fmtFCFA(h.montant),statut:h.statut==="paye"?"PAYE CE CYCLE":"VERSEMENT PARTIEL",
+        cycle:h.cycle||groupe.cycle,totalCycles:groupe.totalCycles,
+        ref,date:d.toLocaleDateString("fr-FR")
+      });
+      const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${histoM.prenom} - ${groupe.nom}`);
+      onToast(shared?"Reçu prêt à partager !":"Recu telecharge ! Envoie-le depuis tes fichiers.");
+    }catch{onToast("Impossible de régénérer ce reçu","error");}
+    setRecuBusy(false);
   };
   const toggleCollecteur=async(m)=>{
     const nouveau=!m.roleCollecteur;
@@ -1758,13 +1792,13 @@ THT - Tontine Habi Traore`;
           ref,date:now.toLocaleDateString("fr-FR")
         });
         const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${versM.prenom} - ${groupe.nom}`);
-        onToast(shared?"Recu pret a partager !":"Recu telecharge ! Envoie-le depuis tes fichiers.");
-      }catch{onToast("Impossible de generer le recu","error");}
+        onToast(shared?"Reçu prêt à partager !":"Recu telecharge ! Envoie-le depuis tes fichiers.");
+      }catch{onToast("Impossible de générer le reçu","error");}
       setRecuBusy(false);
     }
     setShowVers(false);setVersM(null);setVersAmt("");setVersPhoto(null);setVersPhotoPreview(null);
     loadSuivi();
-    onToast(sendWA?"Versement enregistre + recu WhatsApp envoye !":"Versement enregistre !");
+    onToast(sendWA?"Versement enregistré + reçu WhatsApp envoyé !":"Versement enregistre !");
   };
 
   const sendRappelEcheance=()=>{
@@ -1818,7 +1852,7 @@ THT - Tontine Habi Traore`;
         <div style={{background:"linear-gradient(135deg,#1A1A1A,#212121)",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:12}}>
           <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>Budget du groupe</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-            {[["Budget total cycle",fmtFCFA(cagnotteTour),null],["Deja collecte",fmtFCFA(collecte),null],["Reste a collecter",fmtFCFA(Math.max(0,cagnotteTour-collecte)),null],["Caisse sociale",fmtFCFA(groupe.caisseSociale),()=>{setShowCaisse(true);loadCaisseMvts();}]].map(([l,v,onClick])=>(
+            {[["Budget total cycle",fmtFCFA(cagnotteTour),null],["Déjà collecté",fmtFCFA(collecte),null],["Reste à collecter",fmtFCFA(Math.max(0,cagnotteTour-collecte)),null],["Caisse sociale",fmtFCFA(groupe.caisseSociale),()=>{setShowCaisse(true);loadCaisseMvts();}]].map(([l,v,onClick])=>(
               <div key={l} onClick={onClick} style={{background:"#0D0D0D",borderRadius:10,padding:"8px 10px",cursor:onClick?"pointer":"default",border:onClick?"1px solid #3D3D3D":"none"}}>
                 <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}{onClick?" ✏️":""}</p>
                 <p style={{margin:"3px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:12}}>{v}</p>
@@ -1836,8 +1870,8 @@ THT - Tontine Habi Traore`;
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
           <button onClick={()=>{if(user.plan==="free"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
-        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur}/>)}
-        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur}/>)}</>}
+        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}
+        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</>}
       </div>}
 
       {tab==="suivi"&&<div style={{padding:"14px 16px 0"}}>
@@ -1854,7 +1888,7 @@ THT - Tontine Habi Traore`;
               {t?(<>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:!t.recu_envoye?8:0}}>
                   <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
-                  <span onClick={()=>toggleSuiviItem(m.id,t,"recu_envoye",!t.recu_envoye)} style={{cursor:"pointer",background:t.recu_envoye?"#2A2A2A":"#1A0800",color:t.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.recu_envoye?"✅":"❌"} Recu envoye</span>
+                  <span onClick={()=>toggleSuiviItem(m.id,t,"recu_envoye",!t.recu_envoye)} style={{cursor:"pointer",background:t.recu_envoye?"#2A2A2A":"#1A0800",color:t.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.recu_envoye?"✅":"❌"} Reçu envoyé</span>
                   <span style={{background:t.statut==="paye"?"#2A2A2A":"#1A0800",color:t.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
                   <span style={{background:t.photo_url?"#2A2A2A":"#1A0800",color:t.photo_url?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.photo_url?"✅":"❌"} Photo</span>
                 </div>
@@ -1910,7 +1944,7 @@ THT - Tontine Habi Traore`;
           <div style={{background:"linear-gradient(135deg,#2A2A2A,#1A1A1A)",border:"1px solid #FF6B00",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
             <p style={{margin:0,color:"#6B7280",fontSize:12,fontWeight:600}}>GAGNANTE DU CYCLE {groupe.cycle}</p>
             <div style={{margin:"12px auto 8px"}}><Avatar prenom={g?.prenom||"?"} photo={g?.photo} size={64}/></div>
-            <p style={{margin:0,color:"#FF6B00",fontSize:20,fontWeight:900}}>{g?.prenom||"Membre retire"}</p>
+            <p style={{margin:0,color:"#FF6B00",fontSize:20,fontWeight:900}}>{g?.prenom||"Membre retiré"}</p>
             <p style={{margin:"4px 0 0",color:"#6B7280",fontSize:12}}>Tiree au sort le {new Date(gagnantCycleActuel.created_at).toLocaleDateString("fr-FR")}</p>
             {groupe.cycle<groupe.totalCycles?(
               <button onClick={cloturerCycle} disabled={clotureBusy} style={{marginTop:16,width:"100%",background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"12px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>{clotureBusy?"Cloture en cours...":`Cloturer le cycle ${groupe.cycle} et passer au cycle ${groupe.cycle+1}`}</button>
@@ -1931,7 +1965,7 @@ THT - Tontine Habi Traore`;
         :[...tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
           <div key={t.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
             <span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {t.cycle}</span>
-            <p style={{margin:0,color:"#FFFFFF",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retire"}</p>
+            <p style={{margin:0,color:"#FFFFFF",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retiré"}</p>
             <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</p>
           </div>
         );})}
@@ -1963,7 +1997,7 @@ THT - Tontine Habi Traore`;
           return(
           <div key={p.id} style={{background:"#1A1A1A",border:`1px solid ${p.statut==="rembourse"?"#2A2A2A":"#FF6B00"}`,borderRadius:14,padding:16,marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m?.prenom||"Membre retire"}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans interet"}</p></div></div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m?.prenom||"Membre retiré"}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans intérêt"}</p></div></div>
               <span style={{background:"#1A0800",color:col,fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{lbl}</span>
             </div>
             {p.statut!=="refuse"&&<div style={{display:"flex",justifyContent:"space-between",margin:"12px 0"}}>
@@ -1983,8 +2017,8 @@ THT - Tontine Habi Traore`;
           <p style={{margin:"4px 0 0",color:"#FF6B00",fontWeight:900,fontSize:24}}>{fmtFCFA(accepterM.montant)}</p>
           {accepterM.motif&&<p style={{margin:"6px 0 0",color:"#6B7280",fontSize:12,fontStyle:"italic"}}>{accepterM.motif}</p>}
         </div>
-        <Fld label="Taux d interet (%, optionnel)"><Inp value={accepterTaux} onChange={e=>setAccepterTaux(e.target.value.replace(/\D/g,""))} placeholder="0" inputMode="numeric"/></Fld>
-        <Fld label="Date d echeance du remboursement (optionnel)"><Inp value={accepterEcheance} onChange={e=>setAccepterEcheance(e.target.value)} type="date"/></Fld>
+        <Fld label="Taux d'intérêt (%, optionnel)"><Inp value={accepterTaux} onChange={e=>setAccepterTaux(e.target.value.replace(/\D/g,""))} placeholder="0" inputMode="numeric"/></Fld>
+        <Fld label="Date d'échéance du remboursement (optionnel)"><Inp value={accepterEcheance} onChange={e=>setAccepterEcheance(e.target.value)} type="date"/></Fld>
         <Fld label="Photo de l'argent verse (recommande)">
           <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
@@ -1997,8 +2031,8 @@ THT - Tontine Habi Traore`;
         <MH title="Nouveau pret" onClose={()=>setShowPret(false)}/>
         <Fld label="Membre emprunteur"><select value={newPret.membreId} onChange={e=>setNewPret(p=>({...p,membreId:e.target.value}))} style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"13px 14px",color:"#FFFFFF",fontSize:14}}><option value="">Choisir...</option>{groupe.membres.map(m=><option key={m.id} value={m.id}>{m.prenom}</option>)}</select></Fld>
         <Fld label="Montant du pret (FCFA)"><Inp value={newPret.montant} onChange={e=>setNewPret(p=>({...p,montant:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
-        <Fld label="Taux d interet (%, optionnel)"><Inp value={newPret.taux} onChange={e=>setNewPret(p=>({...p,taux:e.target.value.replace(/\D/g,"")}))} placeholder="0" inputMode="numeric"/></Fld>
-        <Fld label="Date d echeance (optionnel)"><Inp value={newPret.echeance} onChange={e=>setNewPret(p=>({...p,echeance:e.target.value}))} type="date"/></Fld>
+        <Fld label="Taux d'intérêt (%, optionnel)"><Inp value={newPret.taux} onChange={e=>setNewPret(p=>({...p,taux:e.target.value.replace(/\D/g,"")}))} placeholder="0" inputMode="numeric"/></Fld>
+        <Fld label="Date d'échéance (optionnel)"><Inp value={newPret.echeance} onChange={e=>setNewPret(p=>({...p,echeance:e.target.value}))} type="date"/></Fld>
         <Fld label="Photo de l'argent verse (recommande)">
           <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
@@ -2043,7 +2077,7 @@ THT - Tontine Habi Traore`;
       {showRapport&&<Modal onClose={()=>setShowRapport(false)}>
         <MH title="Nouveau compte rendu" onClose={()=>setShowRapport(false)}/>
         <Fld label="Titre"><Inp value={newRapport.titre} onChange={e=>setNewRapport(r=>({...r,titre:e.target.value}))} placeholder="Ex: Reunion mensuelle Juillet" maxLength={80} autoFocus/></Fld>
-        <Fld label="Date de la reunion"><Inp value={newRapport.date} onChange={e=>setNewRapport(r=>({...r,date:e.target.value}))} type="date"/></Fld>
+        <Fld label="Date de la réunion"><Inp value={newRapport.date} onChange={e=>setNewRapport(r=>({...r,date:e.target.value}))} type="date"/></Fld>
         <Fld label="Notes / decisions prises"><textarea value={newRapport.contenu} onChange={e=>setNewRapport(r=>({...r,contenu:e.target.value}))} rows={5} placeholder="Ce qui a ete discute et decide..." style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"12px 14px",color:"#FFFFFF",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
         <Btn onClick={creerRapport} disabled={rapportBusy}>{rapportBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
@@ -2087,7 +2121,7 @@ THT - Tontine Habi Traore`;
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FFFFFF",fontSize:14}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
           <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:12,width:44,height:44,color:recording?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
-          <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder={thread?`Message prive a ${thread.prenom}...`:"Ecrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",color:"#FFFFFF",fontSize:14,outline:"none"}}/>
+          <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder={thread?`Message prive a ${thread.prenom}...`:"Écrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",color:"#FFFFFF",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#FF6B00",border:"none",borderRadius:12,padding:"0 16px",color:"#0D0D0D",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
         {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
@@ -2096,7 +2130,7 @@ THT - Tontine Habi Traore`;
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>
         <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:16,padding:16,marginBottom:14}}>
           <p style={{color:"#FF6B00",fontWeight:800,margin:"0 0 14px",fontSize:15}}>Bilan - Cycle {groupe.cycle}/{groupe.totalCycles}</p>
-          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #2A2A2A"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FFFFFF",fontWeight:700,fontSize:13}}>{v}</span></div>)}
+          {[["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #2A2A2A"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FFFFFF",fontWeight:700,fontSize:13}}>{v}</span></div>)}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
         {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #2A2A2A"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FFFFFF",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
@@ -2139,7 +2173,7 @@ THT - Tontine Habi Traore`;
             <span style={{color:"#FFFFFF",fontWeight:700}}>{fmtFCFA(montantDu(versM))}</span>
           </div>
         </div>
-        <Fld label="Montant recu (FCFA)">
+        <Fld label="Montant reçu (FCFA)">
           <Inp value={versAmt} onChange={e=>setVersAmt(e.target.value.replace(/[^0-9]/g,""))} placeholder={"Ex: "+String(montantDu(versM))} inputMode="numeric" autoFocus/>
         </Fld>
         <div style={{display:"flex",gap:8,marginBottom:12}}>
@@ -2147,7 +2181,7 @@ THT - Tontine Habi Traore`;
             <button key={v} onClick={()=>setVersAmt(String(v))} style={{flex:1,background:versAmt===String(v)?"#FF6B00":"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 4px",color:versAmt===String(v)?"#0D0D0D":"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer"}}>{fmtFCFA(v)}</button>
           ))}
         </div>
-        <Fld label="Photo de l'argent recu (optionnel mais recommande)">
+        <Fld label="Photo de l'argent reçu (optionnel mais recommandé)">
           <label style={{display:"block",background:"#0D0D0D",border:"1px dashed #FF6B00",borderRadius:12,padding:versPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirVersPhoto} style={{display:"none"}}/>
             {versPhotoPreview?<img src={versPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Prendre en photo l'argent recu</span>}
@@ -2193,11 +2227,12 @@ THT - Tontine Habi Traore`;
               <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:10,fontWeight:700,letterSpacing:.5}}>CHECKLIST DE SUIVI</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:h.photoUrl?8:0}}>
                 <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
-                <span onClick={()=>toggleChecklistItem(h,"recu_envoye",!h.recuEnvoye)} style={{cursor:"pointer",background:h.recuEnvoye?"#2A2A2A":"#1A0800",color:h.recuEnvoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.recuEnvoye?"✅":"❌"} Recu envoye</span>
+                <span onClick={()=>toggleChecklistItem(h,"recu_envoye",!h.recuEnvoye)} style={{cursor:"pointer",background:h.recuEnvoye?"#2A2A2A":"#1A0800",color:h.recuEnvoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.recuEnvoye?"✅":"❌"} Reçu envoyé</span>
                 <span style={{background:h.statut==="paye"?"#2A2A2A":"#1A0800",color:h.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
                 <span style={{background:h.photoUrl?"#2A2A2A":"#1A0800",color:h.photoUrl?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.photoUrl?"✅":"❌"} Photo</span>
               </div>
               {h.photoUrl&&<a href={h.photoUrl} target="_blank" rel="noreferrer"><img src={h.photoUrl} alt="Preuve" style={{width:"100%",maxHeight:120,objectFit:"cover",borderRadius:8,border:"1px solid #3D3D3D"}}/></a>}
+              <button onClick={()=>voirRecu(h)} disabled={recuBusy} style={{marginTop:8,width:"100%",background:"#212121",border:"1px solid #6B7280",borderRadius:8,padding:"7px",color:"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer"}}>{recuBusy?"⏳ Generation...":"🧾 Voir / repartager le reçu"}</button>
               {!h.recuEnvoye&&<button onClick={()=>toutEstEnOrdre(h)} style={{marginTop:8,width:"100%",background:"transparent",border:"1px solid #FF6B00",borderRadius:8,padding:"7px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>☑️ Tout est en ordre</button>}
             </div>
           </div>
@@ -2233,6 +2268,14 @@ THT - Tontine Habi Traore`;
         </div>
         <Btn onClick={addM} disabled={pickerBusy}>{pickerBusy?"⏳ Ajout en cours...":"Ajouter ce membre"}</Btn>
       </Modal>}
+      {editMembre&&<Modal onClose={()=>{if(!editMBusy)setEditMembre(null);}}>
+        <MH title="Modifier le membre" onClose={()=>{if(!editMBusy)setEditMembre(null);}}/>
+        <Fld label="Prenom"><Inp value={editMembre.prenom} onChange={e=>setEditMembre(m=>({...m,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
+        <Fld label="Numero WhatsApp"><PhoneInput value={editMembre.tel} onChange={v=>setEditMembre(m=>({...m,tel:sPhone(v)}))}/></Fld>
+        <Fld label="Quartier (optionnel)"><Inp value={editMembre.quartier} onChange={e=>setEditMembre(m=>({...m,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
+        <Fld label={`Montant personnalise (optionnel, sinon ${fmtFCFA(groupe.montant)} standard)`}><Inp value={editMembre.montantPerso} onChange={e=>setEditMembre(m=>({...m,montantPerso:e.target.value.replace(/[^0-9]/g,"")}))} placeholder="Ex: 25000" inputMode="numeric"/></Fld>
+        <Btn onClick={saveEditMembre} disabled={editMBusy}>{editMBusy?"Enregistrement...":"Enregistrer les modifications"}</Btn>
+      </Modal>}
       {showUpgrade&&<Modal onClose={()=>setShowUpgrade(false)}>
         <MH title="Limite atteinte" onClose={()=>setShowUpgrade(false)}/>
         <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
@@ -2255,8 +2298,8 @@ THT - Tontine Habi Traore`;
         <MH title="Modifier la tontine" onClose={()=>setShowEdit(false)}/>
         <Fld label="Nom"><Inp value={editG.nom} onChange={e=>setEditG(g=>({...g,nom:e.target.value}))} placeholder="Nom de la tontine" maxLength={40} autoFocus/></Fld>
         <Fld label="Montant par cotisation (FCFA)"><Inp value={editG.montant} onChange={e=>setEditG(g=>({...g,montant:e.target.value.replace(/\D/g,"")}))} placeholder="25000" inputMode="numeric"/></Fld>
-        <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setEditG(g=>({...g,frequence:f}))} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:editG.frequence===f?"#FF6B00":"#2A2A2A",color:editG.frequence===f?"#0D0D0D":"#FFFFFF",borderColor:editG.frequence===f?"#FF6B00":"#3D3D3D"}}>{f}</button>)}</div></Fld>
-        <Fld label="Date d'echeance (prochain versement)"><Inp value={editG.dateEcheance} onChange={e=>setEditG(g=>({...g,dateEcheance:e.target.value}))} type="date"/></Fld>
+        <Fld label="Fréquence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setEditG(g=>({...g,frequence:f}))} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:editG.frequence===f?"#FF6B00":"#2A2A2A",color:editG.frequence===f?"#0D0D0D":"#FFFFFF",borderColor:editG.frequence===f?"#FF6B00":"#3D3D3D"}}>{f}</button>)}</div></Fld>
+        <Fld label="Date d'échéance (prochain versement)"><Inp value={editG.dateEcheance} onChange={e=>setEditG(g=>({...g,dateEcheance:e.target.value}))} type="date"/></Fld>
         <Btn onClick={saveEdit} disabled={editBusy}>{editBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
     </div>
@@ -2264,7 +2307,7 @@ THT - Tontine Habi Traore`;
 };
 
 const HabyScreen = ({groupes}) => {
-  const [msgs,setMsgs]=useState([{role:"assistant",content:"Salut ! Je suis HABY, ton assistante THT. Pose-moi tes questions sur ta tontine, ton epargne ou tes finances !"}]);
+  const [msgs,setMsgs]=useState([{role:"assistant",content:"Salut ! Je suis HABY, ton assistante THT. Pose-moi tes questions sur ta tontine, ton épargne ou tes finances !"}]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
   const bottomRef=useRef();
@@ -2291,8 +2334,8 @@ Ton role :
 Toutes les fonctionnalites de l application THT (utilise cette liste pour repondre a toute question sur comment utiliser l app) :
 - TONTINES : creation, ajout de membres, cotisations a montant standard ou personnalise par membre, marquage paye/non paye, historique des versements avec photo de preuve, tirage au sort du gagnant de chaque cycle, bouton "Cloturer le cycle" pour passer au cycle suivant une fois le tirage fait.
 - BUREAU : roles president/tresoriere/secretaire, elections.
-- PRETS : un membre peut demander un pret (bouton "Demander un pret" dans sa tontine), la creatrice accepte/refuse et verse avec photo de preuve.
-- CHECKLIST DE SUIVI (onglet "Suivi") : pour chaque versement, suit si le montant est recu, si le recu a ete envoye, s il y a une dette, et la photo de preuve. Un role "collecteur" peut etre delegue par la creatrice a 1-2 membres pour aider a enregistrer les versements.
+- PRETS : un membre peut demander un pret (bouton "Demander un prêt" dans sa tontine), la creatrice accepte/refuse et verse avec photo de preuve.
+- CHECKLIST DE SUIVI (onglet "Suivi") : pour chaque versement, suit si le montant est reçu, si le reçu a été envoyé, s'il y a une dette, et la photo de preuve. Un rôle "collecteur" peut être délégué par la créatrice à 1-2 membres pour aider à enregistrer les versements.
 - CAISSE SOCIALE : fonds separe des cotisations, pour l entraide et les imprevus. La creatrice peut y ajouter ou retirer de l argent avec un motif, un historique est garde.
 - CAGNOTTES SOLIDAIRES : creation d une cagnotte (mariage, sante, funerailles, etudes...), avec un lien public de contribution partageable meme a des personnes sans compte THT, photo de preuve du depot obligatoire.
 - EPARGNE PERSONNELLE ("Ma Tirelire") : objectifs d epargne individuels, hors tontine.
@@ -2320,7 +2363,7 @@ Donnees reelles des tontines de l utilisatrice en ce moment : ${ctx||"aucune ton
     setLoading(false);
   };
 
-  const sugg=["C est quand mon tour ?","Qui n a pas paye ?","Combien j ai epargne ?","Conseils pour mon groupe"];
+  const sugg=["C est quand mon tour ?","Qui n a pas paye ?","Combien j'ai épargné ?","Conseils pour mon groupe"];
   return(
     <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 78px)",background:"#0D0D0D"}}>
       <div style={{background:"#1A1A1A",padding:"44px 16px 14px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #2A2A2A",flexShrink:0}}>
@@ -2361,7 +2404,7 @@ const EpargneScreen = ({onToast,user}) => {
   const loadObjs=async()=>{
     setLoading(true);
     const {data,error}=await supabase.from("objectifs").select("*").eq("user_id",user.id).order("created_at",{ascending:true});
-    if(error){onToast("Erreur de chargement de l epargne","error");setObjs([]);}
+    if(error){onToast("Erreur de chargement de l'épargne","error");setObjs([]);}
     else setObjs(data.map(o=>({...o,actuel:Number(o.actuel)||0,cible:Number(o.cible)||0})));
     setLoading(false);
   };
@@ -2375,7 +2418,7 @@ const EpargneScreen = ({onToast,user}) => {
     setBusy(false);
     if(error)return onToast("Impossible d ajouter l objectif","error");
     setObjs(o=>[...o,{...data,actuel:Number(data.actuel)||0,cible:Number(data.cible)||0}]);
-    setNObj({label:"",emoji:"🎯",cible:"",actuel:""});setShowAdd(false);onToast("Objectif ajoute !");
+    setNObj({label:"",emoji:"🎯",cible:"",actuel:""});setShowAdd(false);onToast("Objectif ajouté !");
   };
 
   const delObj=async(o)=>{
@@ -2394,7 +2437,7 @@ const EpargneScreen = ({onToast,user}) => {
     setBusy(false);
     if(error)return onToast("Versement impossible","error");
     setObjs(list=>list.map(o=>o.id===versObj.id?{...o,actuel:Number(data.actuel)||nouveauMontant}:o));
-    onToast(nouveauMontant>=versObj.cible?"Objectif atteint ! 🎉":"Versement ajoute !");
+    onToast(nouveauMontant>=versObj.cible?"Objectif atteint ! 🎉":"Versement ajouté !");
     setVersObj(null);setVersAmt("");
   };
 
@@ -2434,7 +2477,7 @@ const EpargneScreen = ({onToast,user}) => {
         <Fld label="Nom de l objectif"><Inp value={nObj.label} onChange={e=>setNObj(o=>({...o,label:e.target.value}))} placeholder="Ex: Hajj 2027" maxLength={40} autoFocus/></Fld>
         <Fld label="Emoji"><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["🎯","🏠","✈️","📚","💍","🌙","📱","🚗","🏥","💼","👶","🐑"].map(em=><button key={em} onClick={()=>setNObj(o=>({...o,emoji:em}))} style={{fontSize:22,background:nObj.emoji===em?"#FF6B00":"#2A2A2A",border:"none",borderRadius:10,padding:8,cursor:"pointer"}}>{em}</button>)}</div></Fld>
         <Fld label="Montant cible (FCFA)"><Inp value={nObj.cible} onChange={e=>setNObj(o=>({...o,cible:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 500000" inputMode="numeric"/></Fld>
-        <Fld label="Deja epargne (FCFA)"><Inp value={nObj.actuel} onChange={e=>setNObj(o=>({...o,actuel:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
+        <Fld label="Déjà épargné (FCFA)"><Inp value={nObj.actuel} onChange={e=>setNObj(o=>({...o,actuel:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
         <Btn onClick={addObj} disabled={busy}>{busy?"Ajout...":"Ajouter"}</Btn>
       </Modal>}
       {versObj&&<Modal onClose={()=>setVersObj(null)}>
@@ -2700,7 +2743,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         <Fld label="Nouveau PIN"><Inp value={newPinA} onChange={e=>setNewPinA(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
         <Fld label="Confirme le nouveau PIN"><Inp value={newPinA2} onChange={e=>setNewPinA2(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
         <ErrBox msg={pinErrA}/>
-        <Btn onClick={soumettreChangePinAdmin} disabled={pinBusyA}>{pinBusyA?"Verification...":"Confirmer le changement"}</Btn>
+        <Btn onClick={soumettreChangePinAdmin} disabled={pinBusyA}>{pinBusyA?"Vérification...":"Confirmer le changement"}</Btn>
       </Modal>}
 
       {showConfigCodes&&<Modal onClose={()=>setShowConfigCodes(false)}>
@@ -2712,7 +2755,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
       </Modal>}
 
       {showReset&&<Modal onClose={()=>setShowReset(false)}>
-        <MH title="Remise a zero complete" onClose={()=>setShowReset(false)}/>
+        <MH title="Remise à zéro complète" onClose={()=>setShowReset(false)}/>
         <p style={{color:"#EF4444",fontSize:13,lineHeight:1.6,marginBottom:16}}>⚠️ Ceci va supprimer definitivement toutes les tontines, cagnottes, epargnes, messages et comptes de test. Seuls tes 2 numeros admin resteront. Cette action est irreversible.</p>
         <Fld label="Code de securite 1"><Inp value={saisieCode1} onChange={e=>setSaisieCode1(e.target.value)} placeholder="Ton 1er code" autoFocus/></Fld>
         <Fld label="Code de securite 2"><Inp value={saisieCode2} onChange={e=>setSaisieCode2(e.target.value)} placeholder="Ton 2eme code"/></Fld>
@@ -2844,7 +2887,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         if(sub)await sub.unsubscribe();
         await supabase.from("push_subscriptions").delete().eq("user_id",user.id);
         setNotifOn(false);setNotifBusy(false);
-        onToast("Notifications desactivees");
+        onToast("Notifications désactivées");
         return;
       }
       const perm=await Notification.requestPermission();
@@ -2857,7 +2900,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       const {data,error:pushErr}=await supabase.functions.invoke("send-push",{body:{user_id:user.id,title:"THT",body:"Notifications activees avec succes !"}});
       setNotifOn(true);setNotifBusy(false);
       if(pushErr||data?.error)return onToast("Active, mais l envoi test a echoue : "+(data?.error||pushErr?.message||"erreur"),"error");
-      onToast("Notifications activees ! Elles resteront actives jusqu a ce que tu les desactives.");
+      onToast("Notifications activées ! Elles resteront actives jusqu'à ce que tu les désactives.");
     }catch(e){setNotifBusy(false);onToast("Erreur : "+(e.message||"inconnue"),"error");}
   };
   return(
@@ -2900,7 +2943,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           <p style={{margin:"0 0 14px",color:"#FFFFFF",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
           <div style={{background:"#0D0D0D",borderRadius:12,padding:14,marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"flex-end",gap:20,marginBottom:8}}><span style={{color:"#6B7280",fontSize:11,fontWeight:700,width:70,textAlign:"center"}}>GRATUIT</span><span style={{color:"#FF6B00",fontSize:11,fontWeight:800,width:80,textAlign:"center"}}>PREMIUM</span></div>
-            {[["Tontines actives","1 max","Illimite"],["Membres/groupe","15 max","Illimite"],["HABY IA","Basique","Prioritaire"],["Support","Standard","24h"]].map(([f,fr,pr])=>(
+            {[["Tontines actives","1 max","Illimité"],["Membres/groupe","15 max","Illimité"],["HABY IA","Basique","Prioritaire"],["Support","Standard","24h"]].map(([f,fr,pr])=>(
               <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #2A2A2A",fontSize:12}}>
                 <span style={{color:"#6B7280"}}>{f}</span>
                 <div style={{display:"flex",gap:20}}><span style={{color:fr==="Non"?"#EF4444":"#6B7280",width:70,textAlign:"center"}}>{fr}</span><span style={{color:"#FF6B00",fontWeight:700,width:80,textAlign:"center"}}>{pr}</span></div>
@@ -2955,7 +2998,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         <Fld label="Nouveau PIN"><Inp value={newPin} onChange={e=>setNewPin(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
         <Fld label="Confirme le nouveau PIN"><Inp value={newPin2} onChange={e=>setNewPin2(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4}/></Fld>
         <ErrBox msg={pinErr}/>
-        <Btn onClick={soumettreChangePin} disabled={pinBusy}>{pinBusy?"Verification...":"Confirmer le changement"}</Btn>
+        <Btn onClick={soumettreChangePin} disabled={pinBusy}>{pinBusy?"Vérification...":"Confirmer le changement"}</Btn>
       </Modal>}
     </div>
   );
@@ -3033,7 +3076,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
       <h2 style={{color:"#FFFFFF",margin:"0 0 8px"}}>Merci {succes.contributeur} !</h2>
       <p style={{color:"#FF6B00",fontSize:20,fontWeight:900,margin:"0 0 4px"}}>{fmtFCFA(succes.montant)}</p>
       <p style={{color:"#6B7280",fontSize:13,marginBottom:24}}>ajoute a "{succes.titre}"</p>
-      <button onClick={telechargerRecu} disabled={recuBusy} style={{background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px 24px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{recuBusy?"Creation...":"🧾 Telecharger mon recu"}</button>
+      <button onClick={telechargerRecu} disabled={recuBusy} style={{background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px 24px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{recuBusy?"Creation...":"🧾 Télécharger mon reçu"}</button>
       <p style={{color:"#3D3D3D",fontSize:11}}>THT - Tontine Habi Traore</p>
     </div>
   );
@@ -3056,7 +3099,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
         {cagnotte.statut!=="ouverte"?<p style={{color:"#EF4444",textAlign:"center",fontWeight:700}}>Cette cagnotte n'accepte plus de contributions</p>:<>
           <Fld label="Ton prenom"><Inp value={prenom} onChange={e=>setPrenom(e.target.value)} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
           <Fld label="Ton nom (optionnel)"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Diallo" maxLength={30}/></Fld>
-          <Fld label="Ton numero (optionnel)"><PhoneInput value={tel} onChange={setTel}/></Fld>
+          <Fld label="Ton numéro (optionnel)"><PhoneInput value={tel} onChange={setTel}/></Fld>
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
           <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
             <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
@@ -3274,9 +3317,9 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <MH title="Nouvelle Tontine" onClose={onClose}/>
     <Fld label="Nom de la tontine"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Tontine des Mamans" maxLength={40} autoFocus/></Fld>
     <Fld label="Montant par cotisation (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 25000" inputMode="numeric"/></Fld>
-    <Fld label="Date d echeance mensuelle"><Inp value={echeance} onChange={e=>setEcheance(e.target.value)} placeholder="Ex: 2026-07-01" type="date"/></Fld>
+    <Fld label="Date d'échéance mensuelle"><Inp value={echeance} onChange={e=>setEcheance(e.target.value)} placeholder="Ex: 2026-07-01" type="date"/></Fld>
     <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#FF6B00":"#2A2A2A",color:freq===f?"#0D0D0D":"#FFFFFF",borderColor:freq===f?"#FF6B00":"#3D3D3D"}}>{f}</button>)}</div></Fld>
-    <Fld label="Argent deja collecte avant l'app (optionnel)"><Inp value={montantInitial} onChange={e=>setMontantInitial(e.target.value.replace(/\D/g,""))} placeholder="Ex: 50000 - laisser vide si aucun" inputMode="numeric"/></Fld>
+    <Fld label="Argent déjà collecté avant l'app (optionnel)"><Inp value={montantInitial} onChange={e=>setMontantInitial(e.target.value.replace(/\D/g,""))} placeholder="Ex: 50000 - laisser vide si aucun" inputMode="numeric"/></Fld>
     <ErrBox msg={err}/>
     <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer ma tontine"}</Btn>
   </Modal>;
@@ -3479,7 +3522,7 @@ function AppInner() {
     return <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0D0D0D,#1A1A1A)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
       <style>{`
         @keyframes thtLogoIn { 0%{opacity:0;transform:scale(0.6);} 60%{opacity:1;transform:scale(1.08);} 100%{opacity:1;transform:scale(1);} }
-        @keyframes thtGlow { 0%,100%{box-shadow:0 0 20px 0 rgba(212,168,67,0.25);} 50%{box-shadow:0 0 40px 10px rgba(212,168,67,0.5);} }
+        @keyframes thtGlow { 0%,100%{box-shadow:0 0 20px 0 rgba(255,107,0,0.25);} 50%{box-shadow:0 0 40px 10px rgba(255,107,0,0.5);} }
         @keyframes thtTextIn { 0%{opacity:0;transform:translateY(8px);} 100%{opacity:1;transform:translateY(0);} }
         @keyframes thtBarFill { 0%{width:0%;margin-left:0%;} 50%{width:60%;margin-left:20%;} 100%{width:0%;margin-left:100%;} }
       `}</style>
@@ -3515,8 +3558,8 @@ function AppInner() {
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#1A1A1A",borderTop:"1px solid #2A2A2A",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#FF6B00":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}
       </div>
-      {showC&&<ModalCreer onClose={()=>setShowC(false)} onCreate={g=>{setGroupes(p=>[...p,g]);showToast("Tontine creee !");}} user={cu}/>}
-      {showCagnotteModal&&<ModalCreerCagnotte onClose={()=>setShowCagnotteModal(false)} onCreate={c=>{setCagnottes(cs=>[c,...cs]);showToast("Cagnotte creee !");}} user={cu}/>}
+      {showC&&<ModalCreer onClose={()=>setShowC(false)} onCreate={g=>{setGroupes(p=>[...p,g]);showToast("Tontine créée !");}} user={cu}/>}
+      {showCagnotteModal&&<ModalCreerCagnotte onClose={()=>setShowCagnotteModal(false)} onCreate={c=>{setCagnottes(cs=>[c,...cs]);showToast("Cagnotte créée !");}} user={cu}/>}
       {showPinConfirm&&<Modal onClose={()=>setShowPinConfirm(false)}>
         <MH title="Confirme ton PIN" onClose={()=>setShowPinConfirm(false)}/>
         <p style={{color:"#6B7280",fontSize:13,marginBottom:16,lineHeight:1.6}}>Pour proteger le panneau administrateur, entre a nouveau ton code PIN.</p>
@@ -3529,7 +3572,7 @@ function AppInner() {
           setPinConfirmBusy(false);
           if(!ok)return setPinConfirmErr("PIN incorrect");
           setAdminUnlocked(true);setShowPinConfirm(false);pushBack(()=>setNav("profil"));setNav("admin");
-        }} disabled={pinConfirmBusy}>{pinConfirmBusy?"Verification...":"Confirmer"}</Btn>
+        }} disabled={pinConfirmBusy}>{pinConfirmBusy?"Vérification...":"Confirmer"}</Btn>
       </Modal>}
       {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
     </div>

@@ -3,91 +3,90 @@
 ## Contexte
 App PWA de gestion de tontines, cagnottes solidaires et epargne pour l'Afrique de l'Ouest francophone (Mali principalement). Nommee en hommage a Habi Traore, la mere de Kader (proprietaire/createur, non-developpeur). Stack : React + Vite (frontend), Supabase (base de donnees + fonctions serveur + stockage), Netlify (hebergement, deploiement automatique sur push vers `main`).
 
-Kader ne code pas lui-meme. Un assistant Claude ecrit tout le code, commit et pousse directement sur GitHub avec un token temporaire fourni par Kader a chaque session. Kader teste sur Android, communique via captures d'ecran. Un autre assistant (Claude Code, installe sur son ordinateur) travaille aussi en parallele sur le meme depot -- coordination a faire entre les deux pour eviter les conflits.
+Kader ne code pas lui-meme. Un assistant Claude ecrit tout le code, commit et pousse directement sur GitHub avec un token temporaire fourni par Kader a chaque session (le token doit etre revoque par Kader une fois le push termine). Kader teste principalement sur telephone Android (Chrome), communique via captures d'ecran ou voix. Il a aussi un ordinateur avec Claude Code installe, utilisable en parallele sur le meme depot -- toujours demander en debut de session s'il est sur telephone ou ordinateur.
 
 Depot : `niangkader62-hue/haby-tontine`. Site : `https://haby-tontine.netlify.app`.
 
 ## Fonctionnalites (toutes construites et deployees)
 
 **Tontines**
-- Creation, gestion des membres, cotisations a montant standard ou personnalise par membre (0 FCFA = membre exempte, bug corrige -- avant traite comme "pas de montant personnalise")
-- Marquage paye/non paye (bouton rapide "Marquer paye" desormais coherent avec le versement normal), historique des versements avec photo de preuve
+- Creation, gestion des membres, cotisations a montant standard ou personnalise par membre
+- Ajout de membres : un par un (formulaire), **ou plusieurs a la fois** en selectionnant plusieurs contacts Android (`navigator.contacts.select` avec `multiple:true`) -- les valides sont inseres en boucle, les doublons/numeros invalides/limite gratuite sont comptes et signales dans un toast recapitulatif
+- **Modifier un membre existant** (bouton "✏️ Modifier" sur chaque fiche membre) : prenom, numero, quartier, montant personnalise -- cette fonctionnalite n'existait pas avant, on ne pouvait qu'ajouter/supprimer
+- Marquage paye/non paye, historique des versements avec photo de preuve
+- **Archive des recus** : dans l'historique d'un membre, bouton "🧾 Voir / repartager le recu" sur chaque paiement passe -- regenere l'image du recu a la demande (a partir des donnees de la transaction stockee, dont le cycle) et rouvre le partage/telechargement, meme longtemps apres le versement initial
 - Tirage au sort du gagnant de chaque cycle (contrainte anti-doublon en base)
-- Bouton "Cloturer le cycle" -- avant, une tontine restait bloquee indefiniment sur cycle 1, aucun moyen de progresser. Corrige : incremente le cycle, reinitialise les paiements, notifie les membres
-- Bureau (president/tresoriere/secretaire), elections
-- Prets : le membre demande (uniquement dans sa propre tontine, en son nom), la creatrice accepte (avec taux d'interet + date d'echeance + photo de preuve) ou refuse, suivi du remboursement. Messages d'erreur precis sur echec.
-- Checklist de suivi (onglet "Suivi") : montant recu / recu envoye / dette / photo, par versement, avec bouton "Tout est en ordre". Role "collecteur" delegable a 1-2 membres pour aider a la collecte (droits limites).
-- Caisse sociale : fonds separe des cotisations, ajout/retrait avec motif, historique visible **par la creatrice ET par les membres** (avant : membre ne voyait que le solde)
+- Bouton "Cloturer le cycle"
+- Bureau (presidente/tresoriere/secretaire), elections
+- Prets : demande par le membre, acceptation/refus par la creatrice (taux d'interet + date d'echeance + photo de preuve), suivi du remboursement
+- Checklist de suivi (onglet "Suivi") : montant recu / recu envoye / dette / photo, par versement. Role "collecteur" delegable a 1-2 membres
+- Caisse sociale : fonds separe des cotisations, historique visible par la creatrice ET les membres
 - Messagerie de groupe + privee, notifications push en temps reel
-- Rapports de reunion, taches (checklist cliquable cote membre aussi, pas que la creatrice), evenements (mariage/naissance/deces -- maintenant visible cote membre, avant totalement absent)
-- Export PDF (rapport) et CSV/Excel (donnees completes)
-- Transparence : le membre voit tout ce que voit la creatrice (budget, qui a paye/qui est en retard, bureau, reglement, comptes-rendus, prets, tirages, taches, evenements, caisse sociale) sans pouvoir modifier -- sauf cocher ses propres taches
+- Rapports de reunion, taches, evenements (mariage/naissance/deces)
+- Export PDF (rapport) et CSV/Excel
+- Transparence : le membre voit tout ce que voit la creatrice, sans pouvoir modifier
 
 **Cagnottes solidaires**
-- Creation (mariage, sante, funerailles, etudes...), lien de contribution PUBLIC (sans compte requis), formulaire prenom/nom/telephone/montant, photo de preuve obligatoire
-- Incrementation atomique du montant collecte (evite qu'une contribution "disparaisse" si deux arrivent en meme temps)
+- **Depuis cette session : onglet dedie "Cagnottes" dans la barre de navigation** (5 sections : Accueil, Cagnottes, Epargne, HABY, Profil) -- avant, la liste des cagnottes etait melangee avec les tontines sur l'ecran Accueil, ce qui creait de la confusion
+- Creation (mariage, sante, funerailles, etudes...), lien de contribution PUBLIC (sans compte requis), photo de preuve obligatoire
+- Incrementation atomique du montant collecte
 - Notification automatique a la creatrice a chaque contribution
-- Bouton "Notifier un groupe" : push automatique aux membres lies, lien WhatsApp pre-rempli pour les autres
+- Bouton "Notifier un groupe" : push + lien WhatsApp pre-rempli
 
 **Epargne personnelle** ("Ma Tirelire") : objectifs d'epargne individuels
 
 **Compte et securite**
-- Inscription/connexion par numero de telephone + PIN 4 chiffres (Supabase Auth, PIN transforme en mot de passe)
-- Selecteur de pays avec indicatif et recherche : 40 pays (Afrique de l'Ouest/Nord/Centre, France, Etats-Unis/Canada, Espagne, et bien d'autres)
+- Inscription/connexion par numero de telephone + PIN 4 chiffres
+- **Selecteur de pays : 225 pays** (liste quasi mondiale complete, generee via les packages `country-telephone-data` + `i18n-iso-countries` pour les noms français et drapeaux -- avant, seulement 40 pays)
 - Changement de PIN (Profil + Panneau Admin)
 - Tutoriel de bienvenue a l'inscription (4 ecrans)
-- Notifications push (VAPID), rappels automatiques quotidiens (cron Supabase 8h Bamako : J-1, jour J, retard tous les 3 jours)
-- Bouton retour Android (historique navigateur) qui navigue dans l'app au lieu de la fermer
+- Notifications push (VAPID), rappels automatiques quotidiens
+- Bouton retour Android (historique navigateur)
 
 **Panneau Administrateur**
 - Tableau de bord (utilisateurs, tontines, paiements)
-- Remise a zero complete des donnees de test : proteges par 2 codes de securite personnalises (definis par Kader lui-meme) + mot "SUPPRIMER", **verifies cote serveur** (avant : uniquement cote app, contournable). Proteges automatiquement : les 2 vrais numeros admin de Kader.
-- **PROBLEME NON RESOLU** : Kader rapporte que la suppression "refuse encore" malgre plusieurs corrections. Cause exacte inconnue -- en attente d'une capture d'ecran precise du comportement pour diagnostiquer. Le code cote serveur a ete relu plusieurs fois sans trouver de bug evident. Prochaine etape : obtenir une capture d'ecran du moment exact ou ca "refuse".
+- Remise a zero complete des donnees de test, protegee par 2 codes de securite + mot "SUPPRIMER", verifies cote serveur
+- **BUG RESOLU CETTE SESSION** : la remise a zero "refusait" a cause d'une contrainte de cle etrangere incomplete -- `votes.candidate_membre_id` referencait `membres(id)` SANS `on delete cascade` (seul oubli parmi toutes les tables du schema). Resultat : impossible de supprimer un membre qui avait deja ete candidat a une election, que ce soit via la remise a zero OU via le bouton normal "retirer un membre". Corrige par migration SQL (`supabase_fix_votes_cascade.sql`, executee par Kader directement dans Supabase SQL Editor -- pas besoin de redeployer le code pour ce genre de correctif, uniquement pour les changements de `src/`).
 
 **HABY (assistante IA dans l'app)**
-- Basee sur Gemini (edge function `haby-chat`), GEMINI_API_KEY configuree
-- Corrige : limite de reponse augmentee (500 -> 2048 tokens, causait des coupures) et connaissance complete de toutes les fonctionnalites de l'app (avant : seulement les tontines de base, ne savait rien des prets/checklist/cagnottes/etc.)
+- Basee sur Gemini (edge function `haby-chat`), connaissance complete des fonctionnalites de l'app dans son prompt systeme
 
 **Design**
-- Palette orange/noir (changee depuis vert/or sur decision EXPLICITE de Kader, malgre le risque de ressemblance avec Orange Money qui lui a ete signale clairement avant qu'il confirme)
-- Police Inter
-- Bandeau carrousel promotionnel sur l'accueil, auto-defilant, cliquable (renvoie vers parrainage/creation cagnotte/HABY)
-- Menu "Plus" en grille d'icones (style Orange Money)
-- Logo actuel (H+T dore/vert) pas encore adapte au nouveau theme orange/noir -- a signaler si Kader veut un nouveau logo assorti
+- Palette orange/noir, police Inter
+- Bandeau carrousel promotionnel sur l'accueil (le clic sur "Cagnottes solidaires" ouvre maintenant l'onglet Cagnottes dedie plutot que directement la modale de creation)
+- **Nouveau logo assorti au theme orange/noir** (cette session) : remplace l'ancien logo dore/vert (silhouette + H/T) par un embleme genere (gradient orange->noir 135deg identique au gradient des boutons CTA, anneau de points evoquant le cercle de cotisants d'une tontine, monogramme "HT"). Remplace dans les 4 emplacements : `src/assets/logo-icon.png` (256px, utilise dans l'app), `public/icon-192.png`, `public/icon-512.png` (icones PWA, zone de securite "maskable" respectee), `public/apple-touch-icon.png` (180px). La lueur residuelle doree de l'ecran de chargement (`rgba(212,168,67,...)`, ancienne couleur) a aussi ete remplacee par l'orange actuel (`rgba(255,107,0,...)`).
+- **Passe d'accents francais** (cette session) : dictionnaire de traduction FR entierement corrige (Épargne, Créer, Déconnexion, Prêts, Réunions, Événements, Tâches, À jour, Écris à HABY, Exporter mes données, Mes épargnes) + ~70 chaines d'affichage supplementaires corrigees dans tout le fichier (recus, prets, elections, rapports, messages de confirmation/erreur, etc.), verifiees une par une pour ne jamais toucher les noms de colonnes/tables Supabase (ex: `telephone`, `frequence`, `date_echeance` restent volontairement sans accent car ce sont des identifiants techniques). **Portee honnete** : c'est une passe large et verifiee sur les textes les plus visibles, pas une garantie a 100% qu'il ne reste plus aucun mot sans accent nulle part -- si Kader repere encore des oublis, les signaler au fil de l'eau.
 
 **Fiabilite**
-- Error Boundary React : si l'app plante, affiche le vrai message d'erreur + bouton retour, au lieu d'un ecran fige. A permis de diagnostiquer et corriger le bug le plus grave de la session (variables non definies causant un plantage total de l'onglet Message)
-- Audit ESLint (regle no-undef) mis en place -- zero variable non definie dans tout le fichier au dernier controle
-- Performance : bundle JS principal divise par 2 (jsPDF et html2canvas charges a la demande, pas au demarrage)
-- Un audit plus approfondi (logique metier + securite RLS) a ete mene en parallele par Claude Code sur l'ordinateur de Kader ; les corrections identifiees ont ete reproduites ici (voir liste ci-dessus : cycle, montant 0, securite reset, marquer paye, cagnotte atomique)
+- Error Boundary React, audit ESLint (`no-undef`/`no-redeclare`) systematique avant chaque push
+- Performance : jsPDF et html2canvas charges a la demande
 
 ## Fonctions serveur (Supabase Edge Functions)
-- `send-push` : notifications push
-- `daily-reminders` : rappels quotidiens automatiques (cron)
-- `haby-chat` : assistante IA HABY (Gemini)
-- `cinetpay-init` / `cinetpay-webhook` : paiement en ligne -- **PAS CONFIGURE**, cle CinetPay manquante
-- `cagnotte-contribute` : point d'entree public (sans authentification) pour les contributions de cagnotte, increment atomique
-- `admin-reset-data` : remise a zero, verifie role admin + 2 codes de securite cote serveur, journal de diagnostic detaille retourne a l'app
+- `send-push`, `daily-reminders`, `haby-chat` (Gemini)
+- `cinetpay-init` / `cinetpay-webhook` : paiement en ligne -- **PAS ENCORE CONFIGURE**, cle CinetPay manquante. C'est la prochaine grosse etape.
+- `cagnotte-contribute` : point d'entree public pour les contributions
+- `admin-reset-data` : remise a zero -- fonctionnelle depuis la correction de la contrainte `votes` (voir plus haut)
 
 ## Scripts SQL -- statut
-De nombreux scripts ont ete donnes au fil de la session. Le plus recent et le plus complet est `supabase_rattrapage_final.sql` dans le depot, complete ensuite par les policies `checklist_update`, `tirages_un_par_cycle` (contrainte unique), `increment_cagnotte` (fonction), et `prets_update`. **Il est fortement recommande de relire tous les fichiers `supabase_*.sql` du depot et de rejouer un script consolide complet pour etre certain que rien ne manque**, plutot que de supposer que tout a ete execute -- Kader a eu plusieurs confusions sur quels scripts avaient reellement ete lances.
+Le fichier `SCHEMA_COMPLET.sql` fait foi pour la structure de reference. `supabase_fix_votes_cascade.sql` (cette session) corrige la contrainte de cle etrangere sur `votes.candidate_membre_id`. De nombreux autres scripts `supabase_*.sql` existent dans l'historique du depot (fixes ponctuels) ; en cas de doute sur l'etat reel de la base, ne pas supposer qu'un script a ete execute -- demander confirmation a Kader ou verifier directement le schema.
 
 ## Discipline de deploiement
-Netlify facture au credit (15 credits/deploiement, quel que soit le volume de changement). Regle etablie avec Kader : grouper les changements, obtenir son accord avant de pousser -- SAUF urgence de diagnostic necessitant un test en direct immediat (auquel cas on deploie pour observer le resultat). Un incident anterieur a epuise 1000 credits en une journee a cause de deploiements trop frequents ; Kader a du acheter un pack de credits supplementaires (500 credits, 5$) pour debloquer le site apres une pause forcee par Netlify ("Site not available").
+Netlify facture au credit (15 credits/deploiement). Regle : grouper plusieurs changements de code en un seul commit/push. Les correctifs SQL (comme celui des votes) s'executent directement dans Supabase SQL Editor et ne necessitent PAS de deploiement Netlify.
+
+Workflow token GitHub : Kader cree un Personal Access Token (classic, scope "repo" uniquement, expiration courte) a chaque session ou un push est necessaire, le colle dans le chat, puis le revoque une fois le push confirme.
 
 ## Ce qui reste a faire (par priorite)
-1. **Diagnostiquer pourquoi la remise a zero admin "refuse" encore** -- necessite une capture d'ecran precise de Kader
-2. **CinetPay** : creation du compte marchand par Kader (cinetpay.com), puis integration reelle -- prochaine grosse etape apres la fin des correctifs
-3. Suivi de la caisse sociale par membre individuel (actuellement solde global gere par la creatrice uniquement)
-4. Archive consultable des recus envoyes
-5. Logo assorti au nouveau theme orange/noir (optionnel, a demander a Kader)
-6. Renommage du sous-domaine Netlify
-7. Passe complete d'accents francais dans le code (texte simplifie par endroits)
-8. Aucun vrai utilisateur externe n'a encore teste l'app -- 0 utilisateur reel a ce jour, un test reel avec un vrai contact est recommande avant le lancement
+1. **CinetPay** : creation du compte marchand par Kader (cinetpay.com), puis integration reelle des paiements en ligne -- prochaine etape demandee par Kader
+2. Suivi de la caisse sociale par membre individuel (actuellement solde global gere par la creatrice uniquement)
+3. Renommage du sous-domaine Netlify
+4. Test reel avec un vrai contact externe -- **0 utilisateur reel a ce jour**, fortement recommande avant tout lancement serieux ou avant CinetPay
+5. Reliquat mineur d'accents francais si Kader en repere encore au fil de l'usage
 
 ## Notes pour la prochaine conversation
 - Toujours lire les fichiers `SKILL.md` pertinents avant toute tache de creation de fichier
-- Toujours faire `npm run build` ET `npx eslint src/App.jsx --no-eslintrc -c .eslintrc.cjs 2>&1 | grep -E "no-undef|no-redeclare"` avant de pousser -- cette combinaison a permis d'eliminer la quasi-totalite des bugs de plantage cette session
-- Kader communique en francais, teste sur Android via Chrome, souvent via captures d'ecran (parfois de mauvaise qualite/sombres) -- demander une description texte si une capture n'est pas claire plutot que de deviner
-- Toujours donner le vrai message d'erreur (`error.message`) plutot qu'un message generique -- c'est ce qui a permis de resoudre presque tous les bugs difficiles de cette session
-- Le probleme de cache navigateur (PWA) revient regulierement -- toujours suggerer navigation privee ou desinstallation/reinstallation complete avant de chercher un bug plus profond si le comportement rapporte ne correspond pas au code actuel
+- Toujours faire `npm run build` ET `npx eslint src/App.jsx --no-eslintrc -c .eslintrc.cjs 2>&1 | grep -E "no-undef|no-redeclare"` avant de pousser
+- Demander en debut de session si Kader est sur telephone (token GitHub a demander) ou sur ordinateur (Claude Code peut pousser directement)
+- Kader communique en francais, teste sur Android via Chrome, souvent via captures d'ecran -- demander une description texte si une capture n'est pas claire
+- Toujours donner le vrai message d'erreur (`error.message`) plutot qu'un message generique
+- Le probleme de cache navigateur (PWA) revient regulierement -- suggerer navigation privee ou reinstallation complete avant de chercher un bug plus profond
+- Les bugs de suppression/contraintes de cle etrangere (comme celui des votes) sont souvent mieux corriges au niveau du schema SQL (root cause, valable partout) plutot qu'en patchant uniquement la fonction qui le revele

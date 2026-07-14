@@ -133,7 +133,7 @@ const I18N={
     membresEnRetard:"membre(s) en retard",cliquezTontine:"Cliquez sur une tontine",
     tabMembres:"Membres",tabBureau:"Bureau",tabTirage:"Tirage",tabPrets:"Prets",tabReunions:"Reunions",
     tabEvenements:"Evenements",tabTaches:"Taches",tabSocial:"Message",tabRapport:"Rapport",
-    mesCagnottes:"Mes Cagnottes",lectureSeule:"Lecture seule",maSituation:"Ma situation",
+    mesCagnottes:"Mes Cagnottes",cagnottesNav:"Cagnottes",lectureSeule:"Lecture seule",maSituation:"Ma situation",
     statut:"Statut",aJour:"A jour",enRetard:"En retard",membresGroupe:"Membres du groupe",
     ecrisAHaby:"Ecris a HABY...",panneauUtilisatrices:"Utilisatrices inscrites",
   },
@@ -149,7 +149,7 @@ const I18N={
     membresEnRetard:"member(s) late",cliquezTontine:"Click on a tontine",
     tabMembres:"Members",tabBureau:"Board",tabTirage:"Draw",tabPrets:"Loans",tabReunions:"Meetings",
     tabEvenements:"Events",tabTaches:"Tasks",tabSocial:"Message",tabRapport:"Report",
-    mesCagnottes:"My Fundraisers",lectureSeule:"Read only",maSituation:"My situation",
+    mesCagnottes:"My Fundraisers",cagnottesNav:"Funds",lectureSeule:"Read only",maSituation:"My situation",
     statut:"Status",aJour:"Up to date",enRetard:"Late",membresGroupe:"Group members",
     ecrisAHaby:"Write to HABY...",panneauUtilisatrices:"Registered users",
   },
@@ -165,7 +165,7 @@ const I18N={
     membresEnRetard:"عضو(ة) متأخر(ة)",cliquezTontine:"اضغطي على جمعية",
     tabMembres:"الأعضاء",tabBureau:"المكتب",tabTirage:"القرعة",tabPrets:"القروض",tabReunions:"الاجتماعات",
     tabEvenements:"الأحداث",tabTaches:"المهام",tabSocial:"رسالة",tabRapport:"التقرير",
-    mesCagnottes:"صناديقي",lectureSeule:"قراءة فقط",maSituation:"وضعيتي",
+    mesCagnottes:"صناديقي",cagnottesNav:"الصناديق",lectureSeule:"قراءة فقط",maSituation:"وضعيتي",
     statut:"الحالة",aJour:"محدث",enRetard:"متأخر",membresGroupe:"أعضاء المجموعة",
     ecrisAHaby:"اكتبي لهابي...",panneauUtilisatrices:"المستخدمات المسجلات",
   },
@@ -181,7 +181,7 @@ const I18N={
     membresEnRetard:"tɔnden(w) tɔnɔlen",cliquezTontine:"I bolo tontine kan",
     tabMembres:"Tɔndenw",tabBureau:"Ka biro",tabTirage:"Filɛli",tabPrets:"Juruw",tabReunions:"Lajɛw",
     tabEvenements:"Kow",tabTaches:"Baaraw",tabSocial:"Bataki",tabRapport:"Kunnafoni",
-    mesCagnottes:"N ka waribɔlanw",lectureSeule:"Kalanni dɔrɔn",maSituation:"N ka cogoya",
+    mesCagnottes:"N ka waribɔlanw",cagnottesNav:"Waribɔlanw",lectureSeule:"Kalanni dɔrɔn",maSituation:"N ka cogoya",
     statut:"Cogoya",aJour:"A bɛnnen",enRetard:"A tɔnɔlen",membresGroupe:"Jɛkulu tɔndenw",
     ecrisAHaby:"HABY ye sɛbɛn...",panneauUtilisatrices:"Baarakɛlaw tɔgɔsɛbɛnnen",
   },
@@ -290,6 +290,191 @@ const PAYS_LISTE=[
   {code:"+91",nom:"Inde",drapeau:"🇮🇳"},
   {code:"+971",nom:"Emirats Arabes Unis",drapeau:"🇦🇪"},
   {code:"+966",nom:"Arabie Saoudite",drapeau:"🇸🇦"},
+  {code:"+93",nom:"Afghanistan",drapeau:"🇦🇫"},
+  {code:"+27",nom:"Afrique du Sud",drapeau:"🇿🇦"},
+  {code:"+358",nom:"Aland",drapeau:"🇦🇽"},
+  {code:"+355",nom:"Albanie",drapeau:"🇦🇱"},
+  {code:"+376",nom:"Andorre",drapeau:"🇦🇩"},
+  {code:"+244",nom:"Angola",drapeau:"🇦🇴"},
+  {code:"+1264",nom:"Anguilla",drapeau:"🇦🇮"},
+  {code:"+672",nom:"Antarctique",drapeau:"🇦🇶"},
+  {code:"+1268",nom:"Antigua-et-Barbuda",drapeau:"🇦🇬"},
+  {code:"+54",nom:"Argentine",drapeau:"🇦🇷"},
+  {code:"+374",nom:"Armenie",drapeau:"🇦🇲"},
+  {code:"+297",nom:"Aruba",drapeau:"🇦🇼"},
+  {code:"+61",nom:"Australie",drapeau:"🇦🇺"},
+  {code:"+43",nom:"Autriche",drapeau:"🇦🇹"},
+  {code:"+994",nom:"Azerbaidjan",drapeau:"🇦🇿"},
+  {code:"+1242",nom:"Bahamas",drapeau:"🇧🇸"},
+  {code:"+973",nom:"Bahrein",drapeau:"🇧🇭"},
+  {code:"+880",nom:"Bangladesh",drapeau:"🇧🇩"},
+  {code:"+1246",nom:"Barbade",drapeau:"🇧🇧"},
+  {code:"+501",nom:"Belize",drapeau:"🇧🇿"},
+  {code:"+1441",nom:"Bermudes",drapeau:"🇧🇲"},
+  {code:"+975",nom:"Bhoutan",drapeau:"🇧🇹"},
+  {code:"+375",nom:"Bielorussie",drapeau:"🇧🇾"},
+  {code:"+591",nom:"Bolivie",drapeau:"🇧🇴"},
+  {code:"+387",nom:"Bosnie-Herzegovine",drapeau:"🇧🇦"},
+  {code:"+267",nom:"Botswana",drapeau:"🇧🇼"},
+  {code:"+673",nom:"Brunei Darussalam",drapeau:"🇧🇳"},
+  {code:"+359",nom:"Bulgarie",drapeau:"🇧🇬"},
+  {code:"+257",nom:"Burundi",drapeau:"🇧🇮"},
+  {code:"+855",nom:"Cambodge",drapeau:"🇰🇭"},
+  {code:"+56",nom:"Chili",drapeau:"🇨🇱"},
+  {code:"+357",nom:"Chypre",drapeau:"🇨🇾"},
+  {code:"+57",nom:"Colombie",drapeau:"🇨🇴"},
+  {code:"+269",nom:"Comores",drapeau:"🇰🇲"},
+  {code:"+850",nom:"Coree du Nord",drapeau:"🇰🇵"},
+  {code:"+82",nom:"Coree du Sud",drapeau:"🇰🇷"},
+  {code:"+506",nom:"Costa Rica",drapeau:"🇨🇷"},
+  {code:"+385",nom:"Croatie",drapeau:"🇭🇷"},
+  {code:"+53",nom:"Cuba",drapeau:"🇨🇺"},
+  {code:"+599",nom:"Curacao",drapeau:"🇨🇼"},
+  {code:"+45",nom:"Danemark",drapeau:"🇩🇰"},
+  {code:"+253",nom:"Djibouti",drapeau:"🇩🇯"},
+  {code:"+1767",nom:"Dominique",drapeau:"🇩🇲"},
+  {code:"+503",nom:"El Salvador",drapeau:"🇸🇻"},
+  {code:"+593",nom:"Equateur",drapeau:"🇪🇨"},
+  {code:"+291",nom:"Erythree",drapeau:"🇪🇷"},
+  {code:"+372",nom:"Estonie",drapeau:"🇪🇪"},
+  {code:"+251",nom:"Ethiopie",drapeau:"🇪🇹"},
+  {code:"+679",nom:"Fidji",drapeau:"🇫🇯"},
+  {code:"+995",nom:"Georgie",drapeau:"🇬🇪"},
+  {code:"+350",nom:"Gibraltar",drapeau:"🇬🇮"},
+  {code:"+30",nom:"Grece",drapeau:"🇬🇷"},
+  {code:"+1473",nom:"Grenade",drapeau:"🇬🇩"},
+  {code:"+299",nom:"Groenland",drapeau:"🇬🇱"},
+  {code:"+590",nom:"Guadeloupe",drapeau:"🇬🇵"},
+  {code:"+1671",nom:"Guam",drapeau:"🇬🇺"},
+  {code:"+502",nom:"Guatemala",drapeau:"🇬🇹"},
+  {code:"+240",nom:"Guinee equatoriale",drapeau:"🇬🇶"},
+  {code:"+592",nom:"Guyana",drapeau:"🇬🇾"},
+  {code:"+594",nom:"Guyane francaise",drapeau:"🇬🇫"},
+  {code:"+509",nom:"Haiti",drapeau:"🇭🇹"},
+  {code:"+504",nom:"Honduras",drapeau:"🇭🇳"},
+  {code:"+852",nom:"Hong Kong",drapeau:"🇭🇰"},
+  {code:"+36",nom:"Hongrie",drapeau:"🇭🇺"},
+  {code:"+47",nom:"Ile Bouvet",drapeau:"🇧🇻"},
+  {code:"+1345",nom:"Iles Caimans",drapeau:"🇰🇾"},
+  {code:"+682",nom:"Iles Cook",drapeau:"🇨🇰"},
+  {code:"+298",nom:"Iles Feroe",drapeau:"🇫🇴"},
+  {code:"+500",nom:"Iles Malouines",drapeau:"🇫🇰"},
+  {code:"+1670",nom:"Iles Mariannes du Nord",drapeau:"🇲🇵"},
+  {code:"+692",nom:"Iles Marshall",drapeau:"🇲🇭"},
+  {code:"+677",nom:"Iles Salomon",drapeau:"🇸🇧"},
+  {code:"+1649",nom:"Iles Turques-et-Caiques",drapeau:"🇹🇨"},
+  {code:"+1340",nom:"Iles vierges americaines",drapeau:"🇻🇮"},
+  {code:"+1284",nom:"Iles vierges britanniques",drapeau:"🇻🇬"},
+  {code:"+62",nom:"Indonesie",drapeau:"🇮🇩"},
+  {code:"+964",nom:"Irak",drapeau:"🇮🇶"},
+  {code:"+98",nom:"Iran",drapeau:"🇮🇷"},
+  {code:"+353",nom:"Irlande",drapeau:"🇮🇪"},
+  {code:"+354",nom:"Islande",drapeau:"🇮🇸"},
+  {code:"+972",nom:"Israel",drapeau:"🇮🇱"},
+  {code:"+1876",nom:"Jamaique",drapeau:"🇯🇲"},
+  {code:"+81",nom:"Japon",drapeau:"🇯🇵"},
+  {code:"+962",nom:"Jordanie",drapeau:"🇯🇴"},
+  {code:"+254",nom:"Kenya",drapeau:"🇰🇪"},
+  {code:"+996",nom:"Kirghizistan",drapeau:"🇰🇬"},
+  {code:"+686",nom:"Kiribati",drapeau:"🇰🇮"},
+  {code:"+383",nom:"Kosovo",drapeau:"🇽🇰"},
+  {code:"+965",nom:"Koweit",drapeau:"🇰🇼"},
+  {code:"+856",nom:"Laos",drapeau:"🇱🇦"},
+  {code:"+266",nom:"Lesotho",drapeau:"🇱🇸"},
+  {code:"+371",nom:"Lettonie",drapeau:"🇱🇻"},
+  {code:"+961",nom:"Liban",drapeau:"🇱🇧"},
+  {code:"+218",nom:"Libye",drapeau:"🇱🇾"},
+  {code:"+423",nom:"Liechtenstein",drapeau:"🇱🇮"},
+  {code:"+370",nom:"Lituanie",drapeau:"🇱🇹"},
+  {code:"+352",nom:"Luxembourg",drapeau:"🇱🇺"},
+  {code:"+853",nom:"Macao",drapeau:"🇲🇴"},
+  {code:"+389",nom:"Macedoine du Nord",drapeau:"🇲🇰"},
+  {code:"+261",nom:"Madagascar",drapeau:"🇲🇬"},
+  {code:"+60",nom:"Malaisie",drapeau:"🇲🇾"},
+  {code:"+265",nom:"Malawi",drapeau:"🇲🇼"},
+  {code:"+960",nom:"Maldives",drapeau:"🇲🇻"},
+  {code:"+356",nom:"Malte",drapeau:"🇲🇹"},
+  {code:"+596",nom:"Martinique",drapeau:"🇲🇶"},
+  {code:"+230",nom:"Maurice",drapeau:"🇲🇺"},
+  {code:"+52",nom:"Mexique",drapeau:"🇲🇽"},
+  {code:"+691",nom:"Micronesie",drapeau:"🇫🇲"},
+  {code:"+373",nom:"Moldavie",drapeau:"🇲🇩"},
+  {code:"+377",nom:"Monaco",drapeau:"🇲🇨"},
+  {code:"+976",nom:"Mongolie",drapeau:"🇲🇳"},
+  {code:"+382",nom:"Montenegro",drapeau:"🇲🇪"},
+  {code:"+1664",nom:"Montserrat",drapeau:"🇲🇸"},
+  {code:"+258",nom:"Mozambique",drapeau:"🇲🇿"},
+  {code:"+95",nom:"Myanmar",drapeau:"🇲🇲"},
+  {code:"+264",nom:"Namibie",drapeau:"🇳🇦"},
+  {code:"+674",nom:"Nauru",drapeau:"🇳🇷"},
+  {code:"+977",nom:"Nepal",drapeau:"🇳🇵"},
+  {code:"+505",nom:"Nicaragua",drapeau:"🇳🇮"},
+  {code:"+683",nom:"Niue",drapeau:"🇳🇺"},
+  {code:"+687",nom:"Nouvelle-Caledonie",drapeau:"🇳🇨"},
+  {code:"+64",nom:"Nouvelle-Zelande",drapeau:"🇳🇿"},
+  {code:"+246",nom:"Ocean Indien Britannique",drapeau:"🇮🇴"},
+  {code:"+968",nom:"Oman",drapeau:"🇴🇲"},
+  {code:"+256",nom:"Ouganda",drapeau:"🇺🇬"},
+  {code:"+998",nom:"Ouzbekistan",drapeau:"🇺🇿"},
+  {code:"+92",nom:"Pakistan",drapeau:"🇵🇰"},
+  {code:"+680",nom:"Palaos",drapeau:"🇵🇼"},
+  {code:"+970",nom:"Palestine",drapeau:"🇵🇸"},
+  {code:"+507",nom:"Panama",drapeau:"🇵🇦"},
+  {code:"+675",nom:"Papouasie-Nouvelle-Guinee",drapeau:"🇵🇬"},
+  {code:"+595",nom:"Paraguay",drapeau:"🇵🇾"},
+  {code:"+51",nom:"Perou",drapeau:"🇵🇪"},
+  {code:"+63",nom:"Philippines",drapeau:"🇵🇭"},
+  {code:"+48",nom:"Pologne",drapeau:"🇵🇱"},
+  {code:"+689",nom:"Polynesie francaise",drapeau:"🇵🇫"},
+  {code:"+974",nom:"Qatar",drapeau:"🇶🇦"},
+  {code:"+420",nom:"Republique Tcheque",drapeau:"🇨🇿"},
+  {code:"+255",nom:"Republique unie de Tanzanie",drapeau:"🇹🇿"},
+  {code:"+40",nom:"Roumanie",drapeau:"🇷🇴"},
+  {code:"+268",nom:"Royaume d'Eswatini",drapeau:"🇸🇿"},
+  {code:"+7",nom:"Russie",drapeau:"🇷🇺"},
+  {code:"+250",nom:"Rwanda",drapeau:"🇷🇼"},
+  {code:"+1869",nom:"Saint-Christophe-et-Nieves",drapeau:"🇰🇳"},
+  {code:"+378",nom:"Saint-Marin",drapeau:"🇸🇲"},
+  {code:"+1721",nom:"Saint-Martin (partie neerlandaise)",drapeau:"🇸🇽"},
+  {code:"+508",nom:"Saint-Pierre-et-Miquelon",drapeau:"🇵🇲"},
+  {code:"+1784",nom:"Saint-Vincent-et-les-Grenadines",drapeau:"🇻🇨"},
+  {code:"+290",nom:"Sainte-Helene",drapeau:"🇸🇭"},
+  {code:"+1758",nom:"Sainte-Lucie",drapeau:"🇱🇨"},
+  {code:"+685",nom:"Samoa",drapeau:"🇼🇸"},
+  {code:"+1684",nom:"Samoa americaines",drapeau:"🇦🇸"},
+  {code:"+239",nom:"Sao Tome-et-Principe",drapeau:"🇸🇹"},
+  {code:"+381",nom:"Serbie",drapeau:"🇷🇸"},
+  {code:"+248",nom:"Seychelles",drapeau:"🇸🇨"},
+  {code:"+65",nom:"Singapour",drapeau:"🇸🇬"},
+  {code:"+421",nom:"Slovaquie",drapeau:"🇸🇰"},
+  {code:"+386",nom:"Slovenie",drapeau:"🇸🇮"},
+  {code:"+252",nom:"Somalie",drapeau:"🇸🇴"},
+  {code:"+249",nom:"Soudan",drapeau:"🇸🇩"},
+  {code:"+211",nom:"Soudan du Sud",drapeau:"🇸🇸"},
+  {code:"+94",nom:"Sri Lanka",drapeau:"🇱🇰"},
+  {code:"+46",nom:"Suede",drapeau:"🇸🇪"},
+  {code:"+597",nom:"Suriname",drapeau:"🇸🇷"},
+  {code:"+963",nom:"Syrie",drapeau:"🇸🇾"},
+  {code:"+992",nom:"Tadjikistan",drapeau:"🇹🇯"},
+  {code:"+886",nom:"Taiwan",drapeau:"🇹🇼"},
+  {code:"+262",nom:"Terres australes francaises",drapeau:"🇹🇫"},
+  {code:"+66",nom:"Thailande",drapeau:"🇹🇭"},
+  {code:"+670",nom:"Timor-Leste",drapeau:"🇹🇱"},
+  {code:"+690",nom:"Tokelau",drapeau:"🇹🇰"},
+  {code:"+676",nom:"Tonga",drapeau:"🇹🇴"},
+  {code:"+1868",nom:"Trinite-et-Tobago",drapeau:"🇹🇹"},
+  {code:"+993",nom:"Turkmenistan",drapeau:"🇹🇲"},
+  {code:"+90",nom:"Turquie",drapeau:"🇹🇷"},
+  {code:"+688",nom:"Tuvalu",drapeau:"🇹🇻"},
+  {code:"+380",nom:"Ukraine",drapeau:"🇺🇦"},
+  {code:"+598",nom:"Uruguay",drapeau:"🇺🇾"},
+  {code:"+678",nom:"Vanuatu",drapeau:"🇻🇺"},
+  {code:"+58",nom:"Venezuela",drapeau:"🇻🇪"},
+  {code:"+84",nom:"Vietnam",drapeau:"🇻🇳"},
+  {code:"+681",nom:"Wallis-et-Futuna",drapeau:"🇼🇫"},
+  {code:"+967",nom:"Yemen",drapeau:"🇾🇪"},
+  {code:"+260",nom:"Zambie",drapeau:"🇿🇲"},
+  {code:"+263",nom:"Zimbabwe",drapeau:"🇿🇼"},
 ];
 
 const PhoneInput = ({value,onChange,autoFocus}) => {
@@ -556,7 +741,7 @@ const Carousel = ({slides}) => {
   );
 };
 
-const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation,cagnottes,onCreerCagnotte,onSelectCagnotte,onOpenHaby}) => {
+const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation,onOpenHaby,onOpenCagnottes}) => {
   const totalEp=groupes.reduce((a,g)=>a+g.cagnotte,0);
   const totalCS=groupes.reduce((a,g)=>a+g.caisseSociale,0);
   const nbRet=groupes.reduce((a,g)=>a+g.membres.filter(m=>!m.paye).length,0);
@@ -584,7 +769,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
       {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} {t("membresEnRetard")}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{t("cliquezTontine")}</p></div></div>}
       <Carousel slides={[
         {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#2A2A2A,#3D3D3D)",onClick:onProfil},
-        {titre:"Cagnottes solidaires",texte:"Mariage, sante, etudes... cree un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onCreerCagnotte},
+        {titre:"Cagnottes solidaires",texte:"Mariage, sante, etudes... cree un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onOpenCagnottes},
         {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#1A1A1A,#2A2A2A)",onClick:onOpenHaby},
         {titre:"Versements securises",texte:"Photo de preuve a chaque cotisation enregistree",emoji:"📸",bg:"linear-gradient(135deg,#3D2B00,#6B4A00)"},
       ]}/>
@@ -624,12 +809,20 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
           </div>
         ))}
       </div>}
-      <div style={{padding:"22px 16px 0"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{color:"#FFFFFF",fontSize:16,fontWeight:800,margin:0}}>{t("mesCagnottes")}</h3>
-          <button onClick={onCreerCagnotte} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Creer</button>
-        </div>
-        {(!cagnottes||cagnottes.length===0)?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:"10px 0"}}>Aucune cagnotte pour le moment (mariage, sante, funerailles, etudes...)</p>
+    </div>
+  );
+};
+
+const CagnottesScreen = ({cagnottes,onCreerCagnotte,onSelectCagnotte}) => {
+  return(
+    <div style={{paddingBottom:90}}>
+      <div style={{padding:"44px 16px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <h2 style={{color:"#FFFFFF",fontSize:22,fontWeight:900,margin:0}}>{t("mesCagnottes")}</h2>
+        <button onClick={onCreerCagnotte} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Creer</button>
+      </div>
+      <p style={{margin:"10px 16px 0",color:"#6B7280",fontSize:12,lineHeight:1.6}}>Mariage, sante, funerailles, etudes... cree un lien de contribution public, sans compte requis pour les donateurs.</p>
+      <div style={{padding:"18px 16px 0"}}>
+        {(!cagnottes||cagnottes.length===0)?<div style={{textAlign:"center",padding:"40px 20px",color:"#3D3D3D"}}><p style={{fontSize:40}}>🎁</p><p style={{fontWeight:700,color:"#FFFFFF"}}>Aucune cagnotte</p><p style={{fontSize:13}}>Cree ta premiere cagnotte solidaire</p></div>
         :cagnottes.map(c=>{const pct=Math.min(100,Math.round((c.montant_collecte/c.objectif)*100));return(
           <div key={c.id} onClick={()=>onSelectCagnotte(c)} style={{background:"#1A1A1A",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #2A2A2A",cursor:"pointer"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1422,6 +1615,44 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setShowAdd(false);
     onToast(`${data.prenom} a ete ajoute(e) !`);
   };
+  const addMembresEnMasse=async(contacts)=>{
+    if(pickerBusyRef.current)return;
+    const dejaTels=new Set(groupe.membres.map(m=>m.tel));
+    const vus=new Set();
+    const candidats=contacts
+      .map(c=>({prenom:(c.name?.[0]||"").split(" ")[0]||"",tel:c.tel?.[0]?sPhone(c.tel[0]):""}))
+      .filter(c=>c.prenom.trim()&&c.tel.replace(/\D/g,"").length>=8)
+      .filter(c=>{if(dejaTels.has(c.tel)||vus.has(c.tel))return false;vus.add(c.tel);return true;});
+    if(candidats.length===0)return onToast("Aucun contact valide (nom + numero) dans la selection","error");
+    const placesRestantes=user.plan==="free"?Math.max(0,15-groupe.membres.length):candidats.length;
+    if(placesRestantes===0){setShowAdd(false);setShowUpgrade(true);return;}
+    const aTraiter=candidats.slice(0,placesRestantes);
+    const ignoresLimite=candidats.length-aTraiter.length;
+    const invalides=contacts.length-candidats.length;
+    pickerBusyRef.current=true;setPickerBusy(true);
+    let ajoutes=0,echecs=0;
+    for(let i=0;i<aTraiter.length;i++){
+      const c=aTraiter[i];
+      const payload={groupe_id:groupe.id,prenom:s(c.prenom.trim()),tel:c.tel,quartier:"",photo_url:null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length+i,montant_perso:null};
+      const {data,error}=await supabase.from("membres").insert(payload).select().single();
+      if(error){echecs++;continue;}
+      ajoutes++;
+      setGroupe(g=>({...g,membres:[...g.membres,{id:data.id,userId:null,prenom:data.prenom,tel:data.tel,quartier:data.quartier,photo:data.photo_url,score:80,paye:false,cyclesPaies:0,cyclesTotal:g.totalCycles-g.cycle+1,evenement:null,versements:0,montantPerso:null}]}));
+      supabase.rpc("link_membre",{p_membre_id:data.id}).then(async()=>{
+        const {data:linked}=await supabase.from("membres").select("user_id").eq("id",data.id).single();
+        if(linked?.user_id){
+          supabase.functions.invoke("send-push",{body:{user_id:linked.user_id,title:"THT",body:`Tu as ete ajoute(e) a la tontine "${groupe.nom}" !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
+        }
+      }).catch(()=>{});
+    }
+    pickerBusyRef.current=false;setPickerBusy(false);
+    setShowAdd(false);
+    let msg=`${ajoutes} membre(s) ajoute(s) !`;
+    if(echecs>0)msg+=` ${echecs} echec(s).`;
+    if(ignoresLimite>0)msg+=` ${ignoresLimite} non ajoute(s) (limite gratuite 15 membres).`;
+    if(invalides>0)msg+=` ${invalides} ignore(s) (deja membre ou numero invalide).`;
+    onToast(msg,echecs>0||ignoresLimite>0?"warn":"success");
+  };
   const delM=async(mid)=>{
     const {error}=await supabase.from("membres").delete().eq("id",mid);
     if(error)return onToast("Suppression impossible","error");
@@ -1987,11 +2218,13 @@ THT - Tontine Habi Traore`;
           if(pickerBusyRef.current)return;
           pickerBusyRef.current=true;setPickerBusy(true);
           try{
-            const c=await navigator.contacts.select(["name","tel"],{multiple:false});
-            if(c&&c[0]){setNewM(n=>({...n,prenom:c[0].name?.[0]?.split(" ")[0]||n.prenom,tel:sPhone(c[0].tel?.[0]||n.tel)}));onToast("Contact selectionne !");}
-          }catch{}
-          finally{pickerBusyRef.current=false;setPickerBusy(false);}
-        }} style={{width:"100%",background:pickerBusy?"#1A1A1A":"#2A2A2A",border:"1px solid #FF6B00",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#FF6B00",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ouverture des contacts...":"📇 Choisir depuis mes contacts"}</button>}
+            const c=await navigator.contacts.select(["name","tel"],{multiple:true});
+            pickerBusyRef.current=false;setPickerBusy(false);
+            if(!c||c.length===0)return;
+            if(c.length===1){setNewM(n=>({...n,prenom:c[0].name?.[0]?.split(" ")[0]||n.prenom,tel:sPhone(c[0].tel?.[0]||n.tel)}));onToast("Contact selectionne !");}
+            else await addMembresEnMasse(c);
+          }catch{pickerBusyRef.current=false;setPickerBusy(false);}
+        }} style={{width:"100%",background:pickerBusy?"#1A1A1A":"#2A2A2A",border:"1px solid #FF6B00",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#FF6B00",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ajout en cours...":"📇 Choisir depuis mes contacts (plusieurs a la fois possible)"}</button>}
         <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#2A2A2A",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 14px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");try{const url=await uploadPhoto(f,"membres");setNewM(n=>({...n,photo:url}));}catch{onToast("Envoi de la photo impossible","error");}}}/></label></div></Fld>
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><PhoneInput value={newM.tel} onChange={v=>setNewM(n=>({...n,tel:sPhone(v)}))}/></Fld>
@@ -3263,7 +3496,7 @@ function AppInner() {
 
   if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id)]);if(u.linkedCount>0)showToast(`Bienvenue ! Tu as ete ajoute(e) a ${u.linkedCount} tontine(s) !`);}}/>;
   const cu={...user,groupesCount:groupes.length};
-  const NAV=[["home","🏠",t("accueil")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
+  const NAV=[["home","🏠",t("accueil")],["cagnottes","🎁",t("cagnottesNav")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
   return(
     <div style={{background:"#0D0D0D",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
@@ -3272,7 +3505,8 @@ function AppInner() {
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} user={cu} onBack={backTap} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
         :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={backTap} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
         :sel?<GroupeScreen groupe={sel} deepLink={deepLink} onBack={backTap} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
-        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(g);}} cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}} onOpenHaby={()=>setNav("haby")}/>
+        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(g);}} onOpenHaby={()=>setNav("haby")} onOpenCagnottes={()=>setNav("cagnottes")}/>
+        :nav==="cagnottes"?<CagnottesScreen cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id} user={cu}/>

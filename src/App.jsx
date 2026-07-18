@@ -9,10 +9,10 @@ import heroTontine from "./assets/hero-tontine.jpg";
 
 const genererRecuImage=async({nomTontine,prenom,montantRecu,montantDu,totalVerse,statut,cycle,totalCycles,ref,date})=>{
   const div=document.createElement("div");
-  div.style.cssText="position:fixed;top:-9999px;left:-9999px;width:600px;background:linear-gradient(160deg,#0D0D0D,#123322);padding:0;font-family:Georgia,'Times New Roman',serif;overflow:hidden;border-radius:24px;";
+  div.style.cssText="position:fixed;top:-9999px;left:-9999px;width:600px;background:linear-gradient(160deg,#FFFFFF,#E8F5EC);padding:0;font-family:Georgia,'Times New Roman',serif;overflow:hidden;border-radius:24px;";
   div.innerHTML=`
     <div style="height:8px;background:linear-gradient(90deg,#FF6B00,#E8B96A,#FF6B00);"></div>
-    <div style="padding:36px 40px 30px;text-align:center;border-bottom:1px solid #2A2A2A;">
+    <div style="padding:36px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB;">
       <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#FF6B00,#E8B96A);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#0D0D0D;">H</div>
       <p style="margin:0;color:#FF6B00;font-size:22px;font-weight:900;letter-spacing:3px;">THT</p>
       <p style="margin:4px 0 0;color:#6B7280;font-size:11px;letter-spacing:1px;">TONTINE HABI TRAORE</p>
@@ -20,22 +20,22 @@ const genererRecuImage=async({nomTontine,prenom,montantRecu,montantDu,totalVerse
     <div style="padding:28px 40px;">
       <p style="margin:0 0 4px;color:#FFFFFF;font-size:19px;font-weight:700;text-align:center;">Recu de paiement</p>
       <p style="margin:0 0 24px;color:#6B7280;font-size:12px;text-align:center;">${date} - Ref ${ref}</p>
-      <div style="background:#1A1A1A;border:1px solid #2A2A2A;border-radius:16px;padding:20px 22px;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2A2A2A;"><span style="color:#6B7280;font-size:13px;">Membre</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${prenom}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2A2A2A;"><span style="color:#6B7280;font-size:13px;">Tontine</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${nomTontine}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2A2A2A;"><span style="color:#6B7280;font-size:13px;">Cycle</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${cycle} / ${totalCycles}</span></div>
+      <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:16px;padding:20px 22px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Membre</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${prenom}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Tontine</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${nomTontine}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Cycle</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${cycle} / ${totalCycles}</span></div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;"><span style="color:#6B7280;font-size:13px;">Montant du</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${montantDu}</span></div>
       </div>
-      <div style="background:linear-gradient(135deg,#2A2A2A,#1A1A1A);border:1px solid #FF6B00;border-radius:16px;padding:22px;text-align:center;margin-bottom:16px;">
+      <div style="background:linear-gradient(135deg,#E5E7EB,#FFFFFF);border:1px solid #FF6B00;border-radius:16px;padding:22px;text-align:center;margin-bottom:16px;">
         <p style="margin:0;color:#9CA89F;font-size:11px;letter-spacing:1px;">MONTANT RECU</p>
         <p style="margin:6px 0 0;color:#FF6B00;font-size:32px;font-weight:900;">${montantRecu}</p>
       </div>
       <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6B7280;font-size:12px;">Total verse ce cycle</span><span style="color:#FFFFFF;font-size:12px;font-weight:700;">${totalVerse}</span></div>
       <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6B7280;font-size:12px;">Statut</span><span style="color:${statut.includes("PAYE")?"#22C55E":"#FF6B00"};font-size:12px;font-weight:800;">${statut}</span></div>
     </div>
-    <div style="padding:16px 40px 30px;text-align:center;border-top:1px solid #2A2A2A;">
+    <div style="padding:16px 40px 30px;text-align:center;border-top:1px solid #E5E7EB;">
       <p style="margin:0;color:#6B7280;font-size:11px;">Merci ${prenom} pour votre confiance !</p>
-      <p style="margin:4px 0 0;color:#3D3D3D;font-size:10px;">THT - Tontine Habi Traore</p>
+      <p style="margin:4px 0 0;color:#D1D5DB;font-size:10px;">THT - Tontine Habi Traore</p>
     </div>
   `;
   document.body.appendChild(div);
@@ -58,6 +58,25 @@ const partagerImage=async(blob,filename,titre,texte)=>{
   setTimeout(()=>URL.revokeObjectURL(url),3000);
   return false;
 };
+
+const compressImage = (file, maxDim = 1024, quality = 0.82) => new Promise((resolve, reject) => {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    let { width, height } = img;
+    if (width > maxDim || height > maxDim) {
+      if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+      else { width = Math.round(width * maxDim / height); height = maxDim; }
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("compression impossible")), "image/jpeg", quality);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image invalide ou format non reconnu")); };
+  img.src = url;
+});
 
 const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
 const sPhone = (p) => String(p).replace(/[^\d+\s]/g, "").slice(0, 16);
@@ -212,7 +231,7 @@ function useVoiceInput(onResult,onToast){
 const Avatar = ({ prenom, photo, size=40, gold=false }) => {
   const [err, setErr] = useState(false);
   return (
-    <div style={{width:size,height:size,borderRadius:"50%",background:gold?"linear-gradient(135deg,#FF6B00,#CC5200)":"linear-gradient(135deg,#2A2A2A,#3D3D3D)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",border:gold?"2px solid #FF6B00":"none"}}>
+    <div style={{width:size,height:size,borderRadius:"50%",background:gold?"linear-gradient(135deg,#FF6B00,#CC5200)":"linear-gradient(135deg,#E5E7EB,#D1D5DB)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",border:gold?"2px solid #FF6B00":"none"}}>
       {photo&&!err?<img src={photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={()=>setErr(true)}/>:<span style={{color:gold?"#0D0D0D":"#FF6B00",fontWeight:900,fontSize:size*0.38}}>{(prenom||"?")[0].toUpperCase()}</span>}
     </div>
   );
@@ -224,7 +243,7 @@ const Badge = ({score}) => {
 };
 
 const Bar = ({pct,c}) => (
-  <div style={{background:"#2A2A2A",borderRadius:99,height:6,overflow:"hidden",marginTop:10}}>
+  <div style={{background:"#E5E7EB",borderRadius:99,height:6,overflow:"hidden",marginTop:10}}>
     <div style={{width:`${Math.min(pct,100)}%`,height:"100%",background:c,borderRadius:99,transition:"width .5s"}}/>
   </div>
 );
@@ -232,18 +251,18 @@ const Bar = ({pct,c}) => (
 const Toast = ({msg,type="success",onClose}) => {
   useEffect(()=>{const t=setTimeout(onClose,3200);return()=>clearTimeout(t);},[]);
   const bg=type==="error"?"#C1440E":type==="warn"?"#CC5200":"#1B6B45";
-  return <div style={{position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:bg,color:"#FFFFFF",padding:"12px 22px",borderRadius:14,fontWeight:700,zIndex:9999,fontSize:14,boxShadow:"0 8px 30px rgba(0,0,0,0.5)",maxWidth:340,textAlign:"center"}}>{msg}</div>;
+  return <div style={{position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:bg,color:"#111827",padding:"12px 22px",borderRadius:14,fontWeight:700,zIndex:9999,fontSize:14,boxShadow:"0 8px 30px rgba(0,0,0,0.5)",maxWidth:340,textAlign:"center"}}>{msg}</div>;
 };
 
 const Modal = ({children,onClose}) => (
   <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
-    <div style={{background:"#1A1A1A",borderRadius:"24px 24px 0 0",padding:"20px 20px 44px",width:"100%",maxWidth:440,border:"1px solid #2A2A2A",borderBottom:"none",maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>{children}</div>
+    <div style={{background:"#FFFFFF",borderRadius:"24px 24px 0 0",padding:"20px 20px 44px",width:"100%",maxWidth:440,border:"1px solid #E5E7EB",borderBottom:"none",maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>{children}</div>
   </div>
 );
 
 const MH = ({title,onClose}) => (
   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-    <h3 style={{color:"#FFFFFF",margin:0,fontSize:18,fontWeight:800}}>{title}</h3>
+    <h3 style={{color:"#111827",margin:0,fontSize:18,fontWeight:800}}>{title}</h3>
     <button onClick={onClose} style={{background:"none",border:"none",color:"#6B7280",fontSize:22,cursor:"pointer"}}>x</button>
   </div>
 );
@@ -487,18 +506,18 @@ const PhoneInput = ({value,onChange,autoFocus}) => {
   const paysFiltres=PAYS_LISTE.filter(p=>p.nom.toLowerCase().includes(rechPays.toLowerCase()));
   return(
     <div style={{display:"flex",gap:8}}>
-      <button type="button" onClick={()=>setShowPays(true)} style={{display:"flex",alignItems:"center",gap:4,background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"0 10px",color:"#FFFFFF",fontSize:14,cursor:"pointer",flexShrink:0}}>
+      <button type="button" onClick={()=>setShowPays(true)} style={{display:"flex",alignItems:"center",gap:4,background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"0 10px",color:"#111827",fontSize:14,cursor:"pointer",flexShrink:0}}>
         <span style={{fontSize:18}}>{currentPays.drapeau}</span><span>{currentPays.code}</span><span style={{color:"#6B7280",fontSize:11}}>▾</span>
       </button>
       <input value={numeroSeul} onChange={e=>changerNumero(e.target.value)} placeholder="76 XX XX XX" type="tel" inputMode="tel" maxLength={12} autoFocus={autoFocus}
-        style={{flex:1,background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"13px 14px",color:"#FFFFFF",fontSize:15,outline:"none",minWidth:0}}/>
+        style={{flex:1,background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"13px 14px",color:"#111827",fontSize:15,outline:"none",minWidth:0}}/>
       {showPays&&<Modal onClose={()=>{setShowPays(false);setRechPays("");}}>
         <MH title="Choisir un pays" onClose={()=>{setShowPays(false);setRechPays("");}}/>
         <Inp value={rechPays} onChange={e=>setRechPays(e.target.value)} placeholder="Rechercher un pays..." autoFocus/>
         <div style={{marginTop:12}}>
         {paysFiltres.map(p=>(
-          <div key={p.code} onClick={()=>choisirPays(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 4px",borderBottom:"1px solid #2A2A2A",cursor:"pointer"}}>
-            <span style={{color:"#FFFFFF",fontSize:15}}>{p.drapeau} {p.nom}</span>
+          <div key={p.code} onClick={()=>choisirPays(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 4px",borderBottom:"1px solid #E5E7EB",cursor:"pointer"}}>
+            <span style={{color:"#111827",fontSize:15}}>{p.drapeau} {p.nom}</span>
             <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{color:"#6B7280",fontSize:14}}>{p.code}</span>{p.code===currentPays.code&&<span style={{color:"#22C55E"}}>✓</span>}</div>
           </div>
         ))}
@@ -518,17 +537,17 @@ const Fld = ({label,children}) => (
 
 const Inp = ({value,onChange,placeholder,type="text",inputMode,maxLength,autoFocus,onKeyDown}) => (
   <input value={value} onChange={onChange} placeholder={placeholder} type={type} inputMode={inputMode} maxLength={maxLength} autoFocus={autoFocus} onKeyDown={onKeyDown}
-    style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"13px 14px",color:"#FFFFFF",fontSize:15,outline:"none"}}/>
+    style={{width:"100%",background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"13px 14px",color:"#111827",fontSize:15,outline:"none"}}/>
 );
 
 const Btn = ({onClick,children,disabled}) => (
   <button onClick={onClick} disabled={disabled}
-    style={{width:"100%",background:disabled?"#2A2A2A":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"14px",color:disabled?"#6B7280":"#0D0D0D",fontWeight:800,fontSize:15,cursor:disabled?"not-allowed":"pointer",marginTop:6}}>
+    style={{width:"100%",background:disabled?"#E5E7EB":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"14px",color:disabled?"#6B7280":"#0D0D0D",fontWeight:800,fontSize:15,cursor:disabled?"not-allowed":"pointer",marginTop:6}}>
     {children}
   </button>
 );
 
-const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0 12px",fontWeight:600,background:"#1A0800",padding:"8px 12px",borderRadius:8}}>{msg}</p>:null;
+const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0 12px",fontWeight:600,background:"#FEF2F2",padding:"8px 12px",borderRadius:8}}>{msg}</p>:null;
 
 // Boutons de paiement mobile (Orange Money / Wave) : affiche le numero du beneficiaire pour un
 // paiement manuel (l'argent ne transite jamais par l'app). Si onDeclarer est fourni, une photo de
@@ -536,7 +555,6 @@ const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0
 // ca ne peut pas etre valide sans preuve, exactement comme pour les cagnottes et les versements geres
 // par la creatrice.
 const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,declareLabel,dejaDeclare,busy}) => {
-  const [ouvert,setOuvert]=useState(null);
   const [preuve,setPreuve]=useState(null);
   const [preuvePreview,setPreuvePreview]=useState(null);
   if(!numeroOrangeMoney&&!numeroWave)return null;
@@ -549,36 +567,25 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,
     reader.onload=()=>{setPreuve(reader.result);setPreuvePreview(reader.result);};
     reader.readAsDataURL(f);
   };
-  const peutDeclarer=montantNum&&ouvert&&preuve;
+  const peutDeclarer=montantNum&&preuve;
   return(
-    <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14,marginBottom:16}}>
+    <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14,marginBottom:16}}>
       <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>📲 Payer directement</p>
-      {!montantNum&&<p style={{color:"#6B7280",fontSize:11,marginBottom:8}}>Indique d'abord le montant pour activer les boutons.</p>}
-      <div style={{display:"flex",gap:8,marginBottom:ouvert?10:0}}>
-        {numeroOrangeMoney&&<button onClick={()=>montantNum&&setOuvert(ouvert==="om"?null:"om")} disabled={!montantNum} style={{flex:1,background:ouvert==="om"?"#FF6B00":"#212121",border:"1px solid #FF6B00",borderRadius:10,padding:"10px 6px",color:ouvert==="om"?"#0D0D0D":"#FF6B00",fontWeight:700,fontSize:12,cursor:montantNum?"pointer":"not-allowed",opacity:montantNum?1:.5}}>🟠 Orange Money</button>}
-        {numeroWave&&<button onClick={()=>montantNum&&setOuvert(ouvert==="wave"?null:"wave")} disabled={!montantNum} style={{flex:1,background:ouvert==="wave"?"#2A9DF4":"#212121",border:"1px solid #2A9DF4",borderRadius:10,padding:"10px 6px",color:ouvert==="wave"?"#0D0D0D":"#2A9DF4",fontWeight:700,fontSize:12,cursor:montantNum?"pointer":"not-allowed",opacity:montantNum?1:.5}}>🔵 Wave</button>}
-      </div>
-      {ouvert==="om"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
-        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroOrangeMoney}</b> via Orange Money.</p>
-        <div style={{display:"flex",gap:8}}>
-          <a href="tel:%23144%23" style={{flex:1,textAlign:"center",background:"#FF6B00",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>☎️ Ouvrir Orange Money</a>
-          <button onClick={()=>copier(numeroOrangeMoney)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
-        </div>
-        <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Ça ouvre le menu Orange Money (#144#) -- choisis "Transfert d'argent" et entre le numéro et le montant toi-même.</p>
+      {!montantNum&&<p style={{color:"#6B7280",fontSize:11,marginBottom:8}}>Indique d'abord le montant.</p>}
+      {numeroOrangeMoney&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#F3F4F6",borderRadius:8,padding:"8px 12px",marginBottom:8}}>
+        <p style={{margin:0,color:"#111827",fontSize:12}}>Orange Money : <b>{numeroOrangeMoney}</b></p>
+        <button onClick={()=>copier(numeroOrangeMoney)} style={{background:"transparent",border:"none",color:"#FF6B00",fontWeight:700,fontSize:11,cursor:"pointer"}}>📋 Copier</button>
       </div>}
-      {ouvert==="wave"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
-        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroWave}</b> via Wave.</p>
-        <div style={{display:"flex",gap:8}}>
-          <a href="https://pay.wave.com/" style={{flex:1,textAlign:"center",background:"#2A9DF4",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>📱 Ouvrir Wave</a>
-          <button onClick={()=>copier(numeroWave)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
-        </div>
-        <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Si ça n'ouvre pas l'app Wave directement, ouvre-la toi-même et envoie au numéro copié.</p>
+      {numeroWave&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#F3F4F6",borderRadius:8,padding:"8px 12px",marginBottom:8}}>
+        <p style={{margin:0,color:"#111827",fontSize:12}}>Wave : <b>{numeroWave}</b></p>
+        <button onClick={()=>copier(numeroWave)} style={{background:"transparent",border:"none",color:"#2A9DF4",fontWeight:700,fontSize:11,cursor:"pointer"}}>📋 Copier</button>
       </div>}
-      {onDeclarer&&ouvert&&<label style={{display:"block",background:"#0D0D0D",border:"1px dashed #FF6B00",borderRadius:10,padding:preuvePreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden",marginBottom:10}}>
+      <p style={{margin:"4px 0 10px",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Envoie {montantNum?fmtFCFA(montantNum):"le montant"} toi-même depuis Orange Money ou Wave, puis confirme ci-dessous.</p>
+      {onDeclarer&&<label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:10,padding:preuvePreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden",marginBottom:10}}>
         <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>
         {preuvePreview?<img src={preuvePreview} alt="Preuve" style={{width:"100%",maxHeight:180,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Capture d'écran du paiement (obligatoire)</span>}
       </label>}
-      {onDeclarer&&<button onClick={()=>onDeclarer(ouvert==="om"?"orange_money":"wave",preuve)} disabled={busy||dejaDeclare||!peutDeclarer} style={{width:"100%",marginTop:4,background:dejaDeclare?"#2A2A2A":"transparent",border:"1px solid "+(dejaDeclare?"#22C55E":"#3D3D3D"),borderRadius:10,padding:"10px",color:dejaDeclare?"#22C55E":(!peutDeclarer?"#6B7280":"#FFFFFF"),fontWeight:700,fontSize:12,cursor:dejaDeclare||!peutDeclarer?"default":"pointer"}}>{dejaDeclare?"✅ Déclaré, en attente de confirmation":(busy?"Envoi...":!ouvert?"Choisis d'abord Orange Money ou Wave ci-dessus":!preuve?"Ajoute la capture d'écran ci-dessus":(declareLabel||"✅ J'ai effectué le paiement"))}</button>}
+      {onDeclarer&&<button onClick={()=>onDeclarer("mobile_money",preuve)} disabled={busy||dejaDeclare||!peutDeclarer} style={{width:"100%",marginTop:4,background:dejaDeclare?"#E5E7EB":"transparent",border:"1px solid "+(dejaDeclare?"#22C55E":"#D1D5DB"),borderRadius:10,padding:"10px",color:dejaDeclare?"#22C55E":(!peutDeclarer?"#6B7280":"#111827"),fontWeight:700,fontSize:12,cursor:dejaDeclare||!peutDeclarer?"default":"pointer"}}>{dejaDeclare?"✅ Déclaré, en attente de confirmation":(busy?"Envoi...":!preuve?"Ajoute la capture d'écran ci-dessus":(declareLabel||"✅ J'ai effectué le paiement"))}</button>}
     </div>
   );
 };
@@ -598,7 +605,14 @@ const AuthScreen = ({onLogin}) => {
   const [loading,setLoading]=useState(false);
   const fileRef=useRef();
 
-  const handlePhoto=(e)=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return setErr("Photo max 4MB");setPhotoFile(f);const r=new FileReader();r.onload=(ev)=>setPhoto(ev.target.result);r.readAsDataURL(f);};
+  const handlePhoto=async(e)=>{
+    const f=e.target.files?.[0];if(!f)return;
+    try{
+      const blob=await compressImage(f);
+      setPhotoFile(new File([blob],"profil.jpg",{type:"image/jpeg"}));
+      const r=new FileReader();r.onload=(ev)=>setPhoto(ev.target.result);r.readAsDataURL(blob);
+    }catch{setErr("Cette photo n'a pas pu etre traitee, essaie une autre image");}
+  };
   const go=(st)=>{setStep(st);setErr("");setPin("");setPinC("");};
 
   const doLogin=async()=>{
@@ -626,8 +640,8 @@ const AuthScreen = ({onLogin}) => {
     setStep("tutoriel");
   };
 
-  const W={minHeight:"100vh",background:"linear-gradient(160deg,#050F07,#2A2A2A)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"};
-  const C={background:"#1A1A1A",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.6)"};
+  const W={minHeight:"100vh",background:"linear-gradient(160deg,#FFFFFF,#E8F5EC)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"};
+  const C={background:"#FFFFFF",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.6)"};
 
   if(step==="tutoriel"){
     const slides=[
@@ -638,12 +652,12 @@ const AuthScreen = ({onLogin}) => {
     ];
     const sl=slides[tutoStep];
     return(
-      <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#050F07,#2A2A2A)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
-        <div style={{width:88,height:88,borderRadius:24,background:"#1A1A1A",border:"1px solid #FF6B00",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:24}}>{sl.ic}</div>
-        <h2 style={{color:"#FFFFFF",fontSize:21,fontWeight:800,textAlign:"center",margin:"0 0 12px"}}>{sl.titre}</h2>
-        <p style={{color:"#9CA89F",fontSize:14,textAlign:"center",lineHeight:1.6,maxWidth:340,marginBottom:32}}>{sl.texte}</p>
+      <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#FFFFFF,#E8F5EC)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{width:88,height:88,borderRadius:24,background:"#FFFFFF",border:"1px solid #FF6B00",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:24}}>{sl.ic}</div>
+        <h2 style={{color:"#111827",fontSize:21,fontWeight:800,textAlign:"center",margin:"0 0 12px"}}>{sl.titre}</h2>
+        <p style={{color:"#6B7280",fontSize:14,textAlign:"center",lineHeight:1.6,maxWidth:340,marginBottom:32}}>{sl.texte}</p>
         <div style={{display:"flex",gap:6,marginBottom:32}}>
-          {slides.map((_,i)=><div key={i} style={{width:i===tutoStep?22:8,height:8,borderRadius:99,background:i===tutoStep?"#FF6B00":"#3D3D3D",transition:"width .2s"}}/>)}
+          {slides.map((_,i)=><div key={i} style={{width:i===tutoStep?22:8,height:8,borderRadius:99,background:i===tutoStep?"#FF6B00":"#D1D5DB",transition:"width .2s"}}/>)}
         </div>
         <div style={{width:"100%",maxWidth:340}}>
           <Btn onClick={()=>{if(tutoStep<slides.length-1)setTutoStep(t=>t+1);else onLogin(pendingUser);}}>{tutoStep<slides.length-1?"Suivant":"Commencer"}</Btn>
@@ -654,7 +668,7 @@ const AuthScreen = ({onLogin}) => {
   }
 
   if(step==="intro") return(
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#0D0D0D"}}>
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#FFFFFF"}}>
       <style>{`
         @keyframes introLogoIn { 0%{opacity:0;transform:scale(0.5) translateY(10px);} 60%{opacity:1;transform:scale(1.1) translateY(0);} 100%{opacity:1;transform:scale(1) translateY(0);} }
         @keyframes introGlow { 0%,100%{box-shadow:0 8px 24px rgba(255,107,0,0.35);} 50%{box-shadow:0 8px 36px rgba(255,107,0,0.6);} }
@@ -668,9 +682,9 @@ const AuthScreen = ({onLogin}) => {
         <div style={{width:64,height:64,borderRadius:18,margin:"0 auto 16px",overflow:"hidden",opacity:0,animation:"introLogoIn 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards, introGlow 2.4s ease-in-out 0.7s infinite"}}>
           <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         </div>
-        <h1 style={{color:"#FFFFFF",fontSize:26,fontWeight:900,margin:"0 0 6px",letterSpacing:1,opacity:0,animation:"introFadeUp 0.6s ease-out 0.35s forwards"}}>THT</h1>
+        <h1 style={{color:"#111827",fontSize:26,fontWeight:900,margin:"0 0 6px",letterSpacing:1,opacity:0,animation:"introFadeUp 0.6s ease-out 0.35s forwards"}}>THT</h1>
         <p style={{color:"#FF6B00",fontSize:14,margin:"0 0 4px",fontWeight:600,opacity:0,animation:"introFadeUp 0.6s ease-out 0.5s forwards"}}>Tontine Habi Traore</p>
-        <p style={{color:"#9CA89F",fontSize:13,margin:"0 0 28px",lineHeight:1.6,opacity:0,animation:"introFadeUp 0.6s ease-out 0.65s forwards"}}>La tontine digitale qui rassemble les familles et les communautes, en toute confiance.</p>
+        <p style={{color:"#6B7280",fontSize:13,margin:"0 0 28px",lineHeight:1.6,opacity:0,animation:"introFadeUp 0.6s ease-out 0.65s forwards"}}>La tontine digitale qui rassemble les familles et les communautes, en toute confiance.</p>
         <div style={{opacity:0,animation:"introFadeUp 0.6s ease-out 0.8s forwards"}}><Btn onClick={()=>go("welcome")}>Continuer</Btn></div>
       </div>
     </div>
@@ -682,21 +696,21 @@ const AuthScreen = ({onLogin}) => {
         <div style={{width:120,height:120,borderRadius:32,margin:"0 auto 18px",overflow:"hidden",boxShadow:"0 8px 24px rgba(255,107,0,0.3)"}}>
           <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         </div>
-        <h1 style={{color:"#FFFFFF",fontSize:30,fontWeight:900,margin:"8px 0 4px",letterSpacing:2}}>THT</h1>
+        <h1 style={{color:"#111827",fontSize:30,fontWeight:900,margin:"8px 0 4px",letterSpacing:2}}>THT</h1>
         <p style={{color:"#6B7280",fontSize:13,margin:0}}>Tontine Habi Traore - Digitale. Securisee.</p>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:40}}>
         <Btn onClick={()=>go("register")}>Creer mon compte gratuit</Btn>
-        <button onClick={()=>go("login")} style={{width:"100%",background:"transparent",border:"2px solid #2A2A2A",borderRadius:14,padding:"13px",color:"#FFFFFF",fontWeight:700,fontSize:15,cursor:"pointer"}}>J'ai déjà un compte</button>
+        <button onClick={()=>go("login")} style={{width:"100%",background:"transparent",border:"2px solid #E5E7EB",borderRadius:14,padding:"13px",color:"#111827",fontWeight:700,fontSize:15,cursor:"pointer"}}>J'ai déjà un compte</button>
       </div>
-      <p style={{color:"#3D3D3D",fontSize:11,textAlign:"center",marginTop:20}}>Sans email - Donnees chiffrees - 100% prive</p>
+      <p style={{color:"#9CA3AF",fontSize:11,textAlign:"center",marginTop:20}}>Sans email - Donnees chiffrees - 100% prive</p>
     </div></div>
   );
 
   if(step==="login") return(
     <div style={W}><div style={C}>
       <button onClick={()=>go("welcome")} style={{background:"none",border:"none",color:"#FF6B00",cursor:"pointer",fontSize:14,padding:"0 0 16px",display:"block",fontWeight:600}}>← Retour</button>
-      <h2 style={{color:"#FFFFFF",fontWeight:800,fontSize:22,margin:"0 0 20px"}}>Connexion</h2>
+      <h2 style={{color:"#111827",fontWeight:800,fontSize:22,margin:"0 0 20px"}}>Connexion</h2>
       <Fld label="Numéro de téléphone"><PhoneInput value={tel} onChange={v=>setTel(sPhone(v))} autoFocus/></Fld>
       <Fld label="Code PIN (4 chiffres)"><Inp value={pin} onChange={e=>setPin(sPin(e.target.value))} placeholder="Code secret" type="password" inputMode="numeric" maxLength={4}/></Fld>
       <ErrBox msg={err}/>
@@ -708,7 +722,7 @@ const AuthScreen = ({onLogin}) => {
   return(
     <div style={{...W,alignItems:"flex-start"}}><div style={{...C,margin:"20px auto"}}>
       <button onClick={()=>go("welcome")} style={{background:"none",border:"none",color:"#FF6B00",cursor:"pointer",fontSize:14,padding:"0 0 16px",display:"block",fontWeight:600}}>← Retour</button>
-      <h2 style={{color:"#FFFFFF",fontWeight:800,fontSize:22,margin:"0 0 20px"}}>Creer mon compte</h2>
+      <h2 style={{color:"#111827",fontWeight:800,fontSize:22,margin:"0 0 20px"}}>Creer mon compte</h2>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:20}}>
         <div onClick={()=>fileRef.current?.click()} style={{cursor:"pointer",position:"relative"}}>
           <Avatar prenom={prenom||"?"} photo={photo} size={76} gold/>
@@ -724,29 +738,29 @@ const AuthScreen = ({onLogin}) => {
       <Fld label="Code de parrainage (optionnel)"><Inp value={parrainCode} onChange={e=>setParrainCode(e.target.value.toUpperCase())} placeholder="Ex: A1B2C3D4" maxLength={12}/></Fld>
       <ErrBox msg={err}/>
       <Btn onClick={doRegister} disabled={loading}>{loading?"Creation...":"Creer mon compte"}</Btn>
-      <p style={{color:"#3D3D3D",fontSize:11,textAlign:"center",marginTop:14}}>Ton PIN est chiffre et jamais partage</p>
+      <p style={{color:"#9CA3AF",fontSize:11,textAlign:"center",marginTop:14}}>Ton PIN est chiffre et jamais partage</p>
     </div></div>
   );
 };
 
 const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,onPhoto,onToggleCollecteur,onEdit}) => (
-  <div style={{background:"#1A1A1A",border:`1px solid ${m.paye?"#2A2A2A":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
+  <div style={{background:"#FFFFFF",border:`1px solid ${m.paye?"#E5E7EB":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
       <Avatar prenom={m.prenom} photo={m.photo} size={46}/>
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2,flexWrap:"wrap"}}>
-          <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p>
+          <p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m.prenom}</p>
           <Badge score={m.score}/>
           {!m.paye&&<span style={{background:"#C1440E",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99}}>NON PAYE</span>}
-          {m.montantPerso&&<span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #FF6B00"}}>💰 {fmtFCFA(m.montantPerso)}/cycle</span>}
-          {m.roleCollecteur&&<span style={{background:"#2A2A2A",color:"#22C55E",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #22C55E"}}>🤝 Collecteur</span>}
+          {m.montantPerso&&<span style={{background:"#E5E7EB",color:"#FF6B00",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #FF6B00"}}>💰 {fmtFCFA(m.montantPerso)}/cycle</span>}
+          {m.roleCollecteur&&<span style={{background:"#E5E7EB",color:"#22C55E",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #22C55E"}}>🤝 Collecteur</span>}
         </div>
         {m.quartier&&<p style={{margin:0,color:"#FF6B00",fontSize:11,fontWeight:600}}>📍 {m.quartier}</p>}
         <p style={{margin:"1px 0 0",color:"#6B7280",fontSize:11}}>{m.tel}</p>
       </div>
       <div onClick={onToggle} style={{width:30,height:30,borderRadius:"50%",background:m.paye?"#22C55E":"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14,color:"#fff",fontWeight:900}}>{m.paye?"v":"x"}</div>
     </div>
-    <div style={{margin:"8px 0",padding:"9px 10px",background:"#0D0D0D",borderRadius:8}}>
+    <div style={{margin:"8px 0",padding:"9px 10px",background:"#FFFFFF",borderRadius:8}}>
       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
         <span style={{color:"#6B7280",fontSize:12}}>Cotisations payees</span>
         <span style={{color:"#FF6B00",fontWeight:700,fontSize:12}}>{fmtFCFA((m.cyclesPaies||0)*(montant||0))}</span>
@@ -758,14 +772,14 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
     </div>
     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
       <button onClick={onWA} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"8px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>WhatsApp</button>
-      <button onClick={()=>onVersement(m)} style={{flex:1,background:"#212121",border:"1px solid #FF6B00",borderRadius:10,padding:"8px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>+ Versement</button>
-      <button onClick={()=>onHistorique(m)} style={{flex:1,background:"#212121",border:"1px solid #6B7280",borderRadius:10,padding:"8px",color:"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>Historique</button>
-      <label style={{background:"#212121",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"center"}}>📷<input type="file" accept="image/*" hidden onChange={e=>onPhoto(m.id,e)}/></label>
-      {onEdit&&<button onClick={()=>onEdit(m)} style={{background:"#212121",border:"1px solid #6B7280",borderRadius:10,padding:"8px 10px",color:"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer"}}>✏️ Modifier</button>}
+      <button onClick={()=>onVersement(m)} style={{flex:1,background:"#F3F4F6",border:"1px solid #FF6B00",borderRadius:10,padding:"8px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>+ Versement</button>
+      <button onClick={()=>onHistorique(m)} style={{flex:1,background:"#F3F4F6",border:"1px solid #6B7280",borderRadius:10,padding:"8px",color:"#111827",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>Historique</button>
+      <label style={{background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"center"}}>📷<input type="file" accept="image/*" hidden onChange={e=>onPhoto(m.id,e)}/></label>
+      {onEdit&&<button onClick={()=>onEdit(m)} style={{background:"#F3F4F6",border:"1px solid #6B7280",borderRadius:10,padding:"8px 10px",color:"#111827",fontSize:11,fontWeight:700,cursor:"pointer"}}>✏️ Modifier</button>}
       <button onClick={()=>onDelete(m.id)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"8px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Retirer</button>
     </div>
-    {!m.paye&&<button onClick={onToggle} style={{width:"100%",background:"#2A2A2A",border:"1px solid #22C55E",borderRadius:10,padding:"8px",color:"#22C55E",fontSize:12,fontWeight:700,cursor:"pointer",marginTop:6}}>Marquer paye ce cycle</button>}
-    {m.userId&&onToggleCollecteur&&<button onClick={()=>onToggleCollecteur(m)} style={{width:"100%",background:"transparent",border:"1px solid "+(m.roleCollecteur?"#EF4444":"#3D3D3D"),borderRadius:10,padding:"7px",color:m.roleCollecteur?"#EF4444":"#6B7280",fontSize:11,fontWeight:700,cursor:"pointer",marginTop:6}}>{m.roleCollecteur?"Retirer le role collecteur":"🤝 Nommer collecteur (aide pour les versements)"}</button>}
+    {!m.paye&&<button onClick={onToggle} style={{width:"100%",background:"#E5E7EB",border:"1px solid #22C55E",borderRadius:10,padding:"8px",color:"#22C55E",fontSize:12,fontWeight:700,cursor:"pointer",marginTop:6}}>Marquer paye ce cycle</button>}
+    {m.userId&&onToggleCollecteur&&<button onClick={()=>onToggleCollecteur(m)} style={{width:"100%",background:"transparent",border:"1px solid "+(m.roleCollecteur?"#EF4444":"#D1D5DB"),borderRadius:10,padding:"7px",color:m.roleCollecteur?"#EF4444":"#6B7280",fontSize:11,fontWeight:700,cursor:"pointer",marginTop:6}}>{m.roleCollecteur?"Retirer le role collecteur":"🤝 Nommer collecteur (aide pour les versements)"}</button>}
   </div>
 );
 
@@ -773,23 +787,23 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
 // pastille de statut, bloc de stats), mais en LECTURE SEULE : aucun bouton d'action,
 // car un membre participant voit tout mais ne peut rien modifier.
 const MembreRowLecture = ({m,montant}) => (
-  <div style={{background:"#1A1A1A",border:`1px solid ${m.paye?"#2A2A2A":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
+  <div style={{background:"#FFFFFF",border:`1px solid ${m.paye?"#E5E7EB":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
       <Avatar prenom={m.prenom} photo={m.photo} size={46}/>
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2,flexWrap:"wrap"}}>
-          <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p>
+          <p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m.prenom}</p>
           <Badge score={m.score}/>
           {!m.paye&&<span style={{background:"#C1440E",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99}}>NON PAYE</span>}
-          {m.montantPerso&&<span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #FF6B00"}}>💰 {fmtFCFA(m.montantPerso)}/cycle</span>}
-          {m.roleCollecteur&&<span style={{background:"#2A2A2A",color:"#22C55E",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #22C55E"}}>🤝 Collecteur</span>}
+          {m.montantPerso&&<span style={{background:"#E5E7EB",color:"#FF6B00",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #FF6B00"}}>💰 {fmtFCFA(m.montantPerso)}/cycle</span>}
+          {m.roleCollecteur&&<span style={{background:"#E5E7EB",color:"#22C55E",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,border:"1px solid #22C55E"}}>🤝 Collecteur</span>}
         </div>
         {m.quartier&&<p style={{margin:0,color:"#FF6B00",fontSize:11,fontWeight:600}}>📍 {m.quartier}</p>}
         <p style={{margin:"1px 0 0",color:"#6B7280",fontSize:11}}>{m.tel}</p>
       </div>
       <div style={{width:30,height:30,borderRadius:"50%",background:m.paye?"#22C55E":"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14,color:"#fff",fontWeight:900}}>{m.paye?"v":"x"}</div>
     </div>
-    <div style={{margin:"8px 0 0",padding:"9px 10px",background:"#0D0D0D",borderRadius:8}}>
+    <div style={{margin:"8px 0 0",padding:"9px 10px",background:"#FFFFFF",borderRadius:8}}>
       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
         <span style={{color:"#6B7280",fontSize:12}}>Cotisations payees</span>
         <span style={{color:"#FF6B00",fontWeight:700,fontSize:12}}>{fmtFCFA((m.cyclesPaies||0)*(montant||0))}</span>
@@ -834,50 +848,50 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
   const nbRet=groupes.reduce((a,g)=>a+g.membres.filter(m=>!m.paye).length,0);
   return(
     <div style={{paddingBottom:90}}>
-      <div style={{background:"linear-gradient(135deg,#1A1A1A,#2A2A2A)",padding:"48px 20px 36px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+      <div style={{background:"linear-gradient(135deg,#FFFFFF,#E5E7EB)",padding:"48px 20px 36px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
         <div>
           <p style={{color:"#FF6B00",fontSize:13,margin:0,fontWeight:600}}>{t("bienvenue")}</p>
-          <h2 style={{color:"#FFFFFF",margin:"2px 0 0",fontSize:24,fontWeight:900}}>{user.prenom}</h2>
-          <span style={{background:user.plan==="premium"?"#FF6B00":"#2A2A2A",color:user.plan==="premium"?"#0D0D0D":"#FF6B00",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:99,marginTop:4,display:"inline-block"}}>
+          <h2 style={{color:"#111827",margin:"2px 0 0",fontSize:24,fontWeight:900}}>{user.prenom}</h2>
+          <span style={{background:user.plan==="premium"?"#FF6B00":"#E5E7EB",color:user.plan==="premium"?"#0D0D0D":"#FF6B00",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:99,marginTop:4,display:"inline-block"}}>
             {user.plan==="premium"?"PREMIUM":`GRATUIT - ${groupes.length}/1 tontine`}
           </span>
         </div>
         <div onClick={onProfil} style={{cursor:"pointer"}}><Avatar prenom={user.prenom} photo={user.photo} size={50} gold/></div>
       </div>
       <div style={{display:"flex",gap:10,padding:"0 16px",marginTop:-22}}>
-        {[["💰",t("mesEpargnes"),totalEp,"linear-gradient(135deg,#2A2A2A,#3D3D3D)"],["🏦",t("caisseSociale"),totalCS,"linear-gradient(135deg,#8B2500,#C1440E)"]].map(([ic,lb,val,bg])=>(
+        {[["💰",t("mesEpargnes"),totalEp,"linear-gradient(135deg,#E5E7EB,#D1D5DB)"],["🏦",t("caisseSociale"),totalCS,"linear-gradient(135deg,#8B2500,#C1440E)"]].map(([ic,lb,val,bg])=>(
           <div key={lb} style={{flex:1,background:bg,borderRadius:16,padding:"14px 12px"}}>
             <span style={{fontSize:20}}>{ic}</span>
             <p style={{color:"rgba(255,255,255,0.6)",fontSize:11,margin:"6px 0 2px",fontWeight:600}}>{lb}</p>
-            <p style={{color:"#FFFFFF",fontSize:15,fontWeight:900,margin:0}}>{fmtFCFA(val)}</p>
+            <p style={{color:"#111827",fontSize:15,fontWeight:900,margin:0}}>{fmtFCFA(val)}</p>
           </div>
         ))}
       </div>
-      {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} {t("membresEnRetard")}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{t("cliquezTontine")}</p></div></div>}
+      {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#FEF2F2",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} {t("membresEnRetard")}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{t("cliquezTontine")}</p></div></div>}
       <Carousel slides={[
-        {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#2A2A2A,#3D3D3D)",onClick:onProfil},
+        {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#E5E7EB,#D1D5DB)",onClick:onProfil},
         {titre:"Cagnottes solidaires",texte:"Mariage, santé, études... crée un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onOpenCagnottes},
-        {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#1A1A1A,#2A2A2A)",onClick:onOpenHaby},
+        {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#FFFFFF,#E5E7EB)",onClick:onOpenHaby},
         {titre:"Versements securises",texte:"Photo de preuve a chaque cotisation enregistree",emoji:"📸",bg:"linear-gradient(135deg,#3D2B00,#6B4A00)"},
       ]}/>
       <div style={{padding:"20px 16px 0"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{color:"#FFFFFF",fontSize:16,fontWeight:800,margin:0}}>{t("mesTontines")}</h3>
-          <button onClick={onCreer} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ {t("creer")}</button>
+          <h3 style={{color:"#111827",fontSize:16,fontWeight:800,margin:0}}>{t("mesTontines")}</h3>
+          <button onClick={onCreer} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ {t("creer")}</button>
         </div>
-        {groupes.length===0&&<div style={{textAlign:"center",padding:"40px 20px",color:"#3D3D3D"}}><p style={{fontSize:40}}>🏺</p><p style={{fontWeight:700,color:"#FFFFFF"}}>Aucune tontine</p><p style={{fontSize:13}}>Cree ta premiere tontine</p></div>}
+        {groupes.length===0&&<div style={{textAlign:"center",padding:"40px 20px",color:"#9CA3AF"}}><p style={{fontSize:40}}>🏺</p><p style={{fontWeight:700,color:"#111827"}}>Aucune tontine</p><p style={{fontSize:13}}>Cree ta premiere tontine</p></div>}
         {groupes.map(g=>{
           const pct=Math.round((g.cycle/g.totalCycles)*100);
           const ret=g.membres.filter(m=>!m.paye).length;
           return(
-            <div key={g.id} style={{background:"#1A1A1A",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #2A2A2A",cursor:"pointer"}} onClick={()=>onSelectGroupe(g)}>
+            <div key={g.id} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #E5E7EB",cursor:"pointer"}} onClick={()=>onSelectGroupe(g)}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:12,height:12,borderRadius:"50%",background:g.couleur,flexShrink:0}}/><div><p style={{margin:0,color:"#FFFFFF",fontWeight:800,fontSize:15}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{g.membres.length} membres - {g.frequence}</p></div></div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:12,height:12,borderRadius:"50%",background:g.couleur,flexShrink:0}}/><div><p style={{margin:0,color:"#111827",fontWeight:800,fontSize:15}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{g.membres.length} membres - {g.frequence}</p></div></div>
                 <div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontWeight:800,fontSize:15}}>{fmtFCFA(g.montant)}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>par cotisation</p></div>
               </div>
               <Bar pct={pct} c={g.couleur}/>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
-                <p style={{margin:0,color:"#6B7280",fontSize:11}}>Cycle {g.cycle}/{g.totalCycles} - Tour: <strong style={{color:"#FFFFFF"}}>{g.prochainTour}</strong></p>
+                <p style={{margin:0,color:"#6B7280",fontSize:11}}>Cycle {g.cycle}/{g.totalCycles} - Tour: <strong style={{color:"#111827"}}>{g.prochainTour}</strong></p>
                 {ret>0&&<span style={{background:"#C1440E",color:"#fff",fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:99}}>{ret} retard(s)</span>}
               </div>
             </div>
@@ -886,11 +900,11 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
       </div>
 
       {participations&&participations.length>0&&<div style={{padding:"22px 16px 0"}}>
-        <h3 style={{color:"#FFFFFF",fontSize:16,fontWeight:800,margin:"0 0 14px"}}>Tontines ou je participe</h3>
+        <h3 style={{color:"#111827",fontSize:16,fontWeight:800,margin:"0 0 14px"}}>Tontines ou je participe</h3>
         {participations.map(g=>(
-          <div key={g.id} onClick={()=>onSelectParticipation(g)} style={{background:"#1A1A1A",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #3D3D3D",cursor:"pointer"}}>
+          <div key={g.id} onClick={()=>onSelectParticipation(g)} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #D1D5DB",cursor:"pointer"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:12,height:12,borderRadius:"50%",background:g.couleur,flexShrink:0}}/><div><p style={{margin:0,color:"#FFFFFF",fontWeight:800,fontSize:15}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{g.membres.length} membres - {g.frequence}</p></div></div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:12,height:12,borderRadius:"50%",background:g.couleur,flexShrink:0}}/><div><p style={{margin:0,color:"#111827",fontWeight:800,fontSize:15}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{g.membres.length} membres - {g.frequence}</p></div></div>
               <span style={{background:g.moi?.paye?"#22C55E":"#C1440E",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{g.moi?.paye?"A jour":"En retard"}</span>
             </div>
           </div>
@@ -904,17 +918,17 @@ const CagnottesScreen = ({cagnottes,onCreerCagnotte,onSelectCagnotte}) => {
   return(
     <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <h2 style={{color:"#FFFFFF",fontSize:22,fontWeight:900,margin:0}}>{t("mesCagnottes")}</h2>
-        <button onClick={onCreerCagnotte} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Creer</button>
+        <h2 style={{color:"#111827",fontSize:22,fontWeight:900,margin:0}}>{t("mesCagnottes")}</h2>
+        <button onClick={onCreerCagnotte} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Creer</button>
       </div>
       <p style={{margin:"10px 16px 0",color:"#6B7280",fontSize:12,lineHeight:1.6}}>Mariage, sante, funerailles, etudes... cree un lien de contribution public, sans compte requis pour les donateurs.</p>
       <div style={{padding:"18px 16px 0"}}>
-        {(!cagnottes||cagnottes.length===0)?<div style={{textAlign:"center",padding:"40px 20px",color:"#3D3D3D"}}><p style={{fontSize:40}}>🎁</p><p style={{fontWeight:700,color:"#FFFFFF"}}>Aucune cagnotte</p><p style={{fontSize:13}}>Cree ta premiere cagnotte solidaire</p></div>
+        {(!cagnottes||cagnottes.length===0)?<div style={{textAlign:"center",padding:"40px 20px",color:"#9CA3AF"}}><p style={{fontSize:40}}>🎁</p><p style={{fontWeight:700,color:"#111827"}}>Aucune cagnotte</p><p style={{fontSize:13}}>Cree ta premiere cagnotte solidaire</p></div>
         :cagnottes.map(c=>{const pct=Math.min(100,Math.round((c.montant_collecte/c.objectif)*100));return(
-          <div key={c.id} onClick={()=>onSelectCagnotte(c)} style={{background:"#1A1A1A",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #2A2A2A",cursor:"pointer"}}>
+          <div key={c.id} onClick={()=>onSelectCagnotte(c)} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #E5E7EB",cursor:"pointer"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <p style={{margin:0,color:"#FFFFFF",fontWeight:800,fontSize:15}}>{c.titre}</p>
-              <span style={{background:c.statut==="cloturee"?"#2A2A2A":"#FF6B00",color:c.statut==="cloturee"?"#6B7280":"#0D0D0D",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{c.statut==="cloturee"?"Cloturee":"Ouverte"}</span>
+              <p style={{margin:0,color:"#111827",fontWeight:800,fontSize:15}}>{c.titre}</p>
+              <span style={{background:c.statut==="cloturee"?"#E5E7EB":"#FF6B00",color:c.statut==="cloturee"?"#6B7280":"#0D0D0D",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{c.statut==="cloturee"?"Cloturee":"Ouverte"}</span>
             </div>
             <Bar pct={pct} c="#FF6B00"/>
             <p style={{margin:"6px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(c.montant_collecte)} / {fmtFCFA(c.objectif)} ({pct}%)</p>
@@ -1009,7 +1023,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     let q=supabase.from("messages").select("*").eq("groupe_id",groupe.id);
     q=thread?q.or(`and(auteur_user_id.eq.${user.id},destinataire_user_id.eq.${thread.userId}),and(auteur_user_id.eq.${thread.userId},destinataire_user_id.eq.${user.id})`):q.is("destinataire_user_id",null);
     const {data}=await q.order("created_at",{ascending:true});
-    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
+    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
   const threadRef=useRef(thread);
@@ -1020,7 +1034,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       const th=threadRef.current;
       const belongsHere=th?((m.auteur_user_id===user.id&&m.destinataire_user_id===th.userId)||(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
       if(!belongsHere)return;
-      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
+      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
       if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
     }).subscribe();
     return()=>{supabase.removeChannel(ch);};
@@ -1048,7 +1062,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         const audioUrl=await uploadAudio(blob,groupe.id);
         const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
-        setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
+        setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,imageUrl:data.image_url,time:"maintenant"}]);
         notifyMessage(getRecipients(),user.prenom,true,getDeepLink());
         onToast("Message vocal envoyé !");
       }catch{onToast("Envoi du message vocal impossible","error");}
@@ -1096,61 +1110,61 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
   const inSecondary=SECONDARY_TABS.some(([id])=>id===tab);
   return(
     <div style={{paddingBottom:90}}>
-      <div style={{background:"#1A1A1A",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #2A2A2A"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"#FFFFFF",fontSize:24,cursor:"pointer",padding:0}}>←</button>
-        <div style={{flex:1}}><h2 style={{color:"#FFFFFF",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#FF6B00",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
-        <span style={{background:"#2A2A2A",color:"#6B7280",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:99}}>{t("lectureSeule")}</span>
+      <div style={{background:"#FFFFFF",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #E5E7EB"}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"#111827",fontSize:24,cursor:"pointer",padding:0}}>←</button>
+        <div style={{flex:1}}><h2 style={{color:"#111827",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#FF6B00",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
+        <span style={{background:"#E5E7EB",color:"#6B7280",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:99}}>{t("lectureSeule")}</span>
       </div>
       <div style={{padding:"12px 16px 0"}}><Bar pct={pct} c={groupe.couleur}/><p style={{color:"#6B7280",fontSize:12,margin:"6px 0 0"}}>Cycle {groupe.cycle}/{groupe.totalCycles}</p></div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"14px 16px 0"}}>
         {[["Collecte",fmtFCFA(collecte),"💰"],["Cotisations",fmtFCFA(cagnotteTour),"🏆"],["Ponctualite",`${taux}%`,"📊"],["Caisse soc.",fmtFCFA(groupe.caisseSociale),"🏦"],["A jour",`${aJourP.length}/${groupe.membres.length}`,"✅"],["En retard",`${enRetP.length}`,"⚠️"]].map(([l,v,i])=>(
-          <div key={l} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 8px",textAlign:"center"}}><p style={{margin:0,fontSize:16}}>{i}</p><p style={{margin:"4px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:12}}>{v}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{l}</p></div>
+          <div key={l} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 8px",textAlign:"center"}}><p style={{margin:0,fontSize:16}}>{i}</p><p style={{margin:"4px 0 0",color:"#111827",fontWeight:800,fontSize:12}}>{v}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{l}</p></div>
         ))}
       </div>
       <div style={{display:"flex",gap:6,padding:"14px 16px 0"}}>
-        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#1A1A1A",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#2A2A2A"}}>{lbl}</button>)}
-        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#1A1A1A",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#2A2A2A"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
+        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#FFFFFF",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#E5E7EB"}}>{lbl}</button>)}
+        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#FFFFFF",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#E5E7EB"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
       </div>
       {(showMoreTabs||inSecondary)&&<div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5,margin:"0 0 10px"}}>SECTIONS</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
           {SECONDARY_TABS.map(([id,lbl,icon])=>(
             <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0}}>
-              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#1A1A1A",border:tab===id?"none":"1px solid #2A2A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{icon}</div>
-              <span style={{color:tab===id?"#FF6B00":"#9CA89F",fontSize:11,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{lbl}</span>
+              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#FFFFFF",border:tab===id?"none":"1px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{icon}</div>
+              <span style={{color:tab===id?"#FF6B00":"#6B7280",fontSize:11,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{lbl}</span>
             </button>
           ))}
         </div>
       </div>}
 
       {tab==="membres"&&<div style={{padding:"14px 16px 0"}}>
-        <div style={{background:"linear-gradient(135deg,#1A1A1A,#212121)",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:16}}>
+        <div style={{background:"linear-gradient(135deg,#FFFFFF,#F3F4F6)",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:16}}>
           <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>Budget du groupe</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
             {[["Budget total cycle",fmtFCFA(budgetTotal)],["Deja collecte",fmtFCFA(groupe.cagnotte)],["Reste a collecter",fmtFCFA(resteACollecter)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)]].map(([l,v])=>(
-              <div key={l} style={{background:"#0D0D0D",borderRadius:10,padding:"8px 10px"}}>
+              <div key={l} style={{background:"#FFFFFF",borderRadius:10,padding:"8px 10px"}}>
                 <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}</p>
-                <p style={{margin:"3px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:12}}>{v}</p>
+                <p style={{margin:"3px 0 0",color:"#111827",fontWeight:800,fontSize:12}}>{v}</p>
               </div>
             ))}
           </div>
           <Bar pct={budgetTotal>0?Math.round((groupe.cagnotte/budgetTotal)*100):0} c="#FF6B00"/>
           <p style={{margin:"5px 0 0",color:"#6B7280",fontSize:11,textAlign:"right"}}>{budgetTotal>0?Math.round((groupe.cagnotte/budgetTotal)*100):0}% collecte ce cycle</p>
         </div>
-        {groupe.moi&&<div style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
+        {groupe.moi&&<div style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
           <p style={{margin:0,color:"#FF6B00",fontWeight:700,fontSize:13}}>{t("maSituation")}</p>
           <div style={{display:"flex",justifyContent:"space-between",marginTop:10}}>
             <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Statut</p><p style={{margin:"2px 0 0",color:groupe.moi.paye?"#22C55E":"#EF4444",fontWeight:800,fontSize:14}}>{groupe.moi.paye?"À jour":"En retard"}</p></div>
-            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Verse au total</p><p style={{margin:"2px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:14}}>{fmtFCFA(groupe.moi.versements)}</p></div>
-            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Cycles payes</p><p style={{margin:"2px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:14}}>{groupe.moi.cyclesPaies}/{groupe.totalCycles}</p></div>
+            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Verse au total</p><p style={{margin:"2px 0 0",color:"#111827",fontWeight:800,fontSize:14}}>{fmtFCFA(groupe.moi.versements)}</p></div>
+            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Cycles payes</p><p style={{margin:"2px 0 0",color:"#111827",fontWeight:800,fontSize:14}}>{groupe.moi.cyclesPaies}/{groupe.totalCycles}</p></div>
           </div>
-          {dernierVersement&&<div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #2A2A2A"}}>
+          {dernierVersement&&<div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #E5E7EB"}}>
             <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:10,fontWeight:700,letterSpacing:.5}}>DERNIER VERSEMENT</p>
-            <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>{fmtFCFA(dernierVersement.montant)} - {dernierVersement.date} a {dernierVersement.heure}</p>
+            <p style={{margin:"0 0 8px",color:"#111827",fontSize:12}}>{fmtFCFA(dernierVersement.montant)} - {dernierVersement.date} a {dernierVersement.heure}</p>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-              <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Versement enregistre</span>
-              <span style={{background:dernierVersement.recuEnvoye?"#2A2A2A":"#1A0800",color:dernierVersement.recuEnvoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{dernierVersement.recuEnvoye?"✅":"❌"} Recu WhatsApp</span>
-              <span style={{background:dernierVersement.statut==="paye"?"#2A2A2A":"#1A0800",color:dernierVersement.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{dernierVersement.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
+              <span style={{background:"#E5E7EB",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Versement enregistre</span>
+              <span style={{background:dernierVersement.recuEnvoye?"#E5E7EB":"#FEF2F2",color:dernierVersement.recuEnvoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{dernierVersement.recuEnvoye?"✅":"❌"} Recu WhatsApp</span>
+              <span style={{background:dernierVersement.statut==="paye"?"#E5E7EB":"#FEF2F2",color:dernierVersement.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{dernierVersement.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
             </div>
           </div>}
         </div>}
@@ -1167,8 +1181,8 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         {caisseMvtsMembre.length>0&&<div style={{marginBottom:16}}>
           <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE CAISSE SOCIALE</p>
           {caisseMvtsMembre.map(m=>(
-            <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 12px",background:"#1A1A1A",borderRadius:10,marginBottom:6}}>
-              <div><p style={{margin:0,color:"#FFFFFF",fontSize:12}}>{m.motif||(m.sens==="ajout"?"Ajout":"Retrait")}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{new Date(m.created_at).toLocaleDateString("fr-FR")} - {m.auteur_nom}</p></div>
+            <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 12px",background:"#FFFFFF",borderRadius:10,marginBottom:6}}>
+              <div><p style={{margin:0,color:"#111827",fontSize:12}}>{m.motif||(m.sens==="ajout"?"Ajout":"Retrait")}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{new Date(m.created_at).toLocaleDateString("fr-FR")} - {m.auteur_nom}</p></div>
               <p style={{margin:0,color:m.sens==="ajout"?"#22C55E":"#EF4444",fontWeight:700,fontSize:12}}>{m.sens==="ajout"?"+":"-"}{fmtFCFA(m.montant)}</p>
             </div>
           ))}
@@ -1185,17 +1199,17 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         {groupe.membres.map(m=>{
           const tr=suivi[m.id];
           return(
-            <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+            <div key={m.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:tr?10:0}}>
                 <Avatar prenom={m.prenom} photo={m.photo} size={36}/>
-                <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p>{tr&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(tr.montant)} - {new Date(tr.created_at).toLocaleDateString("fr-FR")} a {new Date(tr.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</p>}</div>
+                <div style={{flex:1}}><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m.prenom}</p>{tr&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(tr.montant)} - {new Date(tr.created_at).toLocaleDateString("fr-FR")} a {new Date(tr.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</p>}</div>
               </div>
               {tr?(
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
-                  <span style={{background:tr.recu_envoye?"#2A2A2A":"#1A0800",color:tr.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{tr.recu_envoye?"✅":"❌"} Reçu envoyé</span>
-                  <span style={{background:tr.statut==="paye"?"#2A2A2A":"#1A0800",color:tr.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{tr.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
-                  <span style={{background:tr.photo_url?"#2A2A2A":"#1A0800",color:tr.photo_url?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{tr.photo_url?"✅":"❌"} Photo</span>
+                  <span style={{background:"#E5E7EB",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
+                  <span style={{background:tr.recu_envoye?"#E5E7EB":"#FEF2F2",color:tr.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{tr.recu_envoye?"✅":"❌"} Reçu envoyé</span>
+                  <span style={{background:tr.statut==="paye"?"#E5E7EB":"#FEF2F2",color:tr.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{tr.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
+                  <span style={{background:tr.photo_url?"#E5E7EB":"#FEF2F2",color:tr.photo_url?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{tr.photo_url?"✅":"❌"} Photo</span>
                 </div>
               ):<p style={{margin:0,color:"#6B7280",fontSize:12}}>Aucun versement enregistre pour l instant</p>}
             </div>
@@ -1208,9 +1222,9 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
           <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>BUREAU</p>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {groupe.membres.filter(m=>m.role_bureau).map(m=>(
-              <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:12,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
+              <div key={m.id} style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
                 <Avatar prenom={m.prenom} photo={m.photo} size={26}/>
-                <div><p style={{margin:0,color:"#FFFFFF",fontSize:12,fontWeight:700}}>{m.prenom}</p><p style={{margin:0,color:"#FF6B00",fontSize:10}}>{ROLES_LABELS[m.role_bureau]||m.role_bureau}</p></div>
+                <div><p style={{margin:0,color:"#111827",fontSize:12,fontWeight:700}}>{m.prenom}</p><p style={{margin:0,color:"#FF6B00",fontSize:10}}>{ROLES_LABELS[m.role_bureau]||m.role_bureau}</p></div>
               </div>
             ))}
           </div>
@@ -1218,12 +1232,12 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         {groupe.elections&&groupe.elections.length>0&&<div>
           <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>ELECTIONS EN COURS</p>
           {groupe.elections.map(e=>(
-            <div key={e.id} style={{background:"#0D0D0D",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:10}}>
+            <div key={e.id} style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:10}}>
               <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:700,fontSize:13}}>🗳️ {ROLES_LABELS[e.role]||e.role}</p>
               {e.dejaVote?<p style={{color:"#22C55E",fontSize:13,margin:0}}>✓ Tu as deja vote pour cette election</p>
               :e.candidats.map(cid=>{const c=groupe.membres.find(m=>m.id===cid);return(
-                <button key={cid} onClick={()=>voter(e,cid)} disabled={voting===e.id} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer"}}>
-                  <Avatar prenom={c?.prenom||"?"} photo={c?.photo} size={28}/><p style={{margin:0,color:"#FFFFFF",fontSize:13,fontWeight:600}}>{c?.prenom||"?"}</p>
+                <button key={cid} onClick={()=>voter(e,cid)} disabled={voting===e.id} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer"}}>
+                  <Avatar prenom={c?.prenom||"?"} photo={c?.photo} size={28}/><p style={{margin:0,color:"#111827",fontSize:13,fontWeight:600}}>{c?.prenom||"?"}</p>
                 </button>
               );})}
             </div>
@@ -1235,9 +1249,9 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       {tab==="tirage"&&<div style={{padding:"14px 16px 0"}}>
         {(!groupe.tirages||groupe.tirages.length===0)?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:20}}>Aucun tirage pour l instant</p>
         :[...groupe.tirages].reverse().map(tr=>{const m=groupe.membres.find(mm=>mm.id===tr.membre_id);return(
-          <div key={tr.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
-            <span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {tr.cycle}</span>
-            <p style={{margin:0,color:"#FFFFFF",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retiré"}</p>
+          <div key={tr.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
+            <span style={{background:"#E5E7EB",color:"#FF6B00",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {tr.cycle}</span>
+            <p style={{margin:0,color:"#111827",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retiré"}</p>
             <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(tr.created_at).toLocaleDateString("fr-FR")}</p>
           </div>
         );})}
@@ -1246,17 +1260,17 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       {tab==="prets"&&<div style={{padding:"14px 16px 0"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <p style={{color:"#6B7280",fontSize:12,fontWeight:700,letterSpacing:.5,margin:0}}>PRETS</p>
-          <button onClick={()=>setShowDemandePret(true)} style={{background:"#2A2A2A",border:"1px solid #FF6B00",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Demander un pret</button>
+          <button onClick={()=>setShowDemandePret(true)} style={{background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Demander un pret</button>
         </div>
         {(!groupe.prets||groupe.prets.length===0)&&<p style={{color:"#6B7280",fontSize:12,textAlign:"center",padding:10}}>Aucun pret pour l instant</p>}
         {groupe.prets&&groupe.prets.map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);const total=p.montant*(1+p.taux_interet/100);const reste=total-p.montant_rembourse;
           const labels={en_attente:["En attente","#FF6B00"],en_cours:["En cours","#22C55E"],rembourse:["Rembourse","#22C55E"],refuse:["Refuse","#EF4444"]};
           const [lbl,col]=labels[p.statut]||["En cours","#FF6B00"];
           return(
-          <div key={p.id} style={{background:"#1A1A1A",border:`1px solid ${p.statut==="rembourse"?"#2A2A2A":"#FF6B00"}`,borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+          <div key={p.id} style={{background:"#FFFFFF",border:`1px solid ${p.statut==="rembourse"?"#E5E7EB":"#FF6B00"}`,borderRadius:12,padding:"12px 14px",marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={30}/><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:13}}>{m?.prenom||"?"}</p></div>
-              <span style={{background:"#1A0800",color:col,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{lbl}</span>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={30}/><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:13}}>{m?.prenom||"?"}</p></div>
+              <span style={{background:"#FEF2F2",color:col,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{lbl}</span>
             </div>
             <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(p.montant)} demande{p.statut==="en_cours"||p.statut==="rembourse"?` - ${fmtFCFA(Math.max(0,reste))} restant`:""}</p>
             {(p.statut==="en_cours"||p.statut==="rembourse")&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d'intérêt`:"Sans intérêt"}{p.date_echeance?` - Échéance : ${new Date(p.date_echeance).toLocaleDateString("fr-FR")}`:""}</p>}
@@ -1266,15 +1280,15 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       </div>}
 
       {tab==="reunions"&&<div style={{padding:"14px 16px 0"}}>
-        <div style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
+        <div style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
           <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:14}}>Reglement interieur</p>
-          {groupe.reglement?<p style={{color:"#FFFFFF",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap",margin:0}}>{groupe.reglement}</p>:<p style={{color:"#6B7280",fontSize:13,margin:0}}>Aucun reglement redige pour l instant</p>}
+          {groupe.reglement?<p style={{color:"#111827",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap",margin:0}}>{groupe.reglement}</p>:<p style={{color:"#6B7280",fontSize:13,margin:0}}>Aucun reglement redige pour l instant</p>}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>COMPTES RENDUS DE REUNION</p>
         {(!groupe.rapports||groupe.rapports.length===0)?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:10}}>Aucun compte rendu pour l instant</p>
         :groupe.rapports.map(r=>(
-          <div key={r.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:16,marginBottom:10}}>
-            <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{r.titre}</p>
+          <div key={r.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:16,marginBottom:10}}>
+            <p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{r.titre}</p>
             <p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:11}}>{r.date_reunion?new Date(r.date_reunion).toLocaleDateString("fr-FR"):""}</p>
             {r.contenu&&<p style={{margin:"10px 0 0",color:"#6B7280",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{r.contenu}</p>}
           </div>
@@ -1283,57 +1297,57 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
 
       {tab==="events"&&<div style={{padding:"14px 16px 0"}}>
         {groupe.membres.filter(m=>m.evenement).length===0
-          ?<div style={{textAlign:"center",padding:30,color:"#3D3D3D"}}><p style={{fontSize:32}}>🎉</p><p>Aucun evenement signale</p></div>
+          ?<div style={{textAlign:"center",padding:30,color:"#9CA3AF"}}><p style={{fontSize:32}}>🎉</p><p>Aucun evenement signale</p></div>
           :groupe.membres.filter(m=>m.evenement).map(m=>(
-            <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:"14px 16px",marginBottom:10,display:"flex",gap:12,alignItems:"center"}}>
+            <div key={m.id} style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:"14px 16px",marginBottom:10,display:"flex",gap:12,alignItems:"center"}}>
               <Avatar prenom={m.prenom} size={42}/>
-              <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:13}}>{m.evenement}</p></div>
+              <div style={{flex:1}}><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:13}}>{m.evenement}</p></div>
             </div>
           ))}
       </div>}
 
       {tab==="checklist"&&<div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,marginBottom:12}}>{groupe.checklist.filter(c=>(checklistOverride[c.id]??c.done)).length}/{groupe.checklist.length} taches completees</p>
-        {groupe.checklist.length===0&&<div style={{textAlign:"center",padding:20,color:"#3D3D3D"}}><p>Aucune tache pour le moment</p></div>}
+        {groupe.checklist.length===0&&<div style={{textAlign:"center",padding:20,color:"#9CA3AF"}}><p>Aucune tache pour le moment</p></div>}
         {groupe.checklist.map(c=>{const done=checklistOverride[c.id]??c.done;return(
-          <div key={c.id} onClick={()=>toggleCMembre(c.id)} style={{background:"#1A1A1A",border:`1px solid ${done?"#FF6B00":"#2A2A2A"}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}>
-            <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${done?"#FF6B00":"#3D3D3D"}`,background:done?"#FF6B00":"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{done&&<span style={{color:"#0D0D0D",fontWeight:900,fontSize:12}}>v</span>}</div>
-            <p style={{margin:0,color:done?"#6B7280":"#FFFFFF",fontSize:13,textDecoration:done?"line-through":"none"}}>{c.label}</p>
+          <div key={c.id} onClick={()=>toggleCMembre(c.id)} style={{background:"#FFFFFF",border:`1px solid ${done?"#FF6B00":"#E5E7EB"}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}>
+            <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${done?"#FF6B00":"#D1D5DB"}`,background:done?"#FF6B00":"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{done&&<span style={{color:"#0D0D0D",fontWeight:900,fontSize:12}}>v</span>}</div>
+            <p style={{margin:0,color:done?"#6B7280":"#111827",fontSize:13,textDecoration:done?"line-through":"none"}}>{c.label}</p>
           </div>
         );})}
       </div>}
 
       {tab==="social"&&<div style={{padding:"14px 16px 100px"}}>
         <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10,marginBottom:6}}>
-          <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#FF6B00":"#1A1A1A",border:"1px solid "+(!thread?"#FF6B00":"#2A2A2A"),borderRadius:99,padding:"7px 14px",color:!thread?"#0D0D0D":"#FFFFFF",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
-          {groupe.createurUserId&&groupe.createurUserId!==user.id&&<button onClick={()=>setThread({userId:groupe.createurUserId,prenom:groupe.createurNom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===groupe.createurUserId?"#FF6B00":"#1A1A1A",border:"1px solid "+(thread?.userId===groupe.createurUserId?"#FF6B00":"#2A2A2A"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===groupe.createurUserId?"#0D0D0D":"#FFFFFF",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={groupe.createurNom} photo={groupe.createurPhoto} size={22}/>{groupe.createurNom} (creatrice)</button>}
+          <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#FF6B00":"#FFFFFF",border:"1px solid "+(!thread?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"7px 14px",color:!thread?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
+          {groupe.createurUserId&&groupe.createurUserId!==user.id&&<button onClick={()=>setThread({userId:groupe.createurUserId,prenom:groupe.createurNom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===groupe.createurUserId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===groupe.createurUserId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===groupe.createurUserId?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={groupe.createurNom} photo={groupe.createurPhoto} size={22}/>{groupe.createurNom} (creatrice)</button>}
           {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).map(m=>(
-            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#FF6B00":"#1A1A1A",border:"1px solid "+(thread?.userId===m.userId?"#FF6B00":"#2A2A2A"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0D0D0D":"#FFFFFF",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
+            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===m.userId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
           ))}
         </div>
         {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun autre membre n a encore de compte THT relie pour recevoir un message prive.</p>}
         {thread&&<p style={{color:"#FF6B00",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
-        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#FF6B00",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FFFFFF",fontSize:13}}>{m.texte}</p>}</div></div>)}
+        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#FF6B00",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div>{m.imageUrl?<img src={m.imageUrl} alt="Recu" style={{width:"100%",maxWidth:220,borderRadius:10,display:"block"}}/>:m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#111827",fontSize:13}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
-          <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:12,width:44,height:44,color:recording?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
-          <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder={thread?`Message prive a ${thread.prenom}...`:"Écrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",color:"#FFFFFF",fontSize:14,outline:"none"}}/>
+          <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:12,width:44,height:44,color:recording?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
+          <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder={thread?`Message prive a ${thread.prenom}...`:"Écrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 14px",color:"#111827",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#FF6B00",border:"none",borderRadius:12,padding:"0 16px",color:"#0D0D0D",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
         {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
       </div>}
 
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>
-        <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:16,padding:16,marginBottom:14}}>
+        <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:16,padding:16,marginBottom:14}}>
           <p style={{color:"#FF6B00",fontWeight:800,margin:"0 0 14px",fontSize:15}}>Bilan - Cycle {groupe.cycle}/{groupe.totalCycles}</p>
-          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJourP.length}/${groupe.membres.length}`],["Cycles restants",groupe.totalCycles-groupe.cycle]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #2A2A2A"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FFFFFF",fontWeight:700,fontSize:13}}>{v}</span></div>)}
+          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJourP.length}/${groupe.membres.length}`],["Cycles restants",groupe.totalCycles-groupe.cycle]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #E5E7EB"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#111827",fontWeight:700,fontSize:13}}>{v}</span></div>)}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
-        {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #2A2A2A"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FFFFFF",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{fmtFCFA((m.cyclesPaies||0)*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies||0}/{groupe.totalCycles} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
+        {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #E5E7EB"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#111827",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{fmtFCFA((m.cyclesPaies||0)*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies||0}/{groupe.totalCycles} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
         <Btn onClick={exporterRapportPDF}>Exporter rapport PDF</Btn>
       </div>}
 
-      <div style={{margin:"16px 16px 0",background:"#0D0D0D",border:"1px solid #3D3D3D",borderRadius:12,padding:12}}>
+      <div style={{margin:"16px 16px 0",background:"#FFFFFF",border:"1px solid #D1D5DB",borderRadius:12,padding:12}}>
         <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Tu vois toutes les donnees de cette tontine en toute transparence, comme tous les autres membres. Seule la creatrice peut modifier les informations. Pour signaler un paiement, contacte-la directement.</p>
       </div>
       {showDemandePret&&<Modal onClose={()=>setShowDemandePret(false)}>
@@ -1798,7 +1812,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     let q=supabase.from("messages").select("*").eq("groupe_id",groupe.id);
     q=thread?q.or(`and(auteur_user_id.eq.${user.id},destinataire_user_id.eq.${thread.userId}),and(auteur_user_id.eq.${thread.userId},destinataire_user_id.eq.${user.id})`):q.is("destinataire_user_id",null);
     const {data}=await q.order("created_at",{ascending:true});
-    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
+    setMessages((data||[]).map(m=>({id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})));
   };
   useEffect(()=>{loadMessages();},[groupe.id,thread]);
   const threadRef=useRef(thread);
@@ -1809,7 +1823,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       const th=threadRef.current;
       const belongsHere=th?((m.auteur_user_id===user.id&&m.destinataire_user_id===th.userId)||(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
       if(!belongsHere)return;
-      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
+      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
       if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
     }).subscribe();
     return()=>{supabase.removeChannel(ch);};
@@ -1837,7 +1851,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         const audioUrl=await uploadAudio(blob,groupe.id);
         const {data,error}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",audio_url:audioUrl,destinataire_user_id:thread?.userId||null}).select().single();
         if(error)throw error;
-        setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,time:"maintenant"}]);
+        setMessages(m=>[...m,{id:data.id,auteur:data.auteur_nom,texte:"",audioUrl:data.audio_url,imageUrl:data.image_url,time:"maintenant"}]);
         notifyMessage(getRecipients(),user.prenom,true,getDeepLink());
         onToast("Message vocal envoyé !");
       }catch{onToast("Envoi du message vocal impossible","error");}
@@ -1971,14 +1985,14 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   };
   const updatePhoto=async(mid,e)=>{
     const f=e.target.files?.[0];if(!f)return;
-    if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");
     try{
-      const photoUrl=await uploadPhoto(f,"membres");
+      const blob=await compressImage(f);
+      const photoUrl=await uploadPhoto(new File([blob],"membre.jpg",{type:"image/jpeg"}),"membres");
       const {error}=await supabase.from("membres").update({photo_url:photoUrl}).eq("id",mid);
       if(error)return onToast("Photo impossible a sauvegarder","error");
       setGroupe(g=>({...g,membres:g.membres.map(m=>m.id===mid?{...m,photo:photoUrl}:m)}));
       onToast("Photo mise a jour !");
-    }catch{onToast("Envoi de la photo impossible","error");}
+    }catch{onToast("Cette photo n'a pas pu etre traitee, essaie une autre image","error");}
   };
 
   const buildRecu=(m,amt,paye)=>{
@@ -2007,7 +2021,7 @@ THT - Tontine Habi Traore`;
   };
 
   const [recuBusy,setRecuBusy]=useState(false);
-  const saveVers=async(sendWA)=>{
+  const saveVers=async(mode)=>{ // mode: "simple" (recu envoye dans la messagerie interne) ou "partager" (partage externe, WhatsApp...)
     const amt=Number(versAmt);
     if(!amt||amt<1)return;
     const newVersements=(versM.versements||0)+amt;
@@ -2025,7 +2039,7 @@ THT - Tontine Habi Traore`;
         if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
       }catch{}
     }
-    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,recu_envoye:sendWA});
+    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,recu_envoye:mode==="partager"});
     setGroupe(g=>({...g,
       cagnotte:g.cagnotte+amt,
       membres:g.membres.map(m=>m.id===versM.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)
@@ -2033,24 +2047,40 @@ THT - Tontine Habi Traore`;
     if(versM.userId){
       supabase.functions.invoke("send-push",{body:{user_id:versM.userId,title:"THT - Versement enregistre",body:`Ton versement de ${fmtFCFA(amt)} pour "${groupe.nom}" a ete enregistre. ${paye?"Tu es a jour !":"Il te reste un solde a payer."}`,url:`/?g=${groupe.id}&tab=membres`}}).catch(()=>{});
     }
-    if(sendWA){
-      setRecuBusy(true);
-      try{
-        const now=new Date();
-        const ref=`THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${versM.id.slice(-4).toUpperCase()}`;
-        const blob=await genererRecuImage({
-          nomTontine:groupe.nom,prenom:versM.prenom,montantRecu:fmtFCFA(amt),montantDu:fmtFCFA(montantDu(versM)),
-          totalVerse:fmtFCFA(newVersements),statut:paye?"PAYE CE CYCLE":"VERSEMENT PARTIEL",cycle:groupe.cycle,totalCycles:groupe.totalCycles,
-          ref,date:now.toLocaleDateString("fr-FR")
-        });
+    setRecuBusy(true);
+    try{
+      const now=new Date();
+      const ref=`THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${versM.id.slice(-4).toUpperCase()}`;
+      const blob=await genererRecuImage({
+        nomTontine:groupe.nom,prenom:versM.prenom,montantRecu:fmtFCFA(amt),montantDu:fmtFCFA(montantDu(versM)),
+        totalVerse:fmtFCFA(newVersements),statut:paye?"PAYE CE CYCLE":"VERSEMENT PARTIEL",cycle:groupe.cycle,totalCycles:groupe.totalCycles,
+        ref,date:now.toLocaleDateString("fr-FR")
+      });
+      if(mode==="partager"){
         const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${versM.prenom} - ${groupe.nom}`);
-        onToast(shared?"Reçu prêt à partager !":"Recu telecharge ! Envoie-le depuis tes fichiers.");
-      }catch{onToast("Impossible de générer le reçu","error");}
-      setRecuBusy(false);
-    }
+        onToast(shared?"Versement enregistre, recu pret a partager !":"Versement enregistre, recu telecharge !");
+      }else if(versM.userId){
+        const path=`recus/${groupe.id}/${versM.id}-${Date.now()}.png`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/png",upsert:true});
+        if(!upErr){
+          const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
+          const {error:msgErr}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",image_url:pub.publicUrl,destinataire_user_id:versM.userId});
+          if(!msgErr){
+            notifyMessage([versM.userId],user.prenom,false,`/?g=${groupe.id}&tab=social&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`);
+            onToast("Versement enregistre + recu envoye sur sa messagerie !");
+          }else{
+            onToast("Versement enregistre (le recu n'a pas pu etre envoye : "+(msgErr.message||"erreur inconnue")+")","error");
+          }
+        }else{
+          onToast("Versement enregistre (le recu n'a pas pu etre envoye)","error");
+        }
+      }else{
+        onToast("Versement enregistre (pas de recu envoye : ce membre n'a pas de compte lie a THT)","warn");
+      }
+    }catch{onToast("Versement enregistre, mais le recu n'a pas pu etre cree","error");}
+    setRecuBusy(false);
     setShowVers(false);setVersM(null);setVersAmt("");setVersPhoto(null);setVersPhotoPreview(null);
     loadSuivi();
-    onToast(sendWA?"Versement enregistré + reçu WhatsApp envoyé !":"Versement enregistre !");
   };
 
   const sendRappelEcheance=()=>{
@@ -2071,29 +2101,29 @@ THT - Tontine Habi Traore`;
   const inSecondary=SECONDARY_TABS.some(([id])=>id===tab);
   return(
     <div style={{paddingBottom:90}}>
-      <div style={{background:"#1A1A1A",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #2A2A2A"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"#FFFFFF",fontSize:24,cursor:"pointer",padding:0}}>←</button>
-        <div style={{flex:1}}><h2 style={{color:"#FFFFFF",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#FF6B00",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
-        <button onClick={()=>{setEditG({nom:groupe.nom,montant:String(groupe.montant),frequence:groupe.frequence});setShowEdit(true);}} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:8,padding:"5px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>Modifier</button>
+      <div style={{background:"#FFFFFF",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #E5E7EB"}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"#111827",fontSize:24,cursor:"pointer",padding:0}}>←</button>
+        <div style={{flex:1}}><h2 style={{color:"#111827",margin:0,fontSize:17,fontWeight:800}}>{groupe.nom}</h2><p style={{color:"#FF6B00",margin:0,fontSize:12}}>{groupe.frequence} - {fmtFCFA(groupe.montant)}/cotisation</p></div>
+        <button onClick={()=>{setEditG({nom:groupe.nom,montant:String(groupe.montant),frequence:groupe.frequence});setShowEdit(true);}} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>Modifier</button>
         <button onClick={deleteGroupe} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:8,padding:"5px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Suppr.</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"14px 16px 0"}}>
         {[["Collecte",fmtFCFA(collecte),"💰"],["Cotisations",fmtFCFA(cagnotteTour),"🏆"],["Ponctualite",`${taux}%`,"📊"],["Caisse soc.",fmtFCFA(groupe.caisseSociale),"🏦"],["A jour",`${aJour.length}/${groupe.membres.length}`,"✅"],["En retard",`${enRet.length}`,"⚠️"]].map(([l,v,i])=>(
-          <div key={l} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 8px",textAlign:"center"}}><p style={{margin:0,fontSize:16}}>{i}</p><p style={{margin:"4px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:12}}>{v}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{l}</p></div>
+          <div key={l} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 8px",textAlign:"center"}}><p style={{margin:0,fontSize:16}}>{i}</p><p style={{margin:"4px 0 0",color:"#111827",fontWeight:800,fontSize:12}}>{v}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{l}</p></div>
         ))}
       </div>
       <div style={{margin:"12px 16px 0"}}><button onClick={sendWAG} style={{width:"100%",background:"#075E54",border:"none",borderRadius:12,padding:"12px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>Rappel WhatsApp au groupe complet</button></div>
       <div style={{display:"flex",gap:6,padding:"14px 16px 0"}}>
-        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#1A1A1A",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#2A2A2A"}}>{lbl}</button>)}
-        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#1A1A1A",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#2A2A2A"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
+        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#FFFFFF",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#E5E7EB"}}>{lbl}</button>)}
+        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#FFFFFF",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#E5E7EB"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
       </div>
       {(showMoreTabs||inSecondary)&&<div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5,margin:"0 0 10px"}}>SECTIONS</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
           {SECONDARY_TABS.map(([id,lbl,icon])=>(
             <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0}}>
-              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#1A1A1A",border:tab===id?"none":"1px solid #2A2A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{icon}</div>
-              <span style={{color:tab===id?"#FF6B00":"#9CA89F",fontSize:11,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{lbl}</span>
+              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#FFFFFF",border:tab===id?"none":"1px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{icon}</div>
+              <span style={{color:tab===id?"#FF6B00":"#6B7280",fontSize:11,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{lbl}</span>
             </button>
           ))}
         </div>
@@ -2101,26 +2131,26 @@ THT - Tontine Habi Traore`;
 
 
       {tab==="membres"&&<div style={{padding:"14px 16px 0"}}>
-        <div style={{background:"linear-gradient(135deg,#1A1A1A,#212121)",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:12}}>
+        <div style={{background:"linear-gradient(135deg,#FFFFFF,#F3F4F6)",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:12}}>
           <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>Budget du groupe</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
             {[["Budget total cycle",fmtFCFA(cagnotteTour),null],["Déjà collecté",fmtFCFA(collecte),null],["Reste à collecter",fmtFCFA(Math.max(0,cagnotteTour-collecte)),null],["Caisse sociale",fmtFCFA(groupe.caisseSociale),()=>{setShowCaisse(true);loadCaisseMvts();}]].map(([l,v,onClick])=>(
-              <div key={l} onClick={onClick} style={{background:"#0D0D0D",borderRadius:10,padding:"8px 10px",cursor:onClick?"pointer":"default",border:onClick?"1px solid #3D3D3D":"none"}}>
+              <div key={l} onClick={onClick} style={{background:"#FFFFFF",borderRadius:10,padding:"8px 10px",cursor:onClick?"pointer":"default",border:onClick?"1px solid #D1D5DB":"none"}}>
                 <p style={{margin:0,color:"#6B7280",fontSize:10,fontWeight:600}}>{l}{onClick?" ✏️":""}</p>
-                <p style={{margin:"3px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:12}}>{v}</p>
+                <p style={{margin:"3px 0 0",color:"#111827",fontWeight:800,fontSize:12}}>{v}</p>
               </div>
             ))}
           </div>
           <Bar pct={cagnotteTour>0?Math.round((collecte/cagnotteTour)*100):0} c="#FF6B00"/>
           <p style={{margin:"5px 0 0",color:"#6B7280",fontSize:11,textAlign:"right"}}>{cagnotteTour>0?Math.round((collecte/cagnotteTour)*100):0}% collecte ce cycle</p>
         </div>
-        {groupe.dateEcheance&&<div style={{background:"#1A0800",border:"1px solid #C1440E",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        {groupe.dateEcheance&&<div style={{background:"#FEF2F2",border:"1px solid #C1440E",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>Echeance : {groupe.dateEcheance}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{enRet.length} membre(s) pas encore paye</p></div>
           <button onClick={sendRappelEcheance} style={{background:"#C1440E",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Rappeler</button>
         </div>}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
-          <button onClick={()=>{if(user.plan==="free"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
+          <button onClick={()=>{if(user.plan==="free"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
         {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}
         {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</>}
@@ -2132,15 +2162,15 @@ THT - Tontine Habi Traore`;
           {declarations.map(d=>{
             const membre=groupe.membres.find(m=>m.id===d.membre_id);
             return(
-              <div key={d.id} style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+              <div key={d.id} style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                   <Avatar prenom={membre?.prenom||"?"} photo={membre?.photo} size={36}/>
                   <div style={{flex:1}}>
-                    <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{membre?.prenom||"Membre supprimé"}</p>
+                    <p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{membre?.prenom||"Membre supprimé"}</p>
                     <p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(d.montant)} déclaré via {d.moyen==="wave"?"Wave":"Orange Money"} - {new Date(d.created_at).toLocaleDateString("fr-FR")}</p>
                   </div>
                 </div>
-                {d.photo_url&&<a href={d.photo_url} target="_blank" rel="noreferrer" style={{display:"block",marginBottom:10}}><img src={d.photo_url} alt="Preuve du paiement" style={{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,border:"1px solid #3D3D3D"}}/></a>}
+                {d.photo_url&&<a href={d.photo_url} target="_blank" rel="noreferrer" style={{display:"block",marginBottom:10}}><img src={d.photo_url} alt="Preuve du paiement" style={{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,border:"1px solid #D1D5DB"}}/></a>}
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>confirmerDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"#FF6B00",border:"none",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>{declBusy===d.id?"...":"✅ Confirmer"}</button>
                   <button onClick={()=>rejeterDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"transparent",border:"1px solid #EF4444",borderRadius:8,padding:"9px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>✕ Rejeter</button>
@@ -2154,17 +2184,17 @@ THT - Tontine Habi Traore`;
         {groupe.membres.map(m=>{
           const t=suivi[m.id];
           return(
-            <div key={m.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+            <div key={m.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:t?10:0}}>
                 <Avatar prenom={m.prenom} photo={m.photo} size={36}/>
-                <div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p>{t&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(t.montant)} - {new Date(t.created_at).toLocaleDateString("fr-FR")} a {new Date(t.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</p>}</div>
+                <div style={{flex:1}}><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m.prenom}</p>{t&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(t.montant)} - {new Date(t.created_at).toLocaleDateString("fr-FR")} a {new Date(t.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</p>}</div>
               </div>
               {t?(<>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:!t.recu_envoye?8:0}}>
-                  <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
-                  <span onClick={()=>toggleSuiviItem(m.id,t,"recu_envoye",!t.recu_envoye)} style={{cursor:"pointer",background:t.recu_envoye?"#2A2A2A":"#1A0800",color:t.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.recu_envoye?"✅":"❌"} Reçu envoyé</span>
-                  <span style={{background:t.statut==="paye"?"#2A2A2A":"#1A0800",color:t.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
-                  <span style={{background:t.photo_url?"#2A2A2A":"#1A0800",color:t.photo_url?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.photo_url?"✅":"❌"} Photo</span>
+                  <span style={{background:"#E5E7EB",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
+                  <span onClick={()=>toggleSuiviItem(m.id,t,"recu_envoye",!t.recu_envoye)} style={{cursor:"pointer",background:t.recu_envoye?"#E5E7EB":"#FEF2F2",color:t.recu_envoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.recu_envoye?"✅":"❌"} Reçu envoyé</span>
+                  <span style={{background:t.statut==="paye"?"#E5E7EB":"#FEF2F2",color:t.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
+                  <span style={{background:t.photo_url?"#E5E7EB":"#FEF2F2",color:t.photo_url?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{t.photo_url?"✅":"❌"} Photo</span>
                 </div>
                 {!t.recu_envoye&&<button onClick={()=>toggleSuiviItem(m.id,t,"recu_envoye",true)} style={{width:"100%",background:"transparent",border:"1px solid #FF6B00",borderRadius:8,padding:"7px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>☑️ Tout est en ordre</button>}
               </>):<p style={{margin:0,color:"#6B7280",fontSize:12}}>Aucun versement enregistre pour l instant</p>}
@@ -2180,25 +2210,25 @@ THT - Tontine Habi Traore`;
           const tally={};
           if(elec)votes.filter(v=>v.election_id===elec.id).forEach(v=>{tally[v.candidate_membre_id]=(tally[v.candidate_membre_id]||0)+1;});
           return(
-            <div key={role} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:16,marginBottom:12}}>
+            <div key={role} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:16,marginBottom:12}}>
               <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5}}>{label.toUpperCase()}</p>
-              {t?<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Avatar prenom={t.prenom} photo={t.photo} size={36}/><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:15}}>{t.prenom}</p></div>
+              {t?<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Avatar prenom={t.prenom} photo={t.photo} size={36}/><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:15}}>{t.prenom}</p></div>
               :<p style={{color:"#6B7280",fontSize:13,marginBottom:10}}>Poste non attribue</p>}
               {elec?(
-                <div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginTop:6}}>
+                <div style={{background:"#FFFFFF",borderRadius:10,padding:12,marginTop:6}}>
                   <p style={{margin:"0 0 8px",color:"#FF6B00",fontSize:12,fontWeight:700}}>🗳️ Election en cours</p>
                   {elec.candidats.map(cid=>{const c=groupe.membres.find(m=>m.id===cid);return(
-                    <div key={cid} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",color:"#FFFFFF",fontSize:13}}><span>{c?.prenom||"?"}</span><span style={{color:"#FF6B00",fontWeight:700}}>{tally[cid]||0} voix</span></div>
+                    <div key={cid} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",color:"#111827",fontSize:13}}><span>{c?.prenom||"?"}</span><span style={{color:"#FF6B00",fontWeight:700}}>{tally[cid]||0} voix</span></div>
                   );})}
                   <button onClick={()=>cloturerElection(elec)} style={{marginTop:10,width:"100%",background:"#FF6B00",border:"none",borderRadius:10,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>Cloturer l election</button>
                 </div>
               ):(
-                <button onClick={()=>{setElectionRole(role);setElectionCands([]);setShowElection(true);}} style={{width:"100%",background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"9px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>Lancer une election</button>
+                <button onClick={()=>{setElectionRole(role);setElectionCands([]);setShowElection(true);}} style={{width:"100%",background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"9px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>Lancer une election</button>
               )}
             </div>
           );
         })}
-        <div style={{margin:"14px 0 0",background:"#0D0D0D",border:"1px solid #3D3D3D",borderRadius:12,padding:12}}>
+        <div style={{margin:"14px 0 0",background:"#FFFFFF",border:"1px solid #D1D5DB",borderRadius:12,padding:12}}>
           <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>ℹ️ Seuls les membres ayant un compte THT relie peuvent voter. Tu peux aussi attribuer un poste directement sans election.</p>
         </div>
       </div>}
@@ -2206,8 +2236,8 @@ THT - Tontine Habi Traore`;
         <MH title={`Election - ${ROLES.find(r=>r[0]===electionRole)?.[1]}`} onClose={()=>setShowElection(false)}/>
         <p style={{color:"#6B7280",fontSize:13,marginBottom:14}}>Choisis au moins 2 candidat(e)s parmi les membres.</p>
         {groupe.membres.map(m=>(
-          <div key={m.id} onClick={()=>setElectionCands(c=>c.includes(m.id)?c.filter(x=>x!==m.id):[...c,m.id])} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:electionCands.includes(m.id)?"#2A2A2A":"#1A1A1A",border:`1px solid ${electionCands.includes(m.id)?"#FF6B00":"#2A2A2A"}`,borderRadius:10,marginBottom:6,cursor:"pointer"}}>
-            <Avatar prenom={m.prenom} photo={m.photo} size={30}/><p style={{margin:0,color:"#FFFFFF",fontSize:13,flex:1}}>{m.prenom}</p>
+          <div key={m.id} onClick={()=>setElectionCands(c=>c.includes(m.id)?c.filter(x=>x!==m.id):[...c,m.id])} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:electionCands.includes(m.id)?"#E5E7EB":"#FFFFFF",border:`1px solid ${electionCands.includes(m.id)?"#FF6B00":"#E5E7EB"}`,borderRadius:10,marginBottom:6,cursor:"pointer"}}>
+            <Avatar prenom={m.prenom} photo={m.photo} size={30}/><p style={{margin:0,color:"#111827",fontSize:13,flex:1}}>{m.prenom}</p>
             {electionCands.includes(m.id)&&<span style={{color:"#FF6B00",fontWeight:900}}>✓</span>}
           </div>
         ))}
@@ -2215,7 +2245,7 @@ THT - Tontine Habi Traore`;
       </Modal>}
       {tab==="tirage"&&<div style={{padding:"14px 16px 0"}}>
         {gagnantCycleActuel?(()=>{const g=groupe.membres.find(m=>m.id===gagnantCycleActuel.membre_id);return(
-          <div style={{background:"linear-gradient(135deg,#2A2A2A,#1A1A1A)",border:"1px solid #FF6B00",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
+          <div style={{background:"linear-gradient(135deg,#E5E7EB,#FFFFFF)",border:"1px solid #FF6B00",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
             <p style={{margin:0,color:"#6B7280",fontSize:12,fontWeight:600}}>GAGNANTE DU CYCLE {groupe.cycle}</p>
             <div style={{margin:"12px auto 8px"}}><Avatar prenom={g?.prenom||"?"} photo={g?.photo} size={64}/></div>
             <p style={{margin:0,color:"#FF6B00",fontSize:20,fontWeight:900}}>{g?.prenom||"Membre retiré"}</p>
@@ -2227,9 +2257,9 @@ THT - Tontine Habi Traore`;
             )}
           </div>
         );})():(
-          <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
+          <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:16,padding:20,textAlign:"center",marginBottom:16}}>
             <p style={{fontSize:36,margin:"0 0 8px"}}>🎲</p>
-            <p style={{color:"#FFFFFF",fontSize:14,fontWeight:700,margin:0}}>Aucun tirage pour le cycle {groupe.cycle} pour le moment</p>
+            <p style={{color:"#111827",fontSize:14,fontWeight:700,margin:0}}>Aucun tirage pour le cycle {groupe.cycle} pour le moment</p>
             <p style={{color:"#6B7280",fontSize:12,margin:"6px 0 16px"}}>{eligibles.length} membre(s) pas encore tire(s) au sort sur cette rotation</p>
             <button onClick={lancerTirage} disabled={tirageBusy||eligibles.length===0} style={{background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"12px 24px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>{tirageBusy?"Tirage en cours...":"🎲 Lancer le tirage au sort"}</button>
           </div>
@@ -2237,9 +2267,9 @@ THT - Tontine Habi Traore`;
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"16px 0 10px",letterSpacing:.5}}>HISTORIQUE DES TIRAGES (TRANSPARENT)</p>
         {tirages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:10}}>Aucun tirage effectue pour l instant</p>
         :[...tirages].reverse().map(t=>{const m=groupe.membres.find(mm=>mm.id===t.membre_id);return(
-          <div key={t.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
-            <span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {t.cycle}</span>
-            <p style={{margin:0,color:"#FFFFFF",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retiré"}</p>
+          <div key={t.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
+            <span style={{background:"#E5E7EB",color:"#FF6B00",fontSize:11,fontWeight:800,padding:"3px 8px",borderRadius:8}}>Cycle {t.cycle}</span>
+            <p style={{margin:0,color:"#111827",fontSize:13,fontWeight:700,flex:1}}>{m?.prenom||"Membre retiré"}</p>
             <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</p>
           </div>
         );})}
@@ -2252,11 +2282,11 @@ THT - Tontine Habi Traore`;
         </div>}
       </div>}
       {tab==="prets"&&<div style={{padding:"14px 16px 0"}}>
-        <button onClick={()=>setShowPret(true)} style={{width:"100%",background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"10px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14}}>+ Nouveau pret</button>
+        <button onClick={()=>setShowPret(true)} style={{width:"100%",background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"10px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14}}>+ Nouveau pret</button>
         {prets.filter(p=>p.statut==="en_attente").length>0&&<p style={{color:"#FF6B00",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>DEMANDES EN ATTENTE ({prets.filter(p=>p.statut==="en_attente").length})</p>}
         {prets.filter(p=>p.statut==="en_attente").map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);return(
-          <div key={p.id} style={{background:"#212121",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:10}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m?.prenom||"?"}</p><p style={{margin:0,color:"#FF6B00",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div></div>
+          <div key={p.id} style={{background:"#F3F4F6",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m?.prenom||"?"}</p><p style={{margin:0,color:"#FF6B00",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div></div>
             {p.motif&&<p style={{margin:"0 0 10px",color:"#6B7280",fontSize:12,fontStyle:"italic"}}>{p.motif}</p>}
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>{setAccepterM(p);setPretPhoto(null);setPretPhotoPreview(null);}} style={{flex:1,background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:10,padding:"9px",color:"#0D0D0D",fontWeight:800,fontSize:12,cursor:"pointer"}}>Accepter et verser</button>
@@ -2269,24 +2299,24 @@ THT - Tontine Habi Traore`;
           const labels={en_cours:["En cours","#FF6B00"],rembourse:["Rembourse","#22C55E"],refuse:["Refuse","#EF4444"]};
           const [lbl,col]=labels[p.statut]||["En cours","#FF6B00"];
           return(
-          <div key={p.id} style={{background:"#1A1A1A",border:`1px solid ${p.statut==="rembourse"?"#2A2A2A":"#FF6B00"}`,borderRadius:14,padding:16,marginBottom:10}}>
+          <div key={p.id} style={{background:"#FFFFFF",border:`1px solid ${p.statut==="rembourse"?"#E5E7EB":"#FF6B00"}`,borderRadius:14,padding:16,marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m?.prenom||"Membre retiré"}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans intérêt"}</p></div></div>
-              <span style={{background:"#1A0800",color:col,fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{lbl}</span>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m?.prenom||"Membre retiré"}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d interet`:"Sans intérêt"}</p></div></div>
+              <span style={{background:"#FEF2F2",color:col,fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{lbl}</span>
             </div>
             {p.statut!=="refuse"&&<div style={{display:"flex",justifyContent:"space-between",margin:"12px 0"}}>
-              <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Emprunte</p><p style={{margin:"2px 0 0",color:"#FFFFFF",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div>
+              <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Emprunte</p><p style={{margin:"2px 0 0",color:"#111827",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div>
               <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Rembourse</p><p style={{margin:"2px 0 0",color:"#22C55E",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant_rembourse)}</p></div>
               <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Reste</p><p style={{margin:"2px 0 0",color:"#FF6B00",fontWeight:700,fontSize:13}}>{fmtFCFA(Math.max(0,reste))}</p></div>
             </div>}
-            {p.photo_url&&<a href={p.photo_url} target="_blank" rel="noreferrer"><img src={p.photo_url} alt="Preuve" style={{width:"100%",maxHeight:120,objectFit:"cover",borderRadius:8,border:"1px solid #3D3D3D",marginBottom:10}}/></a>}
-            {p.statut==="en_cours"&&<button onClick={()=>{setRemboM(p);setRemboAmt("");}} style={{width:"100%",background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"9px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Remboursement</button>}
+            {p.photo_url&&<a href={p.photo_url} target="_blank" rel="noreferrer"><img src={p.photo_url} alt="Preuve" style={{width:"100%",maxHeight:120,objectFit:"cover",borderRadius:8,border:"1px solid #D1D5DB",marginBottom:10}}/></a>}
+            {p.statut==="en_cours"&&<button onClick={()=>{setRemboM(p);setRemboAmt("");}} style={{width:"100%",background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"9px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Remboursement</button>}
           </div>
         );})}
       </div>}
       {accepterM&&<Modal onClose={()=>setAccepterM(null)}>
         <MH title="Accepter et verser le pret" onClose={()=>setAccepterM(null)}/>
-        <div style={{background:"#0D0D0D",borderRadius:12,padding:14,marginBottom:16,textAlign:"center"}}>
+        <div style={{background:"#FFFFFF",borderRadius:12,padding:14,marginBottom:16,textAlign:"center"}}>
           <p style={{margin:0,color:"#6B7280",fontSize:12}}>Montant a verser</p>
           <p style={{margin:"4px 0 0",color:"#FF6B00",fontWeight:900,fontSize:24}}>{fmtFCFA(accepterM.montant)}</p>
           {accepterM.motif&&<p style={{margin:"6px 0 0",color:"#6B7280",fontSize:12,fontStyle:"italic"}}>{accepterM.motif}</p>}
@@ -2294,7 +2324,7 @@ THT - Tontine Habi Traore`;
         <Fld label="Taux d'intérêt (%, optionnel)"><Inp value={accepterTaux} onChange={e=>setAccepterTaux(e.target.value.replace(/\D/g,""))} placeholder="0" inputMode="numeric"/></Fld>
         <Fld label="Date d'échéance du remboursement (optionnel)"><Inp value={accepterEcheance} onChange={e=>setAccepterEcheance(e.target.value)} type="date"/></Fld>
         <Fld label="Photo de l'argent verse (recommande)">
-          <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+          <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
             {pretPhotoPreview?<img src={pretPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Photo de l'argent remis</span>}
           </label>
@@ -2303,12 +2333,12 @@ THT - Tontine Habi Traore`;
       </Modal>}
       {showPret&&<Modal onClose={()=>setShowPret(false)}>
         <MH title="Nouveau pret" onClose={()=>setShowPret(false)}/>
-        <Fld label="Membre emprunteur"><select value={newPret.membreId} onChange={e=>setNewPret(p=>({...p,membreId:e.target.value}))} style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"13px 14px",color:"#FFFFFF",fontSize:14}}><option value="">Choisir...</option>{groupe.membres.map(m=><option key={m.id} value={m.id}>{m.prenom}</option>)}</select></Fld>
+        <Fld label="Membre emprunteur"><select value={newPret.membreId} onChange={e=>setNewPret(p=>({...p,membreId:e.target.value}))} style={{width:"100%",background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"13px 14px",color:"#111827",fontSize:14}}><option value="">Choisir...</option>{groupe.membres.map(m=><option key={m.id} value={m.id}>{m.prenom}</option>)}</select></Fld>
         <Fld label="Montant du pret (FCFA)"><Inp value={newPret.montant} onChange={e=>setNewPret(p=>({...p,montant:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
         <Fld label="Taux d'intérêt (%, optionnel)"><Inp value={newPret.taux} onChange={e=>setNewPret(p=>({...p,taux:e.target.value.replace(/\D/g,"")}))} placeholder="0" inputMode="numeric"/></Fld>
         <Fld label="Date d'échéance (optionnel)"><Inp value={newPret.echeance} onChange={e=>setNewPret(p=>({...p,echeance:e.target.value}))} type="date"/></Fld>
         <Fld label="Photo de l'argent verse (recommande)">
-          <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+          <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
             {pretPhotoPreview?<img src={pretPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Photo de l'argent remis</span>}
           </label>
@@ -2321,27 +2351,27 @@ THT - Tontine Habi Traore`;
         <Btn onClick={rembourserPret}>Confirmer</Btn>
       </Modal>}
       {tab==="reunions"&&<div style={{padding:"14px 16px 0"}}>
-        <div style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
+        <div style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <p style={{margin:0,color:"#FF6B00",fontWeight:800,fontSize:14}}>Reglement interieur</p>
-            <button onClick={()=>{setReglementTxt(groupe.reglement||"");setEditReglement(e=>!e);}} style={{background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"5px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>{editReglement?"Annuler":"Modifier"}</button>
+            <button onClick={()=>{setReglementTxt(groupe.reglement||"");setEditReglement(e=>!e);}} style={{background:"transparent",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>{editReglement?"Annuler":"Modifier"}</button>
           </div>
           {editReglement?(
             <>
-              <textarea value={reglementTxt} onChange={e=>setReglementTxt(e.target.value)} rows={8} placeholder="Ex: Toute cotisation doit etre versee avant le 5 du mois. En cas de retard..." style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"12px 14px",color:"#FFFFFF",fontSize:13,outline:"none",resize:"vertical",fontFamily:"inherit"}}/>
+              <textarea value={reglementTxt} onChange={e=>setReglementTxt(e.target.value)} rows={8} placeholder="Ex: Toute cotisation doit etre versee avant le 5 du mois. En cas de retard..." style={{width:"100%",background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px 14px",color:"#111827",fontSize:13,outline:"none",resize:"vertical",fontFamily:"inherit"}}/>
               <div style={{marginTop:10}}><Btn onClick={enregistrerReglement} disabled={reglementBusy}>{reglementBusy?"Enregistrement...":"Enregistrer"}</Btn></div>
             </>
-          ):(groupe.reglement?<p style={{color:"#FFFFFF",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap",margin:0}}>{groupe.reglement}</p>:<p style={{color:"#6B7280",fontSize:13,margin:0}}>Aucun reglement redige pour l instant</p>)}
+          ):(groupe.reglement?<p style={{color:"#111827",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap",margin:0}}>{groupe.reglement}</p>:<p style={{color:"#6B7280",fontSize:13,margin:0}}>Aucun reglement redige pour l instant</p>)}
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <p style={{color:"#6B7280",fontSize:12,fontWeight:700,letterSpacing:.5}}>COMPTES RENDUS DE REUNION</p>
-          <button onClick={()=>setShowRapport(true)} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:8,padding:"5px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Ajouter</button>
+          <button onClick={()=>setShowRapport(true)} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Ajouter</button>
         </div>
         {rapports.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucun compte rendu pour l instant</p>
         :rapports.map(r=>(
-          <div key={r.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:16,marginBottom:10}}>
+          <div key={r.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:16,marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{r.titre}</p><p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:11}}>{r.date_reunion?new Date(r.date_reunion).toLocaleDateString("fr-FR"):""}</p></div>
+              <div><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{r.titre}</p><p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:11}}>{r.date_reunion?new Date(r.date_reunion).toLocaleDateString("fr-FR"):""}</p></div>
               <button onClick={()=>supprimerRapport(r.id)} style={{background:"transparent",border:"none",color:"#EF4444",fontSize:16,cursor:"pointer"}}>✕</button>
             </div>
             {r.contenu&&<p style={{margin:"10px 0 0",color:"#6B7280",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{r.contenu}</p>}
@@ -2352,15 +2382,15 @@ THT - Tontine Habi Traore`;
         <MH title="Nouveau compte rendu" onClose={()=>setShowRapport(false)}/>
         <Fld label="Titre"><Inp value={newRapport.titre} onChange={e=>setNewRapport(r=>({...r,titre:e.target.value}))} placeholder="Ex: Reunion mensuelle Juillet" maxLength={80} autoFocus/></Fld>
         <Fld label="Date de la réunion"><Inp value={newRapport.date} onChange={e=>setNewRapport(r=>({...r,date:e.target.value}))} type="date"/></Fld>
-        <Fld label="Notes / decisions prises"><textarea value={newRapport.contenu} onChange={e=>setNewRapport(r=>({...r,contenu:e.target.value}))} rows={5} placeholder="Ce qui a ete discute et decide..." style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"12px 14px",color:"#FFFFFF",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
+        <Fld label="Notes / decisions prises"><textarea value={newRapport.contenu} onChange={e=>setNewRapport(r=>({...r,contenu:e.target.value}))} rows={5} placeholder="Ce qui a ete discute et decide..." style={{width:"100%",background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px 14px",color:"#111827",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
         <Btn onClick={creerRapport} disabled={rapportBusy}>{rapportBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
       {tab==="events"&&<div style={{padding:"14px 16px 0"}}>
         {groupe.membres.filter(m=>m.evenement).length===0
-          ?<div style={{textAlign:"center",padding:30,color:"#3D3D3D"}}><p style={{fontSize:32}}>🎉</p><p>Aucun evenement signale</p></div>
-          :groupe.membres.filter(m=>m.evenement).map(m=><div key={m.id} style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:"14px 16px",marginBottom:10,display:"flex",gap:12,alignItems:"center"}}><Avatar prenom={m.prenom} size={42}/><div style={{flex:1}}><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:13}}>{m.evenement}</p></div><button onClick={()=>openEvt(m)} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"7px 10px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>Modifier</button><button onClick={()=>sendWA(m)} style={{background:"#075E54",border:"none",borderRadius:10,padding:"7px 10px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>WA</button></div>)}
+          ?<div style={{textAlign:"center",padding:30,color:"#9CA3AF"}}><p style={{fontSize:32}}>🎉</p><p>Aucun evenement signale</p></div>
+          :groupe.membres.filter(m=>m.evenement).map(m=><div key={m.id} style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:"14px 16px",marginBottom:10,display:"flex",gap:12,alignItems:"center"}}><Avatar prenom={m.prenom} size={42}/><div style={{flex:1}}><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m.prenom}</p><p style={{margin:"3px 0 0",color:"#FF6B00",fontSize:13}}>{m.evenement}</p></div><button onClick={()=>openEvt(m)} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"7px 10px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>Modifier</button><button onClick={()=>sendWA(m)} style={{background:"#075E54",border:"none",borderRadius:10,padding:"7px 10px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>WA</button></div>)}
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"18px 0 8px",letterSpacing:.5}}>SIGNALER UN EVENEMENT</p>
-        {groupe.membres.filter(m=>!m.evenement).map(m=><div key={m.id} onClick={()=>openEvt(m)} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FFFFFF",fontSize:13,flex:1}}>{m.prenom}</p><span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>+ Ajouter</span></div>)}
+        {groupe.membres.filter(m=>!m.evenement).map(m=><div key={m.id} onClick={()=>openEvt(m)} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#111827",fontSize:13,flex:1}}>{m.prenom}</p><span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>+ Ajouter</span></div>)}
       </div>}
 
       {evtM&&<Modal onClose={()=>setEvtM(null)}>
@@ -2376,59 +2406,59 @@ THT - Tontine Habi Traore`;
         <p style={{color:"#6B7280",fontSize:12,marginBottom:12}}>{groupe.checklist.filter(c=>c.done).length}/{groupe.checklist.length} taches completees</p>
         <div style={{display:"flex",gap:8,marginBottom:14}}>
           <Inp value={newTask} onChange={e=>setNewTask(e.target.value)} placeholder="Nouvelle tache..." maxLength={100} onKeyDown={e=>{if(e.key==="Enter")addTask();}}/>
-          <button onClick={addTask} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"0 16px",color:"#FF6B00",fontWeight:700,fontSize:20,cursor:"pointer"}}>+</button>
+          <button onClick={addTask} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"0 16px",color:"#FF6B00",fontWeight:700,fontSize:20,cursor:"pointer"}}>+</button>
         </div>
-        {groupe.checklist.length===0&&<div style={{textAlign:"center",padding:20,color:"#3D3D3D"}}><p>Aucune tache pour le moment</p></div>}
-        {groupe.checklist.map(c=><div key={c.id} style={{background:"#1A1A1A",border:`1px solid ${c.done?"#FF6B00":"#2A2A2A"}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}><div onClick={()=>toggleC(c.id)} style={{width:22,height:22,borderRadius:6,border:`2px solid ${c.done?"#FF6B00":"#3D3D3D"}`,background:c.done?"#FF6B00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer"}}>{c.done&&<span style={{color:"#0D0D0D",fontWeight:900,fontSize:13}}>v</span>}</div><p onClick={()=>toggleC(c.id)} style={{margin:0,color:c.done?"#6B7280":"#FFFFFF",fontSize:14,textDecoration:c.done?"line-through":"none",flex:1,cursor:"pointer"}}>{c.label}</p><button onClick={()=>delTask(c.id)} style={{background:"transparent",border:"none",color:"#EF4444",fontSize:18,cursor:"pointer",padding:"0 4px"}}>✕</button></div>)}
+        {groupe.checklist.length===0&&<div style={{textAlign:"center",padding:20,color:"#9CA3AF"}}><p>Aucune tache pour le moment</p></div>}
+        {groupe.checklist.map(c=><div key={c.id} style={{background:"#FFFFFF",border:`1px solid ${c.done?"#FF6B00":"#E5E7EB"}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",gap:12,alignItems:"center"}}><div onClick={()=>toggleC(c.id)} style={{width:22,height:22,borderRadius:6,border:`2px solid ${c.done?"#FF6B00":"#D1D5DB"}`,background:c.done?"#FF6B00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer"}}>{c.done&&<span style={{color:"#0D0D0D",fontWeight:900,fontSize:13}}>v</span>}</div><p onClick={()=>toggleC(c.id)} style={{margin:0,color:c.done?"#6B7280":"#111827",fontSize:14,textDecoration:c.done?"line-through":"none",flex:1,cursor:"pointer"}}>{c.label}</p><button onClick={()=>delTask(c.id)} style={{background:"transparent",border:"none",color:"#EF4444",fontSize:18,cursor:"pointer",padding:"0 4px"}}>✕</button></div>)}
       </div>}
 
       {tab==="social"&&<div style={{padding:"14px 16px 100px"}}>
         <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10,marginBottom:6}}>
-          <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#FF6B00":"#1A1A1A",border:"1px solid "+(!thread?"#FF6B00":"#2A2A2A"),borderRadius:99,padding:"7px 14px",color:!thread?"#0D0D0D":"#FFFFFF",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
+          <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#FF6B00":"#FFFFFF",border:"1px solid "+(!thread?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"7px 14px",color:!thread?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
           {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).map(m=>(
-            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#FF6B00":"#1A1A1A",border:"1px solid "+(thread?.userId===m.userId?"#FF6B00":"#2A2A2A"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0D0D0D":"#FFFFFF",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
+            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===m.userId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
           ))}
         </div>
         {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun autre membre n a encore de compte THT relie pour recevoir un message prive.</p>}
         {thread&&<p style={{color:"#FF6B00",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
-        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#FFFFFF",fontSize:14}}>{m.texte}</p>}</div></div>)}
+        :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.imageUrl?<img src={m.imageUrl} alt="Recu" style={{width:"100%",maxWidth:220,borderRadius:10,display:"block"}}/>:m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#111827",fontSize:14}}>{m.texte}</p>}</div></div>)}
         <div style={{display:"flex",gap:8,marginTop:8}}>
-          <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:12,width:44,height:44,color:recording?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
-          <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder={thread?`Message prive a ${thread.prenom}...`:"Écrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 14px",color:"#FFFFFF",fontSize:14,outline:"none"}}/>
+          <button onClick={toggleRecord} disabled={sendingAudio} style={{background:recording?"#C1440E":"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:12,width:44,height:44,color:recording?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{sendingAudio?"⏳":recording?"⏹":"🎤"}</button>
+          <input value={msgInput} onChange={e=>setMsgInput(s(e.target.value))} placeholder={thread?`Message prive a ${thread.prenom}...`:"Écrire au groupe..."} maxLength={200} onKeyDown={e=>e.key==="Enter"&&sendMsg()} style={{flex:1,background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 14px",color:"#111827",fontSize:14,outline:"none"}}/>
           <button onClick={sendMsg} style={{background:"#FF6B00",border:"none",borderRadius:12,padding:"0 16px",color:"#0D0D0D",fontWeight:900,cursor:"pointer",fontSize:18}}>→</button>
         </div>
         {recording&&<p style={{color:"#C1440E",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>🔴 Enregistrement en cours... clique sur ⏹ pour envoyer</p>}
       </div>}
 
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>
-        <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:16,padding:16,marginBottom:14}}>
+        <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:16,padding:16,marginBottom:14}}>
           <p style={{color:"#FF6B00",fontWeight:800,margin:"0 0 14px",fontSize:15}}>Bilan - Cycle {groupe.cycle}/{groupe.totalCycles}</p>
-          {[["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #2A2A2A"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#FFFFFF",fontWeight:700,fontSize:13}}>{v}</span></div>)}
+          {[["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #E5E7EB"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#111827",fontWeight:700,fontSize:13}}>{v}</span></div>)}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
-        {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #2A2A2A"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#FFFFFF",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
+        {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #E5E7EB"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#111827",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
         <Btn onClick={exporterRapportPDF}>Exporter rapport PDF</Btn>
       </div>}
 
       {showCaisse&&<Modal onClose={()=>setShowCaisse(false)}>
         <MH title="Caisse sociale" onClose={()=>setShowCaisse(false)}/>
-        <div style={{background:"#0D0D0D",borderRadius:12,padding:14,marginBottom:16,textAlign:"center"}}>
+        <div style={{background:"#FFFFFF",borderRadius:12,padding:14,marginBottom:16,textAlign:"center"}}>
           <p style={{margin:0,color:"#6B7280",fontSize:12}}>Solde actuel</p>
           <p style={{margin:"4px 0 0",color:"#FF6B00",fontWeight:900,fontSize:24}}>{fmtFCFA(groupe.caisseSociale)}</p>
         </div>
         <Fld label="Montant (FCFA)"><Inp value={caisseAmt} onChange={e=>setCaisseAmt(e.target.value.replace(/[^0-9]/g,""))} placeholder="Ex: 5000" inputMode="numeric" autoFocus/></Fld>
         <Fld label="Motif (obligatoire pour un retrait)"><Inp value={caisseMotif} onChange={e=>setCaisseMotif(e.target.value)} placeholder="Ex: Aide funerailles famille Diallo" maxLength={80}/></Fld>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>saveCaisse("ajouter")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:!caisseAmt?"#2A2A2A":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px",color:!caisseAmt?"#6B7280":"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>+ Ajouter</button>
-          <button onClick={()=>saveCaisse("retirer")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:"#2A2A2A",border:"1px solid #C1440E",borderRadius:14,padding:"13px",color:"#EF4444",fontWeight:800,fontSize:14,cursor:"pointer"}}>- Retirer (depense)</button>
+          <button onClick={()=>saveCaisse("ajouter")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:!caisseAmt?"#E5E7EB":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px",color:!caisseAmt?"#6B7280":"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>+ Ajouter</button>
+          <button onClick={()=>saveCaisse("retirer")} disabled={!caisseAmt||caisseBusy} style={{flex:1,background:"#E5E7EB",border:"1px solid #C1440E",borderRadius:14,padding:"13px",color:"#EF4444",fontWeight:800,fontSize:14,cursor:"pointer"}}>- Retirer (depense)</button>
         </div>
         <p style={{color:"#6B7280",fontSize:11,margin:"12px 0 16px",lineHeight:1.5}}>La caisse sociale est un fonds separe des cotisations, pour les imprevus, les evenements, ou l entraide entre membres.</p>
         {caisseMvts.length>0&&<>
           <p style={{color:"#6B7280",fontSize:11,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>HISTORIQUE</p>
           {caisseMvts.map(m=>(
-            <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #2A2A2A"}}>
-              <div><p style={{margin:0,color:"#FFFFFF",fontSize:12}}>{m.motif||(m.sens==="ajout"?"Ajout":"Retrait")}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{new Date(m.created_at).toLocaleDateString("fr-FR")} - {m.auteur_nom}</p></div>
+            <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #E5E7EB"}}>
+              <div><p style={{margin:0,color:"#111827",fontSize:12}}>{m.motif||(m.sens==="ajout"?"Ajout":"Retrait")}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{new Date(m.created_at).toLocaleDateString("fr-FR")} - {m.auteur_nom}</p></div>
               <p style={{margin:0,color:m.sens==="ajout"?"#22C55E":"#EF4444",fontWeight:700,fontSize:12}}>{m.sens==="ajout"?"+":"-"}{fmtFCFA(m.montant)}</p>
             </div>
           ))}
@@ -2437,14 +2467,14 @@ THT - Tontine Habi Traore`;
 
       {showVers&&versM&&<Modal onClose={()=>setShowVers(false)}>
         <MH title={"+ Versement - "+versM.prenom} onClose={()=>setShowVers(false)}/>
-        <div style={{background:"#0D0D0D",borderRadius:12,padding:14,marginBottom:16}}>
+        <div style={{background:"#FFFFFF",borderRadius:12,padding:14,marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
             <span style={{color:"#6B7280",fontSize:13}}>Total deja verse</span>
             <span style={{color:"#FF6B00",fontWeight:700}}>{fmtFCFA(versM.versements||0)}</span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between"}}>
             <span style={{color:"#6B7280",fontSize:13}}>Cotisation du mois</span>
-            <span style={{color:"#FFFFFF",fontWeight:700}}>{fmtFCFA(montantDu(versM))}</span>
+            <span style={{color:"#111827",fontWeight:700}}>{fmtFCFA(montantDu(versM))}</span>
           </div>
         </div>
         <Fld label="Montant reçu (FCFA)">
@@ -2452,24 +2482,24 @@ THT - Tontine Habi Traore`;
         </Fld>
         <div style={{display:"flex",gap:8,marginBottom:12}}>
           {[montantDu(versM),Math.round(montantDu(versM)/2),montantDu(versM)*2].map(v=>(
-            <button key={v} onClick={()=>setVersAmt(String(v))} style={{flex:1,background:versAmt===String(v)?"#FF6B00":"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 4px",color:versAmt===String(v)?"#0D0D0D":"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer"}}>{fmtFCFA(v)}</button>
+            <button key={v} onClick={()=>setVersAmt(String(v))} style={{flex:1,background:versAmt===String(v)?"#FF6B00":"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 4px",color:versAmt===String(v)?"#0D0D0D":"#111827",fontSize:11,fontWeight:700,cursor:"pointer"}}>{fmtFCFA(v)}</button>
           ))}
         </div>
         <Fld label="Photo de l'argent reçu (optionnel mais recommandé)">
-          <label style={{display:"block",background:"#0D0D0D",border:"1px dashed #FF6B00",borderRadius:12,padding:versPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+          <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:versPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirVersPhoto} style={{display:"none"}}/>
             {versPhotoPreview?<img src={versPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Prendre en photo l'argent recu</span>}
           </label>
         </Fld>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>saveVers(false)} disabled={!versAmt||Number(versAmt)<1} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#2A2A2A":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px",color:!versAmt||Number(versAmt)<1?"#6B7280":"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>Enregistrer</button>
-          <button onClick={()=>saveVers(true)} disabled={!versAmt||Number(versAmt)<1||recuBusy} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#2A2A2A":"#075E54",border:"none",borderRadius:14,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>{recuBusy?"⏳ Creation...":"🧾 Recu + Partager"}</button>
+          <button onClick={()=>saveVers("simple")} disabled={!versAmt||Number(versAmt)<1||recuBusy} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#E5E7EB":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px",color:!versAmt||Number(versAmt)<1?"#6B7280":"#0D0D0D",fontWeight:800,fontSize:13,cursor:"pointer"}}>{recuBusy?"⏳...":"Enregistrer + Reçu"}</button>
+          <button onClick={()=>saveVers("partager")} disabled={!versAmt||Number(versAmt)<1||recuBusy} style={{flex:1,background:!versAmt||Number(versAmt)<1?"#E5E7EB":"#075E54",border:"none",borderRadius:14,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>{recuBusy?"⏳ Creation...":"🧾 Reçu + Partager"}</button>
         </div>
       </Modal>}
 
       {showHisto&&histoM&&<Modal onClose={()=>setShowHisto(false)}>
         <MH title={"Historique - "+histoM.prenom} onClose={()=>setShowHisto(false)}/>
-        <div style={{background:"#0D0D0D",borderRadius:12,padding:14,marginBottom:16}}>
+        <div style={{background:"#FFFFFF",borderRadius:12,padding:14,marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
             <span style={{color:"#6B7280",fontSize:13}}>Total verse</span>
             <span style={{color:"#FF6B00",fontWeight:800,fontSize:16}}>{fmtFCFA(histoM.versements||0)}</span>
@@ -2484,12 +2514,12 @@ THT - Tontine Habi Traore`;
           </div>
         </div>
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>DETAIL DES PAIEMENTS</p>
-        {(histoM.historique||[]).length===0&&<p style={{color:"#3D3D3D",textAlign:"center",padding:20}}>Aucun historique disponible</p>}
+        {(histoM.historique||[]).length===0&&<p style={{color:"#9CA3AF",textAlign:"center",padding:20}}>Aucun historique disponible</p>}
         {(histoM.historique||[]).map((h,i)=>(
-          <div key={h.id||i} style={{padding:"12px 14px",background:"#1A1A1A",borderRadius:12,marginBottom:8,border:`1px solid ${h.statut==="paye"?"#2A2A2A":"#C1440E44"}`}}>
+          <div key={h.id||i} style={{padding:"12px 14px",background:"#FFFFFF",borderRadius:12,marginBottom:8,border:`1px solid ${h.statut==="paye"?"#E5E7EB":"#C1440E44"}`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
               <div>
-                <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{h.mois}</p>
+                <p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{h.mois}</p>
                 {h.date&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{h.date} a {h.heure}</p>}
               </div>
               <div style={{textAlign:"right"}}>
@@ -2497,21 +2527,21 @@ THT - Tontine Habi Traore`;
                 <span style={{background:h.statut==="paye"?"#1B6B45":"#C1440E",color:"#fff",fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:99}}>{h.statut.toUpperCase()}</span>
               </div>
             </div>
-            <div style={{borderTop:"1px solid #2A2A2A",paddingTop:10}}>
+            <div style={{borderTop:"1px solid #E5E7EB",paddingTop:10}}>
               <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:10,fontWeight:700,letterSpacing:.5}}>CHECKLIST DE SUIVI</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:h.photoUrl?8:0}}>
-                <span style={{background:"#2A2A2A",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
-                <span onClick={()=>toggleChecklistItem(h,"recu_envoye",!h.recuEnvoye)} style={{cursor:"pointer",background:h.recuEnvoye?"#2A2A2A":"#1A0800",color:h.recuEnvoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.recuEnvoye?"✅":"❌"} Reçu envoyé</span>
-                <span style={{background:h.statut==="paye"?"#2A2A2A":"#1A0800",color:h.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
-                <span style={{background:h.photoUrl?"#2A2A2A":"#1A0800",color:h.photoUrl?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.photoUrl?"✅":"❌"} Photo</span>
+                <span style={{background:"#E5E7EB",color:"#22C55E",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>✅ Montant recu</span>
+                <span onClick={()=>toggleChecklistItem(h,"recu_envoye",!h.recuEnvoye)} style={{cursor:"pointer",background:h.recuEnvoye?"#E5E7EB":"#FEF2F2",color:h.recuEnvoye?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.recuEnvoye?"✅":"❌"} Reçu envoyé</span>
+                <span style={{background:h.statut==="paye"?"#E5E7EB":"#FEF2F2",color:h.statut==="paye"?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.statut==="paye"?"✅ Pas de dette":"❌ Dette restante"}</span>
+                <span style={{background:h.photoUrl?"#E5E7EB":"#FEF2F2",color:h.photoUrl?"#22C55E":"#EF4444",fontSize:11,fontWeight:600,padding:"4px 9px",borderRadius:8}}>{h.photoUrl?"✅":"❌"} Photo</span>
               </div>
-              {h.photoUrl&&<a href={h.photoUrl} target="_blank" rel="noreferrer"><img src={h.photoUrl} alt="Preuve" style={{width:"100%",maxHeight:120,objectFit:"cover",borderRadius:8,border:"1px solid #3D3D3D"}}/></a>}
-              <button onClick={()=>voirRecu(h)} disabled={recuBusy} style={{marginTop:8,width:"100%",background:"#212121",border:"1px solid #6B7280",borderRadius:8,padding:"7px",color:"#FFFFFF",fontSize:11,fontWeight:700,cursor:"pointer"}}>{recuBusy?"⏳ Generation...":"🧾 Voir / repartager le reçu"}</button>
+              {h.photoUrl&&<a href={h.photoUrl} target="_blank" rel="noreferrer"><img src={h.photoUrl} alt="Preuve" style={{width:"100%",maxHeight:120,objectFit:"cover",borderRadius:8,border:"1px solid #D1D5DB"}}/></a>}
+              <button onClick={()=>voirRecu(h)} disabled={recuBusy} style={{marginTop:8,width:"100%",background:"#F3F4F6",border:"1px solid #6B7280",borderRadius:8,padding:"7px",color:"#111827",fontSize:11,fontWeight:700,cursor:"pointer"}}>{recuBusy?"⏳ Generation...":"🧾 Voir / repartager le reçu"}</button>
               {!h.recuEnvoye&&<button onClick={()=>toutEstEnOrdre(h)} style={{marginTop:8,width:"100%",background:"transparent",border:"1px solid #FF6B00",borderRadius:8,padding:"7px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>☑️ Tout est en ordre</button>}
             </div>
           </div>
         ))}
-        <div style={{background:"linear-gradient(135deg,#1A1A1A,#212121)",border:"1px solid #FF6B00",borderRadius:12,padding:14,marginTop:8}}>
+        <div style={{background:"linear-gradient(135deg,#FFFFFF,#F3F4F6)",border:"1px solid #FF6B00",borderRadius:12,padding:14,marginTop:8}}>
           <p style={{margin:"0 0 8px",color:"#FF6B00",fontWeight:800,fontSize:13}}>Devis automatique</p>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{color:"#6B7280",fontSize:12}}>Total paye</span><span style={{color:"#22C55E",fontWeight:700}}>{fmtFCFA(histoM.versements||0)}</span></div>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{color:"#6B7280",fontSize:12}}>Paiements en retard</span><span style={{color:"#EF4444",fontWeight:700}}>{(histoM.historique||[]).filter(h=>h.statut==="retard").length} fois</span></div>
@@ -2533,8 +2563,8 @@ THT - Tontine Habi Traore`;
             if(c.length===1){setNewM(n=>({...n,prenom:c[0].name?.[0]?.split(" ")[0]||n.prenom,tel:sPhone(c[0].tel?.[0]||n.tel)}));onToast("Contact selectionne !");}
             else await addMembresEnMasse(c);
           }catch{pickerBusyRef.current=false;setPickerBusy(false);}
-        }} style={{width:"100%",background:pickerBusy?"#1A1A1A":"#2A2A2A",border:"1px solid #FF6B00",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#FF6B00",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ajout en cours...":"📇 Choisir depuis mes contacts (plusieurs a la fois possible)"}</button>}
-        <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#2A2A2A",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 14px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return onToast("Photo max 4 Mo","error");try{const url=await uploadPhoto(f,"membres");setNewM(n=>({...n,photo:url}));}catch{onToast("Envoi de la photo impossible","error");}}}/></label></div></Fld>
+        }} style={{width:"100%",background:pickerBusy?"#FFFFFF":"#E5E7EB",border:"1px solid #FF6B00",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#FF6B00",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ajout en cours...":"📇 Choisir depuis mes contacts (plusieurs a la fois possible)"}</button>}
+        <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 14px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={async e=>{const f=e.target.files?.[0];if(!f)return;try{const blob=await compressImage(f);const url=await uploadPhoto(new File([blob],"membre.jpg",{type:"image/jpeg"}),"membres");setNewM(n=>({...n,photo:url}));}catch{onToast("Cette photo n'a pas pu etre traitee, essaie une autre image","error");}}}/></label></div></Fld>
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><PhoneInput value={newM.tel} onChange={v=>setNewM(n=>({...n,tel:sPhone(v)}))}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
@@ -2553,7 +2583,7 @@ THT - Tontine Habi Traore`;
       {showUpgrade&&<Modal onClose={()=>setShowUpgrade(false)}>
         <MH title="Limite atteinte" onClose={()=>setShowUpgrade(false)}/>
         <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
-        <p style={{color:"#FFFFFF",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>15 membres, c'est le maximum en gratuit</p>
+        <p style={{color:"#111827",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>15 membres, c'est le maximum en gratuit</p>
         <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour ajouter des membres illimites dans cette tontine, et beneficier de toutes les autres fonctionnalites avancees.</p>
         <button onClick={async()=>{
           setPayBusy(true);
@@ -2572,7 +2602,7 @@ THT - Tontine Habi Traore`;
         <MH title="Modifier la tontine" onClose={()=>setShowEdit(false)}/>
         <Fld label="Nom"><Inp value={editG.nom} onChange={e=>setEditG(g=>({...g,nom:e.target.value}))} placeholder="Nom de la tontine" maxLength={40} autoFocus/></Fld>
         <Fld label="Montant par cotisation (FCFA)"><Inp value={editG.montant} onChange={e=>setEditG(g=>({...g,montant:e.target.value.replace(/\D/g,"")}))} placeholder="25000" inputMode="numeric"/></Fld>
-        <Fld label="Fréquence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setEditG(g=>({...g,frequence:f}))} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:editG.frequence===f?"#FF6B00":"#2A2A2A",color:editG.frequence===f?"#0D0D0D":"#FFFFFF",borderColor:editG.frequence===f?"#FF6B00":"#3D3D3D"}}>{f}</button>)}</div></Fld>
+        <Fld label="Fréquence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setEditG(g=>({...g,frequence:f}))} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:editG.frequence===f?"#FF6B00":"#E5E7EB",color:editG.frequence===f?"#0D0D0D":"#111827",borderColor:editG.frequence===f?"#FF6B00":"#D1D5DB"}}>{f}</button>)}</div></Fld>
         <Fld label="Date d'échéance (prochain versement)"><Inp value={editG.dateEcheance} onChange={e=>setEditG(g=>({...g,dateEcheance:e.target.value}))} type="date"/></Fld>
         <Fld label="Numéro Orange Money (optionnel)"><Inp value={editG.numeroOrangeMoney} onChange={e=>setEditG(g=>({...g,numeroOrangeMoney:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
         <Fld label="Numéro Wave (optionnel)"><Inp value={editG.numeroWave} onChange={e=>setEditG(g=>({...g,numeroWave:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
@@ -2642,26 +2672,26 @@ Donnees reelles des tontines de l utilisatrice en ce moment : ${ctx||"aucune ton
 
   const sugg=["C est quand mon tour ?","Qui n a pas paye ?","Combien j'ai épargné ?","Conseils pour mon groupe"];
   return(
-    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 78px)",background:"#0D0D0D"}}>
-      <div style={{background:"#1A1A1A",padding:"44px 16px 14px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #2A2A2A",flexShrink:0}}>
+    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 78px)",background:"#FFFFFF"}}>
+      <div style={{background:"#FFFFFF",padding:"44px 16px 14px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #E5E7EB",flexShrink:0}}>
         <div style={{width:46,height:46,background:"linear-gradient(135deg,#FF6B00,#CC5200)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:20,color:"#0D0D0D",flexShrink:0}}>H</div>
-        <div><p style={{margin:0,color:"#FFFFFF",fontWeight:800,fontSize:16}}>HABY</p><p style={{margin:0,color:"#22C55E",fontSize:11}}>En ligne - Assistante THT</p></div>
+        <div><p style={{margin:0,color:"#111827",fontWeight:800,fontSize:16}}>HABY</p><p style={{margin:0,color:"#22C55E",fontSize:11}}>En ligne - Assistante THT</p></div>
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"16px 16px 0"}}>
         {msgs.map((m,i)=>(
           <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",marginBottom:12,alignItems:"flex-end",gap:8}}>
             {m.role==="assistant"&&<div style={{width:28,height:28,background:"#FF6B00",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:12,color:"#0D0D0D",flexShrink:0}}>H</div>}
-            <div style={{background:m.role==="user"?"linear-gradient(135deg,#FF6B00,#CC5200)":"#1A1A1A",border:m.role==="user"?"none":"1px solid #2A2A2A",borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:"12px 16px",color:m.role==="user"?"#0D0D0D":"#FFFFFF",fontSize:14,maxWidth:"80%",lineHeight:1.6,fontWeight:m.role==="user"?700:400}}>{m.content}</div>
+            <div style={{background:m.role==="user"?"linear-gradient(135deg,#FF6B00,#CC5200)":"#FFFFFF",border:m.role==="user"?"none":"1px solid #E5E7EB",borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:"12px 16px",color:m.role==="user"?"#0D0D0D":"#111827",fontSize:14,maxWidth:"80%",lineHeight:1.6,fontWeight:m.role==="user"?700:400}}>{m.content}</div>
           </div>
         ))}
-        {loading&&<div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:12}}><div style={{width:28,height:28,background:"#FF6B00",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:12,color:"#0D0D0D"}}>H</div><div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:"18px 18px 18px 4px",padding:"14px 18px",color:"#FF6B00",fontSize:20,letterSpacing:4}}>...</div></div>}
+        {loading&&<div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:12}}><div style={{width:28,height:28,background:"#FF6B00",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:12,color:"#0D0D0D"}}>H</div><div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:"18px 18px 18px 4px",padding:"14px 18px",color:"#FF6B00",fontSize:20,letterSpacing:4}}>...</div></div>}
         <div ref={bottomRef}/>
       </div>
-      {msgs.length<=2&&<div style={{display:"flex",gap:8,padding:"8px 16px",overflowX:"auto",flexShrink:0}}>{sugg.map(sg=><button key={sg} onClick={()=>send(sg)} style={{flexShrink:0,background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:99,padding:"8px 14px",color:"#FF6B00",fontSize:12,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>{sg}</button>)}</div>}
-      <div style={{display:"flex",gap:8,padding:"12px 16px 28px",background:"#0D0D0D",borderTop:"1px solid #2A2A2A",flexShrink:0}}>
-        <button onClick={toggleMic} title="Dicter un message" style={{width:46,height:50,background:listening?"#C1440E":"#1A1A1A",border:"1px solid #3D3D3D",borderRadius:14,color:listening?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{listening?"⏹":"🎤"}</button>
-        <input value={input} onChange={e=>setInput(e.target.value.replace(/[<>"]/g,"").slice(0,500))} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!loading){e.preventDefault();send();}}} placeholder="Ecris ou dicte a HABY..." style={{flex:1,background:"#1A1A1A",border:"1px solid #3D3D3D",borderRadius:14,padding:"14px 16px",color:"#FFFFFF",fontSize:15,outline:"none"}}/>
-        <button onClick={()=>send()} disabled={!input.trim()||loading} style={{width:50,height:50,background:input.trim()&&!loading?"#FF6B00":"#2A2A2A",border:"none",borderRadius:14,color:"#0D0D0D",fontWeight:900,fontSize:20,cursor:input.trim()&&!loading?"pointer":"not-allowed",flexShrink:0,alignSelf:"flex-end"}}>→</button>
+      {msgs.length<=2&&<div style={{display:"flex",gap:8,padding:"8px 16px",overflowX:"auto",flexShrink:0}}>{sugg.map(sg=><button key={sg} onClick={()=>send(sg)} style={{flexShrink:0,background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:99,padding:"8px 14px",color:"#FF6B00",fontSize:12,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>{sg}</button>)}</div>}
+      <div style={{display:"flex",gap:8,padding:"12px 16px 28px",background:"#FFFFFF",borderTop:"1px solid #E5E7EB",flexShrink:0}}>
+        <button onClick={toggleMic} title="Dicter un message" style={{width:46,height:50,background:listening?"#C1440E":"#FFFFFF",border:"1px solid #D1D5DB",borderRadius:14,color:listening?"#fff":"#FF6B00",fontSize:18,cursor:"pointer",flexShrink:0}}>{listening?"⏹":"🎤"}</button>
+        <input value={input} onChange={e=>setInput(e.target.value.replace(/[<>"]/g,"").slice(0,500))} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!loading){e.preventDefault();send();}}} placeholder="Ecris ou dicte a HABY..." style={{flex:1,background:"#FFFFFF",border:"1px solid #D1D5DB",borderRadius:14,padding:"14px 16px",color:"#111827",fontSize:15,outline:"none"}}/>
+        <button onClick={()=>send()} disabled={!input.trim()||loading} style={{width:50,height:50,background:input.trim()&&!loading?"#FF6B00":"#E5E7EB",border:"none",borderRadius:14,color:"#0D0D0D",fontWeight:900,fontSize:20,cursor:input.trim()&&!loading?"pointer":"not-allowed",flexShrink:0,alignSelf:"flex-end"}}>→</button>
       </div>
     </div>
   );
@@ -2721,10 +2751,10 @@ const EpargneScreen = ({onToast,user}) => {
   return(
     <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <h2 style={{color:"#FFFFFF",fontSize:22,fontWeight:900,margin:0}}>Ma Tirelire</h2>
-        <button onClick={()=>setShowAdd(true)} style={{background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Objectif</button>
+        <h2 style={{color:"#111827",fontSize:22,fontWeight:900,margin:0}}>Ma Tirelire</h2>
+        <button onClick={()=>setShowAdd(true)} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Objectif</button>
       </div>
-      <div style={{margin:"14px 16px 0",background:"linear-gradient(135deg,#2A2A2A,#1A1A1A)",borderRadius:16,padding:16,border:"1px solid #3D3D3D"}}>
+      <div style={{margin:"14px 16px 0",background:"linear-gradient(135deg,#E5E7EB,#FFFFFF)",borderRadius:16,padding:16,border:"1px solid #D1D5DB"}}>
         <p style={{margin:0,color:"#6B7280",fontSize:12,fontWeight:600}}>TOTAL EPARGNE</p>
         <p style={{margin:"4px 0 0",color:"#FF6B00",fontSize:26,fontWeight:900}}>{fmtFCFA(totalEp)}</p>
         <Bar pct={totalC>0?Math.round((totalEp/totalC)*100):0} c="#FF6B00"/>
@@ -2734,25 +2764,25 @@ const EpargneScreen = ({onToast,user}) => {
         {loading?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Chargement...</p>
         :objs.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucun objectif pour le moment. Cree ton premier objectif d epargne !</p>
         :objs.map(o=>{const pct=o.cible>0?Math.round((o.actuel/o.cible)*100):0;return(
-          <div key={o.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:16,padding:16,marginBottom:10}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:26}}>{o.emoji}</span><div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:15}}>{o.label}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{fmtFCFA(o.actuel)} / {fmtFCFA(o.cible)}</p></div></div><span style={{color:o.couleur,fontWeight:900,fontSize:20}}>{pct}%</span></div>
+          <div key={o.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:16,padding:16,marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:26}}>{o.emoji}</span><div><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:15}}>{o.label}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{fmtFCFA(o.actuel)} / {fmtFCFA(o.cible)}</p></div></div><span style={{color:o.couleur,fontWeight:900,fontSize:20}}>{pct}%</span></div>
             <Bar pct={pct} c={o.couleur}/>
             {pct>=100?<p style={{color:"#22C55E",fontSize:12,margin:"8px 0 0",fontWeight:700}}>Objectif atteint !</p>:<p style={{color:"#6B7280",fontSize:11,margin:"6px 0 0"}}>Reste {fmtFCFA(o.cible-o.actuel)}</p>}
             <div style={{display:"flex",gap:8,marginTop:10}}>
-              <button onClick={()=>openVersement(o)} style={{flex:1,background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"8px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Versement</button>
+              <button onClick={()=>openVersement(o)} style={{flex:1,background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Versement</button>
               <button onClick={()=>delObj(o)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"8px 12px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Suppr.</button>
             </div>
           </div>
         );})}
       </div>
-      <div style={{margin:"6px 16px 0",background:"#0D0D0D",border:"1px solid #FF6B00",borderRadius:14,padding:14}}>
+      <div style={{margin:"6px 16px 0",background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:14}}>
         <p style={{margin:0,color:"#FF6B00",fontWeight:700,fontSize:13}}>Conseil HABY</p>
-        <p style={{margin:"6px 0 0",color:"#FFFFFF",fontSize:13,lineHeight:1.6}}>Epargne 10% de chaque cagnotte recue. En 12 mois tu peux cumuler 30 000 FCFA d epargne personnelle !</p>
+        <p style={{margin:"6px 0 0",color:"#111827",fontSize:13,lineHeight:1.6}}>Epargne 10% de chaque cagnotte recue. En 12 mois tu peux cumuler 30 000 FCFA d epargne personnelle !</p>
       </div>
       {showAdd&&<Modal onClose={()=>setShowAdd(false)}>
         <MH title="Nouvel objectif" onClose={()=>setShowAdd(false)}/>
         <Fld label="Nom de l objectif"><Inp value={nObj.label} onChange={e=>setNObj(o=>({...o,label:e.target.value}))} placeholder="Ex: Hajj 2027" maxLength={40} autoFocus/></Fld>
-        <Fld label="Emoji"><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["🎯","🏠","✈️","📚","💍","🌙","📱","🚗","🏥","💼","👶","🐑"].map(em=><button key={em} onClick={()=>setNObj(o=>({...o,emoji:em}))} style={{fontSize:22,background:nObj.emoji===em?"#FF6B00":"#2A2A2A",border:"none",borderRadius:10,padding:8,cursor:"pointer"}}>{em}</button>)}</div></Fld>
+        <Fld label="Emoji"><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["🎯","🏠","✈️","📚","💍","🌙","📱","🚗","🏥","💼","👶","🐑"].map(em=><button key={em} onClick={()=>setNObj(o=>({...o,emoji:em}))} style={{fontSize:22,background:nObj.emoji===em?"#FF6B00":"#E5E7EB",border:"none",borderRadius:10,padding:8,cursor:"pointer"}}>{em}</button>)}</div></Fld>
         <Fld label="Montant cible (FCFA)"><Inp value={nObj.cible} onChange={e=>setNObj(o=>({...o,cible:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 500000" inputMode="numeric"/></Fld>
         <Fld label="Déjà épargné (FCFA)"><Inp value={nObj.actuel} onChange={e=>setNObj(o=>({...o,actuel:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
         <Btn onClick={addObj} disabled={busy}>{busy?"Ajout...":"Ajouter"}</Btn>
@@ -2779,10 +2809,10 @@ const SupportModal = ({onClose,onToast}) => {
       <MH title="Contacter le support" onClose={onClose}/>
       <p style={{color:"#6B7280",fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Ecris ton message ou dicte-le a voix haute, puis envoie-le a notre equipe sur WhatsApp.</p>
       <div style={{display:"flex",gap:8,marginBottom:14}}>
-        <textarea value={txt} onChange={e=>setTxt(e.target.value.slice(0,500))} placeholder="Explique ton probleme..." rows={4} style={{flex:1,background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"12px 14px",color:"#FFFFFF",fontSize:14,outline:"none",resize:"none",fontFamily:"inherit"}}/>
+        <textarea value={txt} onChange={e=>setTxt(e.target.value.slice(0,500))} placeholder="Explique ton probleme..." rows={4} style={{flex:1,background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px 14px",color:"#111827",fontSize:14,outline:"none",resize:"none",fontFamily:"inherit"}}/>
       </div>
       <div style={{display:"flex",gap:10}}>
-        <button onClick={toggleMic} style={{background:listening?"#C1440E":"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:14,padding:"0 20px",color:listening?"#fff":"#FF6B00",fontSize:18,cursor:"pointer"}}>{listening?"⏹ Stop":"🎤 Dicter"}</button>
+        <button onClick={toggleMic} style={{background:listening?"#C1440E":"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:14,padding:"0 20px",color:listening?"#fff":"#FF6B00",fontSize:18,cursor:"pointer"}}>{listening?"⏹ Stop":"🎤 Dicter"}</button>
         <Btn onClick={send}>Envoyer via WhatsApp</Btn>
       </div>
     </Modal>
@@ -2930,11 +2960,11 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
     <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#FF6B00",fontSize:22,cursor:"pointer"}}>←</button>
-        <h2 style={{color:"#FFFFFF",fontSize:20,fontWeight:900,margin:0}}>Panneau Administrateur</h2>
+        <h2 style={{color:"#111827",fontSize:20,fontWeight:900,margin:0}}>Panneau Administrateur</h2>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"14px 16px 0"}}>
         {[["UTILISATRICES",totalUsers],["PREMIUM",totalPremium],["TONTINES CREEES",groupesCount],["TOTAL COLLECTE",fmtFCFA(totalCollecte)]].map(([l,v])=>(
-          <div key={l} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14}}>
+          <div key={l} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14}}>
             <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>{l}</p>
             <p style={{margin:"4px 0 0",color:"#FF6B00",fontSize:20,fontWeight:900}}>{v}</p>
           </div>
@@ -2943,7 +2973,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
       <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"18px 16px 8px",letterSpacing:.5}}>ACTIVITE (BASEE SUR LES CONNEXIONS)</p>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"0 16px"}}>
         {[["Aujourd'hui",connecteesAuj],["Hier",connecteesHier],["7 derniers jours",connecteesSemaine]].map(([l,v])=>(
-          <div key={l} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
+          <div key={l} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
             <p style={{margin:0,color:"#FF6B00",fontSize:18,fontWeight:900}}>{v}</p>
             <p style={{margin:"3px 0 0",color:"#6B7280",fontSize:10}}>{l}</p>
           </div>
@@ -2952,13 +2982,13 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
       <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"18px 16px 8px",letterSpacing:.5}}>REVENUS (PAIEMENTS CINETPAY REELS)</p>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 16px"}}>
         {[["Revenu total",fmtFCFA(revenuTotal)],["Ce mois-ci",fmtFCFA(revenuMois)],["Paiements reussis",paiementsAcceptes.length],["Paiements aujourd'hui",paiementsAuj]].map(([l,v])=>(
-          <div key={l} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14}}>
+          <div key={l} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14}}>
             <p style={{margin:0,color:"#6B7280",fontSize:11,fontWeight:600}}>{l}</p>
             <p style={{margin:"4px 0 0",color:"#22C55E",fontSize:18,fontWeight:900}}>{v}</p>
           </div>
         ))}
       </div>
-      <div style={{margin:"12px 16px 0",background:"#0D0D0D",border:"1px solid #3D3D3D",borderRadius:12,padding:12}}>
+      <div style={{margin:"12px 16px 0",background:"#FFFFFF",border:"1px solid #D1D5DB",borderRadius:12,padding:12}}>
         <p style={{margin:0,color:"#6B7280",fontSize:11,lineHeight:1.6}}>✅ Toutes ces donnees sont desormais 100% reelles : tontines, membres, cotisations et paiements viennent directement de Supabase, tous comptes confondus. ℹ️ "Connectee" = derniere ouverture de l app, pas presence en direct.</p>
       </div>
       <div style={{padding:"18px 16px 0"}}>
@@ -2966,10 +2996,10 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         {loading?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:10}}>Chargement...</p>
         :tontinesList.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:10}}>Aucune tontine creee pour le moment</p>
         :tontinesList.map(g=>(
-          <div key={g.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+          <div key={g.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Creee par {g.createurNom} ({g.createurTel})</p></div>
-              <span style={{background:"#2A2A2A",color:"#FF6B00",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{g.membresCount} membre(s)</span>
+              <div><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>Creee par {g.createurNom} ({g.createurTel})</p></div>
+              <span style={{background:"#E5E7EB",color:"#FF6B00",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{g.membresCount} membre(s)</span>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
               <p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(g.montant)}/{g.frequence} - Cycle {g.cycle}/{g.total_cycles}</p>
@@ -2982,35 +3012,35 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>UTILISATRICES INSCRITES</p>
         {loading?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Chargement...</p>
         :users.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucune utilisatrice pour le moment</p>
-        :users.map(u=><div key={u.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+        :users.map(u=><div key={u.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
           <Avatar prenom={u.prenom} photo={u.photo_url} size={38}/>
           <div style={{flex:1,minWidth:120}}>
-            <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{u.prenom}{u.role==="admin"&&<span style={{marginLeft:6,color:"#FF6B00",fontSize:10,fontWeight:900}}>ADMIN</span>}</p>
+            <p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{u.prenom}{u.role==="admin"&&<span style={{marginLeft:6,color:"#FF6B00",fontSize:10,fontWeight:900}}>ADMIN</span>}</p>
             <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{u.telephone}</p>
           </div>
-          <span style={{background:u.plan==="premium"?"#FF6B00":"#2A2A2A",color:u.plan==="premium"?"#0D0D0D":"#6B7280",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{u.plan==="premium"?"PREMIUM":"GRATUIT"}</span>
+          <span style={{background:u.plan==="premium"?"#FF6B00":"#E5E7EB",color:u.plan==="premium"?"#0D0D0D":"#6B7280",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{u.plan==="premium"?"PREMIUM":"GRATUIT"}</span>
           <div style={{display:"flex",gap:6,width:"100%",marginTop:2}}>
             <button onClick={()=>togglePremium(u)} disabled={busyId===u.id} style={{flex:1,background:u.plan==="premium"?"transparent":"#FF6B00",border:`1px solid ${u.plan==="premium"?"#C1440E":"#FF6B00"}`,borderRadius:10,padding:"6px 10px",color:u.plan==="premium"?"#EF4444":"#0D0D0D",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.plan==="premium"?"Repasser Gratuit":"Activer Premium"}</button>
-            {u.id!==currentUserId&&<button onClick={()=>toggleAdmin(u)} disabled={busyId===u.id} style={{flex:1,background:u.role==="admin"?"transparent":"#2A2A2A",border:`1px solid ${u.role==="admin"?"#C1440E":"#3D3D3D"}`,borderRadius:10,padding:"6px 10px",color:u.role==="admin"?"#EF4444":"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.role==="admin"?"Retirer admin":"Nommer co-admin"}</button>}
+            {u.id!==currentUserId&&<button onClick={()=>toggleAdmin(u)} disabled={busyId===u.id} style={{flex:1,background:u.role==="admin"?"transparent":"#E5E7EB",border:`1px solid ${u.role==="admin"?"#C1440E":"#D1D5DB"}`,borderRadius:10,padding:"6px 10px",color:u.role==="admin"?"#EF4444":"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.role==="admin"?"Retirer admin":"Nommer co-admin"}</button>}
           </div>
         </div>)}
       </div>
 
       <div style={{padding:"24px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>MON COMPTE</p>
-        <div onClick={()=>setShowChangePinAdmin(true)} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#1A1A1A",borderRadius:14,cursor:"pointer",border:"1px solid #2A2A2A"}}>
-          <span style={{fontSize:20}}>🔒</span><p style={{margin:0,color:"#FFFFFF",fontSize:14,fontWeight:600}}>Changer mon PIN</p><span style={{marginLeft:"auto",color:"#3D3D3D",fontSize:18}}>›</span>
+        <div onClick={()=>setShowChangePinAdmin(true)} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#FFFFFF",borderRadius:14,cursor:"pointer",border:"1px solid #E5E7EB"}}>
+          <span style={{fontSize:20}}>🔒</span><p style={{margin:0,color:"#111827",fontSize:14,fontWeight:600}}>Changer mon PIN</p><span style={{marginLeft:"auto",color:"#9CA3AF",fontSize:18}}>›</span>
         </div>
       </div>
 
       <div style={{padding:"24px 16px 40px"}}>
         <p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"0 0 8px",letterSpacing:.5}}>ZONE DANGEREUSE</p>
-        <div style={{background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:16}}>
-          <p style={{margin:"0 0 10px",color:"#FFFFFF",fontSize:13,lineHeight:1.6}}>Efface TOUTES les tontines, cagnottes, epargnes, messages et comptes de test. Tes 2 numeros admin sont toujours conserves. Action irreversible.</p>
+        <div style={{background:"#FEF2F2",border:"1px solid #C1440E",borderRadius:14,padding:16}}>
+          <p style={{margin:"0 0 10px",color:"#111827",fontSize:13,lineHeight:1.6}}>Efface TOUTES les tontines, cagnottes, epargnes, messages et comptes de test. Tes 2 numeros admin sont toujours conserves. Action irreversible.</p>
           {codeSecu1&&codeSecu2?<>
             <button onClick={()=>setShowReset(true)} style={{width:"100%",background:"transparent",border:"1px solid #EF4444",borderRadius:10,padding:"11px",color:"#EF4444",fontWeight:700,fontSize:13,cursor:"pointer"}}>🗑️ Remettre toutes les donnees a zero</button>
             <button onClick={()=>setShowConfigCodes(true)} style={{width:"100%",background:"transparent",border:"none",color:"#6B7280",fontSize:11,padding:"10px 0 0",cursor:"pointer"}}>🔑 Modifier mes 2 codes de securite</button>
-          </>:<button onClick={()=>setShowConfigCodes(true)} style={{width:"100%",background:"#2A2A2A",border:"1px solid #FF6B00",borderRadius:10,padding:"11px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔑 Configurer mes 2 codes de securite d abord</button>}
+          </>:<button onClick={()=>setShowConfigCodes(true)} style={{width:"100%",background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:10,padding:"11px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔑 Configurer mes 2 codes de securite d abord</button>}
         </div>
       </div>
 
@@ -3038,9 +3068,9 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
         <Fld label="Code de securite 2"><Inp value={saisieCode2} onChange={e=>setSaisieCode2(e.target.value)} placeholder="Ton 2eme code"/></Fld>
         <Fld label='Tape "SUPPRIMER" pour confirmer'><Inp value={confirmReset} onChange={e=>setConfirmReset(e.target.value)} placeholder="SUPPRIMER"/></Fld>
         <button onClick={executerReset} disabled={resetBusy} style={{width:"100%",background:"#C1440E",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>{resetBusy?"Suppression en cours...":"Tout supprimer definitivement"}</button>
-        {resetJournal&&<div style={{marginTop:16,background:"#0D0D0D",border:"1px solid #3D3D3D",borderRadius:12,padding:14}}>
+        {resetJournal&&<div style={{marginTop:16,background:"#FFFFFF",border:"1px solid #D1D5DB",borderRadius:12,padding:14}}>
           <p style={{margin:"0 0 8px",color:"#FF6B00",fontSize:11,fontWeight:700,letterSpacing:.5}}>JOURNAL DETAILLE</p>
-          {resetJournal.map((l,i)=><p key={i} style={{margin:"0 0 4px",color:l.includes("ERREUR")?"#EF4444":"#9CA89F",fontSize:11,fontFamily:"monospace"}}>{l}</p>)}
+          {resetJournal.map((l,i)=><p key={i} style={{margin:"0 0 4px",color:l.includes("ERREUR")?"#EF4444":"#6B7280",fontSize:11,fontFamily:"monospace"}}>{l}</p>)}
         </div>}
       </Modal>}
     </div>
@@ -3182,46 +3212,46 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   };
   return(
     <div style={{paddingBottom:90}}>
-      <div style={{background:"linear-gradient(135deg,#1A1A1A,#2A2A2A)",padding:"44px 20px 30px"}}>
-        <h2 style={{color:"#FFFFFF",margin:"0 0 20px",fontSize:20,fontWeight:800}}>{t("profil")}</h2>
+      <div style={{background:"linear-gradient(135deg,#FFFFFF,#E5E7EB)",padding:"44px 20px 30px"}}>
+        <h2 style={{color:"#111827",margin:"0 0 20px",fontSize:20,fontWeight:800}}>{t("profil")}</h2>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           <Avatar prenom={user.prenom} photo={user.photo} size={76} gold/>
           <div>
-            <p style={{margin:0,color:"#FFFFFF",fontSize:20,fontWeight:900}}>{user.prenom}</p>
+            <p style={{margin:0,color:"#111827",fontSize:20,fontWeight:900}}>{user.prenom}</p>
             <p style={{margin:"3px 0 0",color:"#6B7280",fontSize:13}}>{user.tel}</p>
-            <span style={{background:user.plan==="premium"?"#FF6B00":"#2A2A2A",color:user.plan==="premium"?"#0D0D0D":"#FF6B00",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,marginTop:6,display:"inline-block"}}>{user.plan==="premium"?t("premium"):t("gratuit")}</span>
+            <span style={{background:user.plan==="premium"?"#FF6B00":"#E5E7EB",color:user.plan==="premium"?"#0D0D0D":"#FF6B00",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,marginTop:6,display:"inline-block"}}>{user.plan==="premium"?t("premium"):t("gratuit")}</span>
           </div>
         </div>
       </div>
       <div style={{padding:"16px 16px 0"}}>
-        <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14,marginBottom:16}}>
+        <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14,marginBottom:16}}>
           <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:12,fontWeight:700}}>{t("langue")}</p>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {[["fr","Francais"],["en","English"],["bm","Bamanankan"],["ar","العربية"]].map(([code,label])=>(
-              <button key={code} onClick={()=>onChangeLang(code)} style={{flex:"1 1 45%",minWidth:90,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:lang===code?"#FF6B00":"#2A2A2A",color:lang===code?"#0D0D0D":"#FFFFFF",borderColor:lang===code?"#FF6B00":"#3D3D3D"}}>{label}</button>
+              <button key={code} onClick={()=>onChangeLang(code)} style={{flex:"1 1 45%",minWidth:90,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:lang===code?"#FF6B00":"#E5E7EB",color:lang===code?"#0D0D0D":"#111827",borderColor:lang===code?"#FF6B00":"#D1D5DB"}}>{label}</button>
             ))}
           </div>
         </div>
-        <div style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
+        <div style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
           <p style={{margin:"0 0 6px",color:"#FF6B00",fontWeight:800,fontSize:15}}>🎁 Parraine et gagne du Premium</p>
           <p style={{margin:"0 0 12px",color:"#6B7280",fontSize:12,lineHeight:1.6}}>Chaque filleul(e) qui passe Premium te fait gagner 1 mois gratuit, cumulable !</p>
-          <div style={{background:"#0D0D0D",borderRadius:10,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <p style={{margin:0,color:"#FFFFFF",fontSize:18,fontWeight:900,letterSpacing:2}}>{user.parrainCode||"..."}</p>
+          <div style={{background:"#FFFFFF",borderRadius:10,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <p style={{margin:0,color:"#111827",fontSize:18,fontWeight:900,letterSpacing:2}}>{user.parrainCode||"..."}</p>
             <span style={{color:"#6B7280",fontSize:11}}>Ton code</span>
           </div>
           <div style={{display:"flex",gap:16,marginBottom:12}}>
-            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Filleul(e)s</p><p style={{margin:"2px 0 0",color:"#FFFFFF",fontWeight:800,fontSize:16}}>{parrainages.length}</p></div>
+            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Filleul(e)s</p><p style={{margin:"2px 0 0",color:"#111827",fontWeight:800,fontSize:16}}>{parrainages.length}</p></div>
             <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Devenus Premium</p><p style={{margin:"2px 0 0",color:"#22C55E",fontWeight:800,fontSize:16}}>{parrainages.filter(p=>p.statut==="premium").length}</p></div>
           </div>
           <button onClick={partagerCode} style={{width:"100%",background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager mon code sur WhatsApp</button>
         </div>
-        {user.plan==="free"&&<div style={{background:"linear-gradient(135deg,#1A0800,#3D1500)",border:"1px solid #FF6B00",borderRadius:18,padding:18,marginBottom:16}}>
+        {user.plan==="free"&&<div style={{background:"linear-gradient(135deg,#FEF2F2,#FED7AA)",border:"1px solid #FF6B00",borderRadius:18,padding:18,marginBottom:16}}>
           <p style={{margin:"0 0 4px",color:"#FF6B00",fontWeight:800,fontSize:16}}>Passer a THT Premium</p>
-          <p style={{margin:"0 0 14px",color:"#FFFFFF",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
-          <div style={{background:"#0D0D0D",borderRadius:12,padding:14,marginBottom:14}}>
+          <p style={{margin:"0 0 14px",color:"#111827",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
+          <div style={{background:"#FFFFFF",borderRadius:12,padding:14,marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"flex-end",gap:20,marginBottom:8}}><span style={{color:"#6B7280",fontSize:11,fontWeight:700,width:70,textAlign:"center"}}>GRATUIT</span><span style={{color:"#FF6B00",fontSize:11,fontWeight:800,width:80,textAlign:"center"}}>PREMIUM</span></div>
             {[["Tontines actives","1 max","Illimité"],["Membres/groupe","15 max","Illimité"],["HABY IA","Basique","Prioritaire"],["Support","Standard","24h"]].map(([f,fr,pr])=>(
-              <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #2A2A2A",fontSize:12}}>
+              <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #E5E7EB",fontSize:12}}>
                 <span style={{color:"#6B7280"}}>{f}</span>
                 <div style={{display:"flex",gap:20}}><span style={{color:fr==="Non"?"#EF4444":"#6B7280",width:70,textAlign:"center"}}>{fr}</span><span style={{color:"#FF6B00",fontWeight:700,width:80,textAlign:"center"}}>{pr}</span></div>
               </div>
@@ -3229,10 +3259,10 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           </div>
           <div style={{display:"flex",gap:10,marginBottom:12}}>
             <button onClick={onPayCinetPay} disabled={payBusy} style={{flex:1,background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"14px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>{payBusy?"...":"1 000 FCFA/mois"}</button>
-            <button onClick={onPayCinetPay} disabled={payBusy} style={{flex:1,background:"#2A2A2A",border:"1px solid #FF6B00",borderRadius:12,padding:"14px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",lineHeight:1.4}}>10 000/an<br/><span style={{fontSize:10}}>(-17%)</span></button>
+            <button onClick={onPayCinetPay} disabled={payBusy} style={{flex:1,background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:12,padding:"14px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",lineHeight:1.4}}>10 000/an<br/><span style={{fontSize:10}}>(-17%)</span></button>
           </div>
-          <button onClick={onPayCinetPay} disabled={payBusy} style={{width:"100%",background:"#0D0D0D",border:"1px solid #FF6B00",borderRadius:12,padding:"13px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant (Orange Money / Wave / Carte)"}</button>
-          <div style={{background:"#0D0D0D",borderRadius:12,padding:12}}>
+          <button onClick={onPayCinetPay} disabled={payBusy} style={{width:"100%",background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"13px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant (Orange Money / Wave / Carte)"}</button>
+          <div style={{background:"#FFFFFF",borderRadius:12,padding:12}}>
             <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:11,fontWeight:700}}>OU MANUELLEMENT VIA WHATSAPP :</p>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>window.open("https://wa.me/22376908031?text=Je%20veux%20THT%20Premium","_blank")} style={{flex:1,background:"#FF6600",border:"none",borderRadius:10,padding:"10px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Orange Money</button>
@@ -3250,11 +3280,11 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           <div key={group.label} style={{marginBottom:18}}>
             <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>{group.label}</p>
             {group.items.map(item=>(
-              <div key={item.key||item.lb} onClick={item.toggle===undefined?item.fn:undefined} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#1A1A1A",borderRadius:14,marginBottom:8,cursor:item.toggle===undefined?"pointer":"default",border:"1px solid #2A2A2A",opacity:item.busy?0.7:1}}>
-                <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#FFFFFF",fontSize:14,fontWeight:600}}>{item.lb}</p>
+              <div key={item.key||item.lb} onClick={item.toggle===undefined?item.fn:undefined} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#FFFFFF",borderRadius:14,marginBottom:8,cursor:item.toggle===undefined?"pointer":"default",border:"1px solid #E5E7EB",opacity:item.busy?0.7:1}}>
+                <span style={{fontSize:20}}>{item.ic}</span><p style={{margin:0,color:"#111827",fontSize:14,fontWeight:600}}>{item.lb}</p>
                 {item.toggle===undefined
-                  ?<span style={{marginLeft:"auto",color:"#3D3D3D",fontSize:18}}>›</span>
-                  :<div onClick={item.busy?undefined:item.fn} style={{marginLeft:"auto",width:46,height:26,borderRadius:99,background:item.toggle?"#FF6B00":"#3D3D3D",position:"relative",cursor:"pointer",transition:"background .2s",flexShrink:0}}>
+                  ?<span style={{marginLeft:"auto",color:"#9CA3AF",fontSize:18}}>›</span>
+                  :<div onClick={item.busy?undefined:item.fn} style={{marginLeft:"auto",width:46,height:26,borderRadius:99,background:item.toggle?"#FF6B00":"#D1D5DB",position:"relative",cursor:"pointer",transition:"background .2s",flexShrink:0}}>
                       <div style={{position:"absolute",top:3,left:item.toggle?23:3,width:20,height:20,borderRadius:"50%",background:"#FFFFFF",transition:"left .2s"}}/>
                     </div>}
               </div>
@@ -3264,9 +3294,9 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         <div style={{marginTop:16}}>
           {!showOut
             ?<button onClick={()=>setShowOut(true)} style={{width:"100%",background:"transparent",border:"1px solid #C1440E",borderRadius:14,padding:"14px",color:"#EF4444",fontWeight:700,fontSize:15,cursor:"pointer"}}>{t("deconnexion")}</button>
-            :<div style={{background:"#1A0800",border:"1px solid #C1440E",borderRadius:14,padding:16}}><p style={{color:"#FFFFFF",fontWeight:700,margin:"0 0 14px",textAlign:"center"}}>Confirmer la deconnexion ?</p><div style={{display:"flex",gap:10}}><button onClick={()=>setShowOut(false)} style={{flex:1,background:"#2A2A2A",border:"none",borderRadius:12,padding:12,color:"#FFFFFF",fontWeight:700,cursor:"pointer"}}>Annuler</button><button onClick={onLogout} style={{flex:1,background:"#C1440E",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer"}}>Deconnecter</button></div></div>}
+            :<div style={{background:"#FEF2F2",border:"1px solid #C1440E",borderRadius:14,padding:16}}><p style={{color:"#111827",fontWeight:700,margin:"0 0 14px",textAlign:"center"}}>Confirmer la deconnexion ?</p><div style={{display:"flex",gap:10}}><button onClick={()=>setShowOut(false)} style={{flex:1,background:"#E5E7EB",border:"none",borderRadius:12,padding:12,color:"#111827",fontWeight:700,cursor:"pointer"}}>Annuler</button><button onClick={onLogout} style={{flex:1,background:"#C1440E",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer"}}>Deconnecter</button></div></div>}
         </div>
-        <p style={{color:"#3D3D3D",fontSize:11,textAlign:"center",margin:"20px 0 10px"}}>THT v2.1 - Fait avec amour pour l Afrique</p>
+        <p style={{color:"#9CA3AF",fontSize:11,textAlign:"center",margin:"20px 0 10px"}}>THT v2.1 - Fait avec amour pour l Afrique</p>
       </div>
       {showSupport&&<SupportModal onClose={()=>setShowSupport(false)} onToast={onToast}/>}
       {showChangePin&&<Modal onClose={()=>setShowChangePin(false)}>
@@ -3344,34 +3374,34 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
     setRecuBusy(false);
   };
 
-  if(loading)return <div style={{minHeight:"100vh",background:"#0D0D0D",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#FF6B00"}}>Chargement...</p></div>;
-  if(loadErr)return <div style={{minHeight:"100vh",background:"#0D0D0D",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}><p style={{fontSize:40,margin:"0 0 10px"}}>😕</p><p style={{color:"#FFFFFF",fontWeight:700}}>{loadErr}</p><p style={{color:"#6B7280",fontSize:13,marginTop:8}}>Ce lien n'est peut-etre plus valide.</p></div>;
+  if(loading)return <div style={{minHeight:"100vh",background:"#FFFFFF",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#FF6B00"}}>Chargement...</p></div>;
+  if(loadErr)return <div style={{minHeight:"100vh",background:"#FFFFFF",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}><p style={{fontSize:40,margin:"0 0 10px"}}>😕</p><p style={{color:"#111827",fontWeight:700}}>{loadErr}</p><p style={{color:"#6B7280",fontSize:13,marginTop:8}}>Ce lien n'est peut-etre plus valide.</p></div>;
 
   if(succes)return(
-    <div style={{minHeight:"100vh",background:"#0D0D0D",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
-      <div style={{width:70,height:70,borderRadius:"50%",background:"#2A2A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:16}}>✅</div>
-      <h2 style={{color:"#FFFFFF",margin:"0 0 8px"}}>Merci {succes.contributeur} !</h2>
+    <div style={{minHeight:"100vh",background:"#FFFFFF",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
+      <div style={{width:70,height:70,borderRadius:"50%",background:"#E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:16}}>✅</div>
+      <h2 style={{color:"#111827",margin:"0 0 8px"}}>Merci {succes.contributeur} !</h2>
       <p style={{color:"#FF6B00",fontSize:20,fontWeight:900,margin:"0 0 4px"}}>{fmtFCFA(succes.montant)}</p>
       <p style={{color:"#6B7280",fontSize:13,marginBottom:24}}>ajoute a "{succes.titre}"</p>
       <button onClick={telechargerRecu} disabled={recuBusy} style={{background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px 24px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{recuBusy?"Creation...":"🧾 Télécharger mon reçu"}</button>
-      <p style={{color:"#3D3D3D",fontSize:11}}>THT - Tontine Habi Traore</p>
+      <p style={{color:"#9CA3AF",fontSize:11}}>THT - Tontine Habi Traore</p>
     </div>
   );
 
   const pct=Math.min(100,Math.round((cagnotte.montant_collecte/cagnotte.objectif)*100));
   return(
-    <div style={{minHeight:"100vh",background:"#0D0D0D",padding:"32px 20px"}}>
+    <div style={{minHeight:"100vh",background:"#FFFFFF",padding:"32px 20px"}}>
       <div style={{maxWidth:420,margin:"0 auto"}}>
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{width:56,height:56,borderRadius:16,margin:"0 auto 12px",overflow:"hidden"}}><img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
           <p style={{color:"#6B7280",fontSize:11,letterSpacing:1}}>THT - CAGNOTTE</p>
         </div>
-        <div style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:16,padding:20,marginBottom:20}}>
-          <p style={{margin:0,color:"#FFFFFF",fontWeight:800,fontSize:18}}>{cagnotte.titre}</p>
+        <div style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:16,padding:20,marginBottom:20}}>
+          <p style={{margin:0,color:"#111827",fontWeight:800,fontSize:18}}>{cagnotte.titre}</p>
           {cagnotte.beneficiaire&&<p style={{margin:"4px 0 0",color:"#FF6B00",fontSize:13}}>Pour {cagnotte.beneficiaire}</p>}
           {cagnotte.description&&<p style={{margin:"10px 0 0",color:"#6B7280",fontSize:13,lineHeight:1.5}}>{cagnotte.description}</p>}
           <div style={{margin:"16px 0 6px"}}><Bar pct={pct} c="#FF6B00"/></div>
-          <p style={{margin:0,color:"#FFFFFF",fontSize:13}}>{fmtFCFA(cagnotte.montant_collecte)} <span style={{color:"#6B7280"}}>/ {fmtFCFA(cagnotte.objectif)} ({pct}%)</span></p>
+          <p style={{margin:0,color:"#111827",fontSize:13}}>{fmtFCFA(cagnotte.montant_collecte)} <span style={{color:"#6B7280"}}>/ {fmtFCFA(cagnotte.objectif)} ({pct}%)</span></p>
         </div>
         {cagnotte.statut!=="ouverte"?<p style={{color:"#EF4444",textAlign:"center",fontWeight:700}}>Cette cagnotte n'accepte plus de contributions</p>:<>
           <Fld label="Ton prenom"><Inp value={prenom} onChange={e=>setPrenom(e.target.value)} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
@@ -3380,7 +3410,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
           <BoutonsPaiementMobile montant={montant} numeroOrangeMoney={cagnotte.numero_orange_money} numeroWave={cagnotte.numero_wave}/>
           <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
-            <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+            <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
               <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>
               {preuvePreview?<img src={preuvePreview} alt="Preuve" style={{width:"100%",maxHeight:220,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:13,fontWeight:700}}>📷 Ajouter une photo</span>}
             </label>
@@ -3473,23 +3503,23 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
     <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#FF6B00",fontSize:22,cursor:"pointer"}}>←</button>
-        <div style={{flex:1}}><h2 style={{color:"#FFFFFF",margin:0,fontSize:17,fontWeight:800}}>{cagnotte.titre}</h2>{cagnotte.beneficiaire&&<p style={{color:"#FF6B00",margin:0,fontSize:12}}>Pour : {cagnotte.beneficiaire}</p>}</div>
+        <div style={{flex:1}}><h2 style={{color:"#111827",margin:0,fontSize:17,fontWeight:800}}>{cagnotte.titre}</h2>{cagnotte.beneficiaire&&<p style={{color:"#FF6B00",margin:0,fontSize:12}}>Pour : {cagnotte.beneficiaire}</p>}</div>
         <button onClick={supprimer} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:8,padding:"5px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Suppr.</button>
       </div>
       {cagnotte.description&&<p style={{color:"#6B7280",fontSize:13,padding:"12px 16px 0",lineHeight:1.6}}>{cagnotte.description}</p>}
-      <div style={{margin:"16px 16px 0",background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:16,padding:18}}>
+      <div style={{margin:"16px 16px 0",background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:16,padding:18}}>
         <p style={{margin:0,color:"#6B7280",fontSize:12,fontWeight:600}}>COLLECTE</p>
         <p style={{margin:"4px 0 0",color:"#FF6B00",fontSize:26,fontWeight:900}}>{fmtFCFA(cagnotte.montant_collecte)}</p>
         <Bar pct={pct} c="#FF6B00"/>
         <p style={{margin:"6px 0 0",color:"#6B7280",fontSize:11}}>Objectif : {fmtFCFA(cagnotte.objectif)} ({pct}%){cagnotte.date_limite?` - avant le ${new Date(cagnotte.date_limite).toLocaleDateString("fr-FR")}`:""}</p>
       </div>
       {cagnotte.statut!=="cloturee"&&<div style={{display:"flex",gap:10,padding:"14px 16px 0"}}>
-        <button onClick={ouvrirNotifier} style={{flex:1,background:"#2A2A2A",border:"1px solid #3D3D3D",borderRadius:10,padding:"11px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>📣 Notifier un groupe</button>
+        <button onClick={ouvrirNotifier} style={{flex:1,background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"11px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>📣 Notifier un groupe</button>
         <button onClick={partager} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager WA</button>
       </div>}
-      {cagnotte.statut!=="cloturee"&&<button onClick={async()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;try{await navigator.clipboard.writeText(lien);onToast("Lien copie !");}catch{onToast(lien);}}} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"#2A2A2A",border:"1px solid #FF6B00",borderRadius:10,padding:"10px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔗 Copier le lien de contribution</button>}
-      {cagnotte.statut!=="cloturee"&&<button onClick={cloturer} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"transparent",border:"1px solid #3D3D3D",borderRadius:10,padding:"10px",color:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>Cloturer la cagnotte</button>}
-      <div style={{margin:"16px 16px 0",background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14}}>
+      {cagnotte.statut!=="cloturee"&&<button onClick={async()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;try{await navigator.clipboard.writeText(lien);onToast("Lien copie !");}catch{onToast(lien);}}} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:10,padding:"10px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔗 Copier le lien de contribution</button>}
+      {cagnotte.statut!=="cloturee"&&<button onClick={cloturer} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"transparent",border:"1px solid #D1D5DB",borderRadius:10,padding:"10px",color:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>Cloturer la cagnotte</button>}
+      <div style={{margin:"16px 16px 0",background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14}}>
         <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>📲 Numéros de réception</p>
         <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:11,lineHeight:1.5}}>Affichés aux contributeurs comme boutons de paiement direct. L'argent part directement sur ces numéros, jamais sur l'app.</p>
         <Fld label="Numéro Orange Money (optionnel)"><Inp value={numOM} onChange={e=>setNumOM(e.target.value.replace(/[^\d+]/g,""))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
@@ -3500,12 +3530,12 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>CONTRIBUTIONS ({contributions.length})</p>
         {contributions.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucune contribution pour l instant</p>
         :contributions.map(c=>(
-          <div key={c.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+          <div key={c.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={c.contributeur} size={32}/><div><p style={{margin:0,color:"#FFFFFF",fontSize:14,fontWeight:600}}>{c.contributeur}</p>{c.tel&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{c.tel}</p>}</div></div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={c.contributeur} size={32}/><div><p style={{margin:0,color:"#111827",fontSize:14,fontWeight:600}}>{c.contributeur}</p>{c.tel&&<p style={{margin:0,color:"#6B7280",fontSize:11}}>{c.tel}</p>}</div></div>
               <p style={{margin:0,color:"#FF6B00",fontWeight:700,fontSize:14}}>{fmtFCFA(c.montant)}</p>
             </div>
-            {c.preuve_url&&<a href={c.preuve_url} target="_blank" rel="noreferrer" style={{display:"block",marginTop:10}}><img src={c.preuve_url} alt="Preuve de depot" style={{width:"100%",maxHeight:160,objectFit:"cover",borderRadius:8,border:"1px solid #3D3D3D"}}/></a>}
+            {c.preuve_url&&<a href={c.preuve_url} target="_blank" rel="noreferrer" style={{display:"block",marginTop:10}}><img src={c.preuve_url} alt="Preuve de depot" style={{width:"100%",maxHeight:160,objectFit:"cover",borderRadius:8,border:"1px solid #D1D5DB"}}/></a>}
           </div>
         ))}
       </div>
@@ -3517,13 +3547,13 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
           const linked=g.membres.filter(m=>m.user_id);
           const aAfficher=g.aFallback||g.membres.filter(m=>!m.user_id);
           return(
-            <div key={g.id} style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+            <div key={g.id} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:aAfficher.length>0?10:0}}>
-                <div><p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{linked.length} avec compte - {g.membres.length-linked.length} sans compte</p></div>
-                <button onClick={()=>notifierGroupe(g)} disabled={notifBusy||linked.length===0} style={{background:linked.length===0?"#2A2A2A":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:10,padding:"8px 14px",color:linked.length===0?"#6B7280":"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>Notifier</button>
+                <div><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{g.nom}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{linked.length} avec compte - {g.membres.length-linked.length} sans compte</p></div>
+                <button onClick={()=>notifierGroupe(g)} disabled={notifBusy||linked.length===0} style={{background:linked.length===0?"#E5E7EB":"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:10,padding:"8px 14px",color:linked.length===0?"#6B7280":"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>Notifier</button>
               </div>
               {aAfficher.map(m=>(
-                <button key={m.id} onClick={()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;const msg=encodeURIComponent(`Salut ${m.prenom} ! Participe a la cagnotte "${cagnotte.titre}" ici :\n${lien}`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");}} style={{display:"flex",alignItems:"center",gap:8,width:"100%",background:"#0D0D0D",border:"1px solid #075E54",borderRadius:8,padding:"7px 10px",color:"#22C55E",fontSize:12,fontWeight:600,cursor:"pointer",marginTop:6}}>💬 Envoyer a {m.prenom} sur WhatsApp</button>
+                <button key={m.id} onClick={()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;const msg=encodeURIComponent(`Salut ${m.prenom} ! Participe a la cagnotte "${cagnotte.titre}" ici :\n${lien}`);window.open(`https://wa.me/${m.tel.replace(/[\s+]/g,"")}?text=${msg}`,"_blank");}} style={{display:"flex",alignItems:"center",gap:8,width:"100%",background:"#FFFFFF",border:"1px solid #075E54",borderRadius:8,padding:"7px 10px",color:"#22C55E",fontSize:12,fontWeight:600,cursor:"pointer",marginTop:6}}>💬 Envoyer a {m.prenom} sur WhatsApp</button>
               ))}
             </div>
           );
@@ -3561,7 +3591,7 @@ const ModalCreerCagnotte = ({onClose,onCreate,user}) => {
       <MH title="Nouvelle cagnotte" onClose={onClose}/>
       <Fld label="Titre"><Inp value={titre} onChange={e=>setTitre(e.target.value)} placeholder="Ex: Mariage de Fatoumata" maxLength={60} autoFocus/></Fld>
       <Fld label="Pour qui (beneficiaire)"><Inp value={beneficiaire} onChange={e=>setBeneficiaire(e.target.value)} placeholder="Ex: Fatoumata Diallo" maxLength={60}/></Fld>
-      <Fld label="Description (optionnel)"><textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} placeholder="Details de l occasion..." style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"12px 14px",color:"#FFFFFF",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
+      <Fld label="Description (optionnel)"><textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} placeholder="Details de l occasion..." style={{width:"100%",background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px 14px",color:"#111827",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
       <Fld label="Objectif (FCFA)"><Inp value={objectif} onChange={e=>setObjectif(e.target.value.replace(/\D/g,""))} placeholder="Ex: 200000" inputMode="numeric"/></Fld>
       <Fld label="Date limite (optionnel)"><Inp value={dateLimite} onChange={e=>setDateLimite(e.target.value)} type="date"/></Fld>
       <Fld label="Numéro Orange Money (optionnel)"><Inp value={numeroOrangeMoney} onChange={e=>setNumeroOrangeMoney(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les dons" inputMode="tel"/></Fld>
@@ -3601,7 +3631,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   if(limitReached)return <Modal onClose={onClose}>
     <MH title="Limite atteinte" onClose={onClose}/>
     <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
-    <p style={{color:"#FFFFFF",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>1 tontine geree, c'est le maximum en gratuit</p>
+    <p style={{color:"#111827",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>1 tontine geree, c'est le maximum en gratuit</p>
     <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour gerer plusieurs tontines en meme temps.</p>
     <button onClick={async()=>{
       setPayBusy(true);
@@ -3622,7 +3652,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <Fld label="Nom de la tontine"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Tontine des Mamans" maxLength={40} autoFocus/></Fld>
     <Fld label="Montant par cotisation (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 25000" inputMode="numeric"/></Fld>
     <Fld label="Date d'échéance mensuelle"><Inp value={echeance} onChange={e=>setEcheance(e.target.value)} placeholder="Ex: 2026-07-01" type="date"/></Fld>
-    <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#FF6B00":"#2A2A2A",color:freq===f?"#0D0D0D":"#FFFFFF",borderColor:freq===f?"#FF6B00":"#3D3D3D"}}>{f}</button>)}</div></Fld>
+    <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#FF6B00":"#E5E7EB",color:freq===f?"#0D0D0D":"#111827",borderColor:freq===f?"#FF6B00":"#D1D5DB"}}>{f}</button>)}</div></Fld>
     <Fld label="Argent déjà collecté avant l'app (optionnel)"><Inp value={montantInitial} onChange={e=>setMontantInitial(e.target.value.replace(/\D/g,""))} placeholder="Ex: 50000 - laisser vide si aucun" inputMode="numeric"/></Fld>
     <Fld label="Numéro Orange Money (optionnel)"><Inp value={numeroOrangeMoney} onChange={e=>setNumeroOrangeMoney(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les cotisations" inputMode="tel"/></Fld>
     <Fld label="Numéro Wave (optionnel)"><Inp value={numeroWave} onChange={e=>setNumeroWave(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les cotisations" inputMode="tel"/></Fld>
@@ -3638,10 +3668,10 @@ class ErrorBoundary extends Component {
   render(){
     if(this.state.error){
       return (
-        <div style={{minHeight:"100vh",background:"#0D0D0D",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
+        <div style={{minHeight:"100vh",background:"#FFFFFF",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
           <p style={{fontSize:40,margin:"0 0 14px"}}>⚠️</p>
-          <p style={{color:"#FFFFFF",fontWeight:800,fontSize:16,margin:"0 0 10px"}}>Un probleme technique est survenu</p>
-          <div style={{background:"#1A1A1A",border:"1px solid #C1440E",borderRadius:12,padding:14,marginBottom:20,maxWidth:420,width:"100%"}}>
+          <p style={{color:"#111827",fontWeight:800,fontSize:16,margin:"0 0 10px"}}>Un probleme technique est survenu</p>
+          <div style={{background:"#FFFFFF",border:"1px solid #C1440E",borderRadius:12,padding:14,marginBottom:20,maxWidth:420,width:"100%"}}>
             <p style={{color:"#EF4444",fontSize:12,fontFamily:"monospace",wordBreak:"break-word",margin:0,textAlign:"left"}}>{String(this.state.error?.message||this.state.error)}</p>
           </div>
           <button onClick={()=>{this.setState({error:null});window.location.href="/";}} style={{background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:14,padding:"13px 28px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>Retour a l accueil</button>
@@ -3827,7 +3857,7 @@ function AppInner() {
   if(contribuerCagnotteId)return <ContributionPubliqueScreen cagnotteId={contribuerCagnotteId}/>;
 
   if(checking){
-    return <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0D0D0D,#1A1A1A)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+    return <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#FFFFFF,#F5F5F5)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
       <style>{`
         @keyframes thtLogoIn { 0%{opacity:0;transform:scale(0.6);} 60%{opacity:1;transform:scale(1.08);} 100%{opacity:1;transform:scale(1);} }
         @keyframes thtGlow { 0%,100%{box-shadow:0 0 20px 0 rgba(255,107,0,0.25);} 50%{box-shadow:0 0 40px 10px rgba(255,107,0,0.5);} }
@@ -3837,9 +3867,9 @@ function AppInner() {
       <div style={{width:84,height:84,borderRadius:22,overflow:"hidden",animation:"thtLogoIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards, thtGlow 2s ease-in-out 0.8s infinite"}}>
         <img src={logoIcon} alt="THT" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
       </div>
-      <p style={{color:"#FFFFFF",fontSize:20,fontWeight:900,letterSpacing:4,margin:"18px 0 4px",opacity:0,animation:"thtTextIn 0.6s ease-out 0.5s forwards"}}>THT</p>
+      <p style={{color:"#111827",fontSize:20,fontWeight:900,letterSpacing:4,margin:"18px 0 4px",opacity:0,animation:"thtTextIn 0.6s ease-out 0.5s forwards"}}>THT</p>
       <p style={{color:"#6B7280",fontSize:11,margin:0,opacity:0,animation:"thtTextIn 0.6s ease-out 0.7s forwards"}}>Tontine Habi Traore</p>
-      <div style={{width:120,height:2,background:"#2A2A2A",borderRadius:2,marginTop:26,overflow:"hidden"}}>
+      <div style={{width:120,height:2,background:"#E5E7EB",borderRadius:2,marginTop:26,overflow:"hidden"}}>
         <div style={{height:"100%",background:"linear-gradient(90deg,#FF6B00,#E8B96A)",animation:"thtBarFill 1.6s ease-in-out infinite"}}/>
       </div>
     </div>;
@@ -3850,8 +3880,8 @@ function AppInner() {
   const NAV=[["home","🏠",t("accueil")],["cagnottes","🎁",t("cagnottesNav")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
   return(
-    <div style={{background:"#0D0D0D",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Inter',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#3D3D3D;}`}</style>
+    <div style={{background:"#FFFFFF",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Inter',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#D1D5DB;}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} user={cu} onBack={backTap} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
         :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={backTap} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
@@ -3863,7 +3893,7 @@ function AppInner() {
         :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id} user={cu}/>
         :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){pushBack(()=>setNav("profil"));setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang}/>:null}
       </div>
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#1A1A1A",borderTop:"1px solid #2A2A2A",display:"flex",padding:"8px 0 20px",zIndex:100}}>
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#FFFFFF",borderTop:"1px solid #E5E7EB",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#FF6B00":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}
       </div>
       {showC&&<ModalCreer onClose={()=>setShowC(false)} onCreate={g=>{setGroupes(p=>[...p,g]);showToast("Tontine créée !");}} user={cu}/>}

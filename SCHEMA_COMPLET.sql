@@ -762,6 +762,7 @@ alter table membres add constraint membres_groupe_tel_unique unique (groupe_id, 
 -- Sans danger : ajoute juste ce qui manque
 
 alter table messages add column if not exists audio_url text;
+alter table messages add column if not exists image_url text;
 
 -- Nouvel espace de stockage pour les messages vocaux
 insert into storage.buckets (id, name, public)

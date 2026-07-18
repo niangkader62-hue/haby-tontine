@@ -2,10 +2,8 @@
 // Declenchee une fois par jour par une tache planifiee (pg_cron), jamais par le navigateur
 //
 // Logique des rappels (basee sur la vraie date d'echeance de chaque tontine) :
-//   - Echeance = demain      -> "Rappel : cotisation due demain"        (tout le monde, montant personnalise si defini)
-//   - Echeance = aujourd'hui -> "Rappel : cotisation due aujourd'hui"   (tout le monde, montant personnalise si defini)
-//   - Echeance depassee      -> "Paiement en retard"                    (seulement les membres pas encore payes,
-//                                                                         renvoye tous les 3 jours pour ne pas spammer)
+//   - Echeance dans 2 jours, demain, ou aujourd'hui -> "Rappel"    (tout le monde, montant personnalise si defini)
+//   - Echeance depassee de 1 ou 2 jours              -> "Paiement en retard"  (seulement les membres pas encore payes)
 
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -34,6 +32,9 @@ Deno.serve(async (req) => {
   const tomorrow = new Date(todayDate);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const dansDeuxJours = new Date(todayDate);
+  dansDeuxJours.setDate(dansDeuxJours.getDate() + 2);
+  const dansDeuxJoursStr = dansDeuxJours.toISOString().split("T")[0];
 
   // Repasse en gratuit les comptes Premium dont le mois offert par parrainage est expire
   await supabase.from("users").update({ plan: "free" }).lt("premium_expire_le", todayStr).eq("plan", "premium");
@@ -56,10 +57,16 @@ Deno.serve(async (req) => {
   const { data: groupesDus } = await supabase
     .from("groupes")
     .select("id, nom, montant, user_id, date_echeance")
-    .in("date_echeance", [tomorrowStr, todayStr]);
+    .in("date_echeance", [dansDeuxJoursStr, tomorrowStr, todayStr]);
+
+  const libelleEcheance = (dateEcheance) => {
+    if (dateEcheance === todayStr) return "due aujourd'hui";
+    if (dateEcheance === tomorrowStr) return "due demain";
+    return "due dans 2 jours";
+  };
 
   for (const g of groupesDus || []) {
-    const estAujourdhui = g.date_echeance === todayStr;
+    const quand = libelleEcheance(g.date_echeance);
     const url = `/?g=${g.id}&tab=rapport`;
     const title = "THT - Rappel";
     const { data: membres } = await supabase.from("membres").select("user_id, montant_perso").eq("groupe_id", g.id).not("user_id", "is", null);
@@ -69,22 +76,18 @@ Deno.serve(async (req) => {
       if (dejaNotifies.has(m.user_id)) continue;
       dejaNotifies.add(m.user_id);
       const montant = m.montant_perso || g.montant;
-      const body = estAujourdhui
-        ? `Cotisation "${g.nom}" due aujourd'hui (${montant} FCFA). Pense a preparer ton versement !`
-        : `Cotisation "${g.nom}" due demain (${montant} FCFA). Pense a preparer ton versement !`;
+      const body = `Cotisation "${g.nom}" ${quand} (${montant} FCFA). Pense a preparer ton versement !`;
       if (await sendTo(m.user_id, title, body, url)) sent++;
     }
     // Filet de securite : si la creatrice n'a pas encore sa propre ligne membre (anciennes tontines), on la notifie quand meme
     if (!dejaNotifies.has(g.user_id)) {
-      const body = estAujourdhui
-        ? `Cotisation "${g.nom}" due aujourd'hui (${g.montant} FCFA). Pense a preparer ton versement !`
-        : `Cotisation "${g.nom}" due demain (${g.montant} FCFA). Pense a preparer ton versement !`;
+      const body = `Cotisation "${g.nom}" ${quand} (${g.montant} FCFA). Pense a preparer ton versement !`;
       if (await sendTo(g.user_id, title, body, url)) sent++;
     }
   }
 
   // 2) TONTINES EN RETARD (echeance passee) -> alerte uniquement aux membres pas encore payes,
-  //    renvoyee tous les 3 jours (jour+1, jour+4, jour+7, ...) pour eviter le spam quotidien
+  //    envoyee le lendemain (jour+1) et le surlendemain (jour+2) de l'echeance, puis plus rien ensuite
   const { data: groupesRetard } = await supabase
     .from("groupes")
     .select("id, nom, montant, user_id, date_echeance")
@@ -93,7 +96,7 @@ Deno.serve(async (req) => {
   for (const g of groupesRetard || []) {
     const echeance = new Date(g.date_echeance + "T00:00:00Z");
     const joursRetard = Math.floor((todayDate.getTime() - echeance.getTime()) / 86400000);
-    if (joursRetard < 1 || (joursRetard - 1) % 3 !== 0) continue; // seulement jour+1, jour+4, jour+7...
+    if (joursRetard !== 1 && joursRetard !== 2) continue; // seulement jour+1 et jour+2
 
     const url = `/?g=${g.id}&tab=rapport`;
     const { data: membres } = await supabase.from("membres").select("id, prenom, user_id, paye, montant_perso").eq("groupe_id", g.id).eq("paye", false).not("user_id", "is", null);

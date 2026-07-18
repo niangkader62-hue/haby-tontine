@@ -530,17 +530,26 @@ const Btn = ({onClick,children,disabled}) => (
 
 const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0 12px",fontWeight:600,background:"#1A0800",padding:"8px 12px",borderRadius:8}}>{msg}</p>:null;
 
-// Boutons de paiement mobile (Orange Money / Wave) : redirige vers le paiement au numero du beneficiaire.
-// L'argent ne transite jamais par l'app -- il part directement au numero indique. Optionnellement,
-// un bouton "J'ai paye" permet de declarer le paiement pour confirmation (voir onDeclarer).
+// Boutons de paiement mobile (Orange Money / Wave) : affiche le numero du beneficiaire pour un
+// paiement manuel (l'argent ne transite jamais par l'app). Si onDeclarer est fourni, une photo de
+// preuve (capture d'ecran de la transaction) est OBLIGATOIRE avant de pouvoir declarer le paiement --
+// ca ne peut pas etre valide sans preuve, exactement comme pour les cagnottes et les versements geres
+// par la creatrice.
 const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,declareLabel,dejaDeclare,busy}) => {
   const [ouvert,setOuvert]=useState(null);
+  const [preuve,setPreuve]=useState(null);
+  const [preuvePreview,setPreuvePreview]=useState(null);
   if(!numeroOrangeMoney&&!numeroWave)return null;
   const montantNum=Number(montant)||0;
   const copier=async(txt)=>{try{await navigator.clipboard.writeText(txt);}catch{}};
-  const isAndroid=typeof navigator!=="undefined"&&/Android/i.test(navigator.userAgent);
-  const ussdOM=numeroOrangeMoney?`tel:%23144%231*1*${numeroOrangeMoney}*${montantNum}*1*`:null;
-  const intentWave="intent://send#Intent;package=com.wave.personal;scheme=android-app;S.browser_fallback_url="+encodeURIComponent("https://play.google.com/store/apps/details?id=com.wave.personal")+";end";
+  const choisirPreuve=(e)=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+    const reader=new FileReader();
+    reader.onload=()=>{setPreuve(reader.result);setPreuvePreview(reader.result);};
+    reader.readAsDataURL(f);
+  };
+  const peutDeclarer=montantNum&&ouvert&&preuve;
   return(
     <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14,marginBottom:16}}>
       <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>📲 Payer directement</p>
@@ -550,20 +559,18 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,
         {numeroWave&&<button onClick={()=>montantNum&&setOuvert(ouvert==="wave"?null:"wave")} disabled={!montantNum} style={{flex:1,background:ouvert==="wave"?"#2A9DF4":"#212121",border:"1px solid #2A9DF4",borderRadius:10,padding:"10px 6px",color:ouvert==="wave"?"#0D0D0D":"#2A9DF4",fontWeight:700,fontSize:12,cursor:montantNum?"pointer":"not-allowed",opacity:montantNum?1:.5}}>🔵 Wave</button>}
       </div>
       {ouvert==="om"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
-        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroOrangeMoney}</b> via Orange Money.</p>
-        <div style={{display:"flex",gap:8}}>
-          <a href={ussdOM} style={{flex:1,textAlign:"center",background:"#FF6B00",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>☎️ Composer</a>
-          <button onClick={()=>copier(numeroOrangeMoney)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
-        </div>
+        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Ouvre toi-même Orange Money (compose <b>#144#</b>) et envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroOrangeMoney}</b>.</p>
+        <button onClick={()=>copier(numeroOrangeMoney)} style={{width:"100%",background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier le numéro</button>
       </div>}
       {ouvert==="wave"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
-        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroWave}</b> via Wave.</p>
-        <div style={{display:"flex",gap:8}}>
-          {isAndroid&&<a href={intentWave} style={{flex:1,textAlign:"center",background:"#2A9DF4",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>📱 Ouvrir Wave</a>}
-          <button onClick={()=>copier(numeroWave)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
-        </div>
+        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Ouvre toi-même l'app Wave et envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroWave}</b>.</p>
+        <button onClick={()=>copier(numeroWave)} style={{width:"100%",background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier le numéro</button>
       </div>}
-      {onDeclarer&&<button onClick={()=>onDeclarer(ouvert==="om"?"orange_money":"wave")} disabled={busy||dejaDeclare||!montantNum||!ouvert} style={{width:"100%",marginTop:4,background:dejaDeclare?"#2A2A2A":"transparent",border:"1px solid "+(dejaDeclare?"#22C55E":"#3D3D3D"),borderRadius:10,padding:"10px",color:dejaDeclare?"#22C55E":(!ouvert?"#6B7280":"#FFFFFF"),fontWeight:700,fontSize:12,cursor:dejaDeclare||!ouvert?"default":"pointer"}}>{dejaDeclare?"✅ Déclaré, en attente de confirmation":(busy?"Envoi...":!ouvert?"Choisis d'abord Orange Money ou Wave ci-dessus":(declareLabel||"✅ J'ai effectué le paiement"))}</button>}
+      {onDeclarer&&ouvert&&<label style={{display:"block",background:"#0D0D0D",border:"1px dashed #FF6B00",borderRadius:10,padding:preuvePreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden",marginBottom:10}}>
+        <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>
+        {preuvePreview?<img src={preuvePreview} alt="Preuve" style={{width:"100%",maxHeight:180,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Capture d'écran du paiement (obligatoire)</span>}
+      </label>}
+      {onDeclarer&&<button onClick={()=>onDeclarer(ouvert==="om"?"orange_money":"wave",preuve)} disabled={busy||dejaDeclare||!peutDeclarer} style={{width:"100%",marginTop:4,background:dejaDeclare?"#2A2A2A":"transparent",border:"1px solid "+(dejaDeclare?"#22C55E":"#3D3D3D"),borderRadius:10,padding:"10px",color:dejaDeclare?"#22C55E":(!peutDeclarer?"#6B7280":"#FFFFFF"),fontWeight:700,fontSize:12,cursor:dejaDeclare||!peutDeclarer?"default":"pointer"}}>{dejaDeclare?"✅ Déclaré, en attente de confirmation":(busy?"Envoi...":!ouvert?"Choisis d'abord Orange Money ou Wave ci-dessus":!preuve?"Ajoute la capture d'écran ci-dessus":(declareLabel||"✅ J'ai effectué le paiement"))}</button>}
     </div>
   );
 };
@@ -965,11 +972,20 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     if(!groupe.moi?.id)return;
     supabase.from("declarations_paiement").select("*").eq("membre_id",groupe.moi.id).eq("statut","en_attente").order("created_at",{ascending:false}).limit(1).maybeSingle().then(({data})=>setDeclarationEnAttente(data||null));
   },[groupe.moi?.id]);
-  const declarerPaiement=async(moyen)=>{
+  const declarerPaiement=async(moyen,preuve)=>{
     if(!groupe.moi?.id)return;
+    if(!preuve)return onToast("Une capture d'écran du paiement est requise","error");
     setDeclareBusy(true);
     const montant=groupe.moi.montantPerso??groupe.montant;
-    const {data,error}=await supabase.from("declarations_paiement").insert({groupe_id:groupe.id,membre_id:groupe.moi.id,montant,moyen,cycle:groupe.cycle}).select().single();
+    let photoUrl=null;
+    try{
+      const blobPhoto=await (await fetch(preuve)).blob();
+      const path=`declarations/${groupe.id}/${groupe.moi.id}-${Date.now()}.jpg`;
+      const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
+      if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
+    }catch{}
+    if(!photoUrl){setDeclareBusy(false);return onToast("Impossible d'enregistrer la photo, réessaie","error");}
+    const {data,error}=await supabase.from("declarations_paiement").insert({groupe_id:groupe.id,membre_id:groupe.moi.id,montant,moyen,cycle:groupe.cycle,photo_url:photoUrl}).select().single();
     setDeclareBusy(false);
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setDeclarationEnAttente(data);
@@ -1135,7 +1151,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
             montant={groupe.moi.montantPerso??groupe.montant}
             numeroOrangeMoney={groupe.numeroOrangeMoney}
             numeroWave={groupe.numeroWave}
-            onDeclarer={(moyen)=>declarerPaiement(moyen)}
+            onDeclarer={(moyen,preuve)=>declarerPaiement(moyen,preuve)}
             dejaDeclare={!!declarationEnAttente}
             busy={declareBusy}
           />
@@ -1565,7 +1581,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const newCyclesPaies=paye?membre.cyclesPaies+1:membre.cyclesPaies;
     const {error:mErr}=await supabase.from("membres").update({versements:newVersements,paye,score:newScore,cycles_paies:newCyclesPaies}).eq("id",membre.id);
     if(mErr){setDeclBusy(null);return onToast("Erreur : "+(mErr.message||"inconnue"),"error");}
-    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:membre.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel"});
+    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:membre.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:d.photo_url||null});
     const moiMembre=groupe.membres.find(m=>m.userId===user.id);
     await supabase.from("declarations_paiement").update({statut:"confirme",confirme_par:moiMembre?.id||null,confirme_at:new Date().toISOString()}).eq("id",d.id);
     setGroupe(g=>({...g,cagnotte:g.cagnotte+amt,membres:g.membres.map(m=>m.id===membre.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)}));
@@ -2116,6 +2132,7 @@ THT - Tontine Habi Traore`;
                     <p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(d.montant)} déclaré via {d.moyen==="wave"?"Wave":"Orange Money"} - {new Date(d.created_at).toLocaleDateString("fr-FR")}</p>
                   </div>
                 </div>
+                {d.photo_url&&<a href={d.photo_url} target="_blank" rel="noreferrer" style={{display:"block",marginBottom:10}}><img src={d.photo_url} alt="Preuve du paiement" style={{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,border:"1px solid #3D3D3D"}}/></a>}
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>confirmerDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"#FF6B00",border:"none",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>{declBusy===d.id?"...":"✅ Confirmer"}</button>
                   <button onClick={()=>rejeterDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"transparent",border:"1px solid #EF4444",borderRadius:8,padding:"9px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>✕ Rejeter</button>

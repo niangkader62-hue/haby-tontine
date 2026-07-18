@@ -61,6 +61,31 @@ Depot : `niangkader62-hue/haby-tontine`. Site : `https://haby-tontine.netlify.ap
 - Error Boundary React, audit ESLint (`no-undef`/`no-redeclare`) systematique avant chaque push
 - Performance : jsPDF et html2canvas charges a la demande
 
+## Paiement mobile direct (session la plus recente)
+**Fonctionnel et deploye :**
+- Numero Orange Money / Wave configurable sur chaque tontine (creation + Modifier la tontine) et chaque cagnotte (creation + section "Numeros de reception" dans CagnotteScreen)
+- Composant reutilisable `BoutonsPaiementMobile` (definie juste apres `ErrBox`) : affiche le numero du beneficiaire, boutons de redirection, et si `onDeclarer` est fourni, exige une photo de preuve avant de pouvoir declarer
+- Nouvelle table `declarations_paiement` (tontines uniquement) : un membre declare avoir paye (moyen + photo obligatoire), la creatrice confirme (cree la vraie transaction dans `transactions`, calcul automatique inchange -- meme mecanisme que `saveVers`) ou rejette. RLS : le membre ne peut declarer que pour lui-meme ; creatrice/collecteur/admin peuvent confirmer/rejeter
+- Cote creatrice (GroupeScreen, onglet Suivi) : section "Declarations en attente" avec photo visible avant de confirmer
+- Cote membre (ParticipationScreen) : boutons affiches dans la carte "Ma situation" quand le membre n'est pas a jour
+- Cagnotte publique (`ContributionPubliqueScreen`) : boutons affiches avant la photo de preuve existante (le flux cagnotte etait deja auto-declaratif, on ajoute juste le rappel du numero)
+- SQL executes : `supabase_paiement_mobile.sql` (numeros + table declarations) puis `supabase_paiement_mobile_photo.sql` (colonne `photo_url` NOT NULL sur `declarations_paiement`)
+- L'ancienne methode (creatrice/collecteur enregistre un versement manuellement avec photo, `VersementModal`/`saveVers`) est restee totalement inchangee -- les deux methodes coexistent
+
+**⏳ Non resolu -- decision en attente de Kader :** les boutons "Ouvrir Orange Money"/"Ouvrir Wave" n'ouvrent pas encore les applications elles-memes.
+- Tentative 1 : USSD predempli `tel:%23144%231*1*num*montant*1*` -> erreur reseau "code IHM non valide" (le chemin de menu devine etait probablement faux ou obsolete)
+- Tentative 2 : lien `intent://` vers Wave avec `scheme=android-app` -> syntaxe invalide, retombait systematiquement sur le Play Store meme app installee
+- Tentative 3 (preparee, PAS ENCORE POUSSEE au moment de la redaction) : syntaxe `intent://` corrigee, `action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=...` -- Wave : `com.wave.personal`, Orange Mali : `com.orange.myorange.oml` (app "Orange et moi Mali", inclut le transfert Orange Money)
+- Repli fiable a 100% si les tentatives d'auto-ouverture echouent encore : garder uniquement "Copier le numero" + instruction textuelle d'ouvrir l'app soi-meme (deja en place en secours)
+- **Important** : aucun outil Claude (chat ni Claude Code) ne peut tester un deep link sur un vrai telephone Android -- Kader doit tester chaque tentative lui-meme et rapporter precisement ce qui se passe (bug reseau ? mauvaise app ouverte ? rien ne se passe ?)
+
+**Demandes formulees, pas encore codees :**
+1. Bouton "Annuler/modifier" un versement mal confirme dans l'Historique (creatrice uniquement) -- necessite un recalcul propre du solde du membre (statut a jour, cycles payes, score), pas juste une suppression. Design a valider avec Kader avant de coder vu la sensibilite des calculs cumulatifs.
+2. Verifier que les rappels automatiques quotidiens sont bien actives cote Supabase (le code existe deja, voir plus bas) : script `supabase_cron_rappels.sql` execute ? `CRON_SECRET` + `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` presents dans Edge Functions -> Secrets ?
+3. Renvoyer un recu WhatsApp apres coup pour un versement deja enregistre : **existe deja**, bouton "🧾 Voir / repartager le recu" dans l'Historique d'un membre (fonctionne aussi pour les transactions issues d'une declaration confirmee, meme table `transactions`) -- juste a verifier que Kader le trouve au bon endroit.
+
+**Nouvelle consigne de Kader (a partir de cette session) :** ne plus pousser sur GitHub/Netlify sans son accord explicite prealable -- batcher les changements et demander le feu vert avant chaque `git push`, meme pour de petits correctifs.
+
 ## Fonctions serveur (Supabase Edge Functions)
 - `send-push`, `daily-reminders`, `haby-chat` (Gemini)
 - `cinetpay-init` / `cinetpay-webhook` : paiement en ligne -- **PAS ENCORE CONFIGURE**, cle CinetPay manquante. C'est la prochaine grosse etape.
@@ -76,13 +101,18 @@ Netlify facture au credit (15 credits/deploiement). Regle : grouper plusieurs ch
 Workflow token GitHub : Kader cree un Personal Access Token (classic, scope "repo" uniquement, expiration courte) a chaque session ou un push est necessaire, le colle dans le chat, puis le revoque une fois le push confirme.
 
 ## Ce qui reste a faire (par priorite)
-1. **CinetPay** : creation du compte marchand par Kader (cinetpay.com), puis integration reelle des paiements en ligne -- prochaine etape demandee par Kader
-2. Suivi de la caisse sociale par membre individuel (actuellement solde global gere par la creatrice uniquement)
-3. Renommage du sous-domaine Netlify
-4. Test reel avec un vrai contact externe -- **0 utilisateur reel a ce jour**, fortement recommande avant tout lancement serieux ou avant CinetPay
-5. Reliquat mineur d'accents francais si Kader en repere encore au fil de l'usage
+1. **Deep link Orange Money/Wave** : decider si on pousse la tentative 3 (syntaxe `intent://` corrigee) ou si on abandonne l'auto-ouverture au profit du "Copier le numero" seul -- voir section dediee plus haut
+2. **CinetPay** : creation du compte marchand par Kader (cinetpay.com), puis integration reelle des paiements en ligne
+3. **PayDunya** : creation de compte bloquee sur reception du code OTP -- alternative preferee a CinetPay (liquidite), a reprendre
+4. Bouton annuler/modifier un versement mal confirme (design a valider, voir section dediee)
+5. Verifier configuration Supabase des rappels automatiques (cron + secrets, voir section dediee)
+6. Suivi de la caisse sociale par membre individuel (actuellement solde global gere par la creatrice uniquement)
+7. Renommage du sous-domaine Netlify
+8. Test reel avec un vrai contact externe -- **0 utilisateur reel a ce jour**, fortement recommande avant tout lancement serieux
+9. Reliquat mineur d'accents francais si Kader en repere encore au fil de l'usage
 
 ## Notes pour la prochaine conversation
+- **Ne JAMAIS `git push` sans l'accord explicite de Kader donne dans la conversation en cours, meme pour un petit correctif** -- preparer/committer localement si besoin, mais demander le feu vert avant de pousser
 - Toujours lire les fichiers `SKILL.md` pertinents avant toute tache de creation de fichier
 - Toujours faire `npm run build` ET `npx eslint src/App.jsx --no-eslintrc -c .eslintrc.cjs 2>&1 | grep -E "no-undef|no-redeclare"` avant de pousser
 - Demander en debut de session si Kader est sur telephone (token GitHub a demander) ou sur ordinateur (Claude Code peut pousser directement)
@@ -90,3 +120,4 @@ Workflow token GitHub : Kader cree un Personal Access Token (classic, scope "rep
 - Toujours donner le vrai message d'erreur (`error.message`) plutot qu'un message generique
 - Le probleme de cache navigateur (PWA) revient regulierement -- suggerer navigation privee ou reinstallation complete avant de chercher un bug plus profond
 - Les bugs de suppression/contraintes de cle etrangere (comme celui des votes) sont souvent mieux corriges au niveau du schema SQL (root cause, valable partout) plutot qu'en patchant uniquement la fonction qui le revele
+- Pour tout deep link vers une app tierce (Orange Money, Wave...), verifier le nom de package exact par recherche web avant de coder -- ne jamais deviner une syntaxe `intent://` sans la verifier, et etre transparent sur le fait qu'aucun test reel sur telephone n'est possible cote Claude

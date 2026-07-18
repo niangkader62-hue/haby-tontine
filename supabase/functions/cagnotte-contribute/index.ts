@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
       const { data, error } = await supabase
         .from("cagnottes")
-        .select("id, titre, description, objectif, montant_collecte, beneficiaire, statut, date_limite")
+        .select("id, titre, description, objectif, montant_collecte, beneficiaire, statut, date_limite, numero_orange_money, numero_wave")
         .eq("id", id)
         .single();
 

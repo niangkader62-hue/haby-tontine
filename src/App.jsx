@@ -530,6 +530,44 @@ const Btn = ({onClick,children,disabled}) => (
 
 const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0 12px",fontWeight:600,background:"#1A0800",padding:"8px 12px",borderRadius:8}}>{msg}</p>:null;
 
+// Boutons de paiement mobile (Orange Money / Wave) : redirige vers le paiement au numero du beneficiaire.
+// L'argent ne transite jamais par l'app -- il part directement au numero indique. Optionnellement,
+// un bouton "J'ai paye" permet de declarer le paiement pour confirmation (voir onDeclarer).
+const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,declareLabel,dejaDeclare,busy}) => {
+  const [ouvert,setOuvert]=useState(null);
+  if(!numeroOrangeMoney&&!numeroWave)return null;
+  const montantNum=Number(montant)||0;
+  const copier=async(txt)=>{try{await navigator.clipboard.writeText(txt);}catch{}};
+  const isAndroid=typeof navigator!=="undefined"&&/Android/i.test(navigator.userAgent);
+  const ussdOM=numeroOrangeMoney?`tel:%23144%231*1*${numeroOrangeMoney}*${montantNum}*1*`:null;
+  const intentWave="intent://send#Intent;package=com.wave.personal;scheme=android-app;S.browser_fallback_url="+encodeURIComponent("https://play.google.com/store/apps/details?id=com.wave.personal")+";end";
+  return(
+    <div style={{background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14,marginBottom:16}}>
+      <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>📲 Payer directement</p>
+      {!montantNum&&<p style={{color:"#6B7280",fontSize:11,marginBottom:8}}>Indique d'abord le montant pour activer les boutons.</p>}
+      <div style={{display:"flex",gap:8,marginBottom:ouvert?10:0}}>
+        {numeroOrangeMoney&&<button onClick={()=>montantNum&&setOuvert(ouvert==="om"?null:"om")} disabled={!montantNum} style={{flex:1,background:ouvert==="om"?"#FF6B00":"#212121",border:"1px solid #FF6B00",borderRadius:10,padding:"10px 6px",color:ouvert==="om"?"#0D0D0D":"#FF6B00",fontWeight:700,fontSize:12,cursor:montantNum?"pointer":"not-allowed",opacity:montantNum?1:.5}}>🟠 Orange Money</button>}
+        {numeroWave&&<button onClick={()=>montantNum&&setOuvert(ouvert==="wave"?null:"wave")} disabled={!montantNum} style={{flex:1,background:ouvert==="wave"?"#2A9DF4":"#212121",border:"1px solid #2A9DF4",borderRadius:10,padding:"10px 6px",color:ouvert==="wave"?"#0D0D0D":"#2A9DF4",fontWeight:700,fontSize:12,cursor:montantNum?"pointer":"not-allowed",opacity:montantNum?1:.5}}>🔵 Wave</button>}
+      </div>
+      {ouvert==="om"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
+        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroOrangeMoney}</b> via Orange Money.</p>
+        <div style={{display:"flex",gap:8}}>
+          <a href={ussdOM} style={{flex:1,textAlign:"center",background:"#FF6B00",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>☎️ Composer</a>
+          <button onClick={()=>copier(numeroOrangeMoney)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
+        </div>
+      </div>}
+      {ouvert==="wave"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
+        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroWave}</b> via Wave.</p>
+        <div style={{display:"flex",gap:8}}>
+          {isAndroid&&<a href={intentWave} style={{flex:1,textAlign:"center",background:"#2A9DF4",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>📱 Ouvrir Wave</a>}
+          <button onClick={()=>copier(numeroWave)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
+        </div>
+      </div>}
+      {onDeclarer&&<button onClick={()=>onDeclarer(ouvert==="om"?"orange_money":"wave")} disabled={busy||dejaDeclare||!montantNum||!ouvert} style={{width:"100%",marginTop:4,background:dejaDeclare?"#2A2A2A":"transparent",border:"1px solid "+(dejaDeclare?"#22C55E":"#3D3D3D"),borderRadius:10,padding:"10px",color:dejaDeclare?"#22C55E":(!ouvert?"#6B7280":"#FFFFFF"),fontWeight:700,fontSize:12,cursor:dejaDeclare||!ouvert?"default":"pointer"}}>{dejaDeclare?"✅ Déclaré, en attente de confirmation":(busy?"Envoi...":!ouvert?"Choisis d'abord Orange Money ou Wave ci-dessus":(declareLabel||"✅ J'ai effectué le paiement"))}</button>}
+    </div>
+  );
+};
+
 const AuthScreen = ({onLogin}) => {
   const [step,setStep]=useState("intro");
   const [pendingUser,setPendingUser]=useState(null);
@@ -921,6 +959,25 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       if(data)setDernierVersement({montant:Number(data.montant),date:new Date(data.created_at).toLocaleDateString("fr-FR"),heure:new Date(data.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),recuEnvoye:data.recu_envoye,statut:data.statut});
     });
   },[groupe.moi?.id]);
+  const [declareBusy,setDeclareBusy]=useState(false);
+  const [declarationEnAttente,setDeclarationEnAttente]=useState(null);
+  useEffect(()=>{
+    if(!groupe.moi?.id)return;
+    supabase.from("declarations_paiement").select("*").eq("membre_id",groupe.moi.id).eq("statut","en_attente").order("created_at",{ascending:false}).limit(1).maybeSingle().then(({data})=>setDeclarationEnAttente(data||null));
+  },[groupe.moi?.id]);
+  const declarerPaiement=async(moyen)=>{
+    if(!groupe.moi?.id)return;
+    setDeclareBusy(true);
+    const montant=groupe.moi.montantPerso??groupe.montant;
+    const {data,error}=await supabase.from("declarations_paiement").insert({groupe_id:groupe.id,membre_id:groupe.moi.id,montant,moyen,cycle:groupe.cycle}).select().single();
+    setDeclareBusy(false);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    setDeclarationEnAttente(data);
+    onToast("Paiement déclaré ! En attente de confirmation.");
+    if(groupe.createurUserId){
+      supabase.functions.invoke("send-push",{body:{user_id:groupe.createurUserId,title:"THT - Paiement déclaré",body:`${user.prenom} a déclaré avoir payé ${fmtFCFA(montant)} pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=suivi`}}).catch(()=>{});
+    }
+  };
   const [messages,setMessages]=useState([]);
   const [msgInput,setMsgInput]=useState("");
   const [thread,setThread]=useState(deepLink?.thread||null);
@@ -1073,6 +1130,16 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
             </div>
           </div>}
         </div>}
+        {groupe.moi&&!groupe.moi.paye&&(groupe.numeroOrangeMoney||groupe.numeroWave)&&
+          <BoutonsPaiementMobile
+            montant={groupe.moi.montantPerso??groupe.montant}
+            numeroOrangeMoney={groupe.numeroOrangeMoney}
+            numeroWave={groupe.numeroWave}
+            onDeclarer={(moyen)=>declarerPaiement(moyen)}
+            dejaDeclare={!!declarationEnAttente}
+            busy={declareBusy}
+          />
+        }
         {caisseMvtsMembre.length>0&&<div style={{marginBottom:16}}>
           <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE CAISSE SOCIALE</p>
           {caisseMvtsMembre.map(m=>(
@@ -1312,7 +1379,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [evtM,setEvtM]=useState(null);
   const [evtTxt,setEvtTxt]=useState("");
   const [showEdit,setShowEdit]=useState(false);
-  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence,dateEcheance:gInit.dateEcheance||""});
+  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence,dateEcheance:gInit.dateEcheance||"",numeroOrangeMoney:gInit.numeroOrangeMoney||"",numeroWave:gInit.numeroWave||""});
   const [editBusy,setEditBusy]=useState(false);
   const [tirages,setTirages]=useState([]);
   const [tirageAnim,setTirageAnim]=useState(false);
@@ -1360,11 +1427,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!editG.nom.trim())return onToast("Le nom est requis","error");
     if(!editG.montant||Number(editG.montant)<500)return onToast("Montant minimum 500 FCFA","error");
     setEditBusy(true);
-    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null}).eq("id",groupe.id);
+    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null,numero_orange_money:editG.numeroOrangeMoney.trim()||null,numero_wave:editG.numeroWave.trim()||null}).eq("id",groupe.id);
     setEditBusy(false);
     if(error)return onToast("Modification impossible","error");
-    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null}));
-    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null});
+    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null}));
+    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null});
     setShowEdit(false);onToast("Tontine modifiée !");
   };
 
@@ -1478,6 +1545,49 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setSuivi(s=>({...s,[membreId]:{...s[membreId],[champ]:val}}));
     onToast("Mis a jour !");
+  };
+
+  const [declarations,setDeclarations]=useState([]);
+  const loadDeclarations=async()=>{
+    const {data}=await supabase.from("declarations_paiement").select("*").eq("groupe_id",groupe.id).eq("statut","en_attente").order("created_at",{ascending:false});
+    setDeclarations(data||[]);
+  };
+  useEffect(()=>{loadDeclarations();},[groupe.id]);
+  const [declBusy,setDeclBusy]=useState(null);
+  const confirmerDeclaration=async(d)=>{
+    const membre=groupe.membres.find(m=>m.id===d.membre_id);
+    if(!membre)return onToast("Membre introuvable","error");
+    setDeclBusy(d.id);
+    const amt=Number(d.montant);
+    const newVersements=(membre.versements||0)+amt;
+    const paye=newVersements>=montantDu(membre);
+    const newScore=Math.min((membre.score||80)+(paye?5:2),100);
+    const newCyclesPaies=paye?membre.cyclesPaies+1:membre.cyclesPaies;
+    const {error:mErr}=await supabase.from("membres").update({versements:newVersements,paye,score:newScore,cycles_paies:newCyclesPaies}).eq("id",membre.id);
+    if(mErr){setDeclBusy(null);return onToast("Erreur : "+(mErr.message||"inconnue"),"error");}
+    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:membre.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel"});
+    const moiMembre=groupe.membres.find(m=>m.userId===user.id);
+    await supabase.from("declarations_paiement").update({statut:"confirme",confirme_par:moiMembre?.id||null,confirme_at:new Date().toISOString()}).eq("id",d.id);
+    setGroupe(g=>({...g,cagnotte:g.cagnotte+amt,membres:g.membres.map(m=>m.id===membre.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)}));
+    setDeclarations(ds=>ds.filter(x=>x.id!==d.id));
+    loadSuivi();
+    setDeclBusy(null);
+    onToast("Paiement confirmé !");
+    if(membre.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:membre.userId,title:"THT - Paiement confirmé",body:`Ton paiement de ${fmtFCFA(amt)} pour "${groupe.nom}" a été confirmé.`,url:`/?g=${groupe.id}&tab=membres`}}).catch(()=>{});
+    }
+  };
+  const rejeterDeclaration=async(d)=>{
+    setDeclBusy(d.id);
+    const {error}=await supabase.from("declarations_paiement").update({statut:"rejete"}).eq("id",d.id);
+    setDeclBusy(null);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    setDeclarations(ds=>ds.filter(x=>x.id!==d.id));
+    onToast("Déclaration rejetée.");
+    const membre=groupe.membres.find(m=>m.id===d.membre_id);
+    if(membre?.userId){
+      supabase.functions.invoke("send-push",{body:{user_id:membre.userId,title:"THT - Paiement non confirmé",body:`Ta déclaration de paiement pour "${groupe.nom}" n a pas été confirmée. Contacte la créatrice.`,url:`/?g=${groupe.id}&tab=membres`}}).catch(()=>{});
+    }
   };
 
   const loadRapports=async()=>{
@@ -1993,6 +2103,27 @@ THT - Tontine Habi Traore`;
       </div>}
 
       {tab==="suivi"&&<div style={{padding:"14px 16px 0"}}>
+        {declarations.length>0&&<div style={{marginBottom:18}}>
+          <p style={{color:"#FF6B00",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>DÉCLARATIONS EN ATTENTE ({declarations.length})</p>
+          {declarations.map(d=>{
+            const membre=groupe.membres.find(m=>m.id===d.membre_id);
+            return(
+              <div key={d.id} style={{background:"#1A1A1A",border:"1px solid #FF6B00",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <Avatar prenom={membre?.prenom||"?"} photo={membre?.photo} size={36}/>
+                  <div style={{flex:1}}>
+                    <p style={{margin:0,color:"#FFFFFF",fontWeight:700,fontSize:14}}>{membre?.prenom||"Membre supprimé"}</p>
+                    <p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(d.montant)} déclaré via {d.moyen==="wave"?"Wave":"Orange Money"} - {new Date(d.created_at).toLocaleDateString("fr-FR")}</p>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>confirmerDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"#FF6B00",border:"none",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>{declBusy===d.id?"...":"✅ Confirmer"}</button>
+                  <button onClick={()=>rejeterDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"transparent",border:"1px solid #EF4444",borderRadius:8,padding:"9px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>✕ Rejeter</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>}
         <p style={{color:"#6B7280",fontSize:12,marginBottom:14,lineHeight:1.5}}>Vue d ensemble du dernier versement de chaque membre. Tape sur "Recu envoye" pour corriger, ou sur "Historique" dans l onglet Membres pour voir tous les paiements.</p>
         {groupe.membres.length===0&&<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:20}}>Aucun membre pour l instant</p>}
         {groupe.membres.map(m=>{
@@ -2418,6 +2549,9 @@ THT - Tontine Habi Traore`;
         <Fld label="Montant par cotisation (FCFA)"><Inp value={editG.montant} onChange={e=>setEditG(g=>({...g,montant:e.target.value.replace(/\D/g,"")}))} placeholder="25000" inputMode="numeric"/></Fld>
         <Fld label="Fréquence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setEditG(g=>({...g,frequence:f}))} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:editG.frequence===f?"#FF6B00":"#2A2A2A",color:editG.frequence===f?"#0D0D0D":"#FFFFFF",borderColor:editG.frequence===f?"#FF6B00":"#3D3D3D"}}>{f}</button>)}</div></Fld>
         <Fld label="Date d'échéance (prochain versement)"><Inp value={editG.dateEcheance} onChange={e=>setEditG(g=>({...g,dateEcheance:e.target.value}))} type="date"/></Fld>
+        <Fld label="Numéro Orange Money (optionnel)"><Inp value={editG.numeroOrangeMoney} onChange={e=>setEditG(g=>({...g,numeroOrangeMoney:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
+        <Fld label="Numéro Wave (optionnel)"><Inp value={editG.numeroWave} onChange={e=>setEditG(g=>({...g,numeroWave:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
+        <p style={{color:"#6B7280",fontSize:11,margin:"-8px 0 14px",lineHeight:1.5}}>Renseigne ces numéros pour afficher les boutons de paiement direct aux membres. L'argent part directement sur ces numéros, jamais sur l'app.</p>
         <Btn onClick={saveEdit} disabled={editBusy}>{editBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
     </div>
@@ -3219,6 +3353,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
           <Fld label="Ton nom (optionnel)"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Diallo" maxLength={30}/></Fld>
           <Fld label="Ton numéro (optionnel)"><PhoneInput value={tel} onChange={setTel}/></Fld>
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
+          <BoutonsPaiementMobile montant={montant} numeroOrangeMoney={cagnotte.numero_orange_money} numeroWave={cagnotte.numero_wave}/>
           <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
             <label style={{display:"block",background:"#1A1A1A",border:"1px dashed #FF6B00",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
               <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>
@@ -3240,6 +3375,19 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
   const [showNotifier,setShowNotifier]=useState(false);
   const [mesGroupes,setMesGroupes]=useState([]);
   const [notifBusy,setNotifBusy]=useState(false);
+  const [numOM,setNumOM]=useState(cInit.numero_orange_money||"");
+  const [numWave,setNumWave]=useState(cInit.numero_wave||"");
+  const [numBusy,setNumBusy]=useState(false);
+
+  const saveNumeros=async()=>{
+    setNumBusy(true);
+    const {error}=await supabase.from("cagnottes").update({numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null}).eq("id",cagnotte.id);
+    setNumBusy(false);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    setCagnotte(c=>({...c,numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null}));
+    onUpdate(cagnotte.id,{numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null});
+    onToast("Numéros de réception enregistrés !");
+  };
 
   const loadContribs=async()=>{
     const {data}=await supabase.from("cagnotte_contributions").select("*").eq("cagnotte_id",cagnotte.id).order("created_at",{ascending:false});
@@ -3316,6 +3464,13 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
       </div>}
       {cagnotte.statut!=="cloturee"&&<button onClick={async()=>{const lien=`${window.location.origin}/?contribuer=${cagnotte.id}`;try{await navigator.clipboard.writeText(lien);onToast("Lien copie !");}catch{onToast(lien);}}} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"#2A2A2A",border:"1px solid #FF6B00",borderRadius:10,padding:"10px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔗 Copier le lien de contribution</button>}
       {cagnotte.statut!=="cloturee"&&<button onClick={cloturer} style={{width:"calc(100% - 32px)",margin:"10px 16px 0",background:"transparent",border:"1px solid #3D3D3D",borderRadius:10,padding:"10px",color:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>Cloturer la cagnotte</button>}
+      <div style={{margin:"16px 16px 0",background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:14,padding:14}}>
+        <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>📲 Numéros de réception</p>
+        <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:11,lineHeight:1.5}}>Affichés aux contributeurs comme boutons de paiement direct. L'argent part directement sur ces numéros, jamais sur l'app.</p>
+        <Fld label="Numéro Orange Money (optionnel)"><Inp value={numOM} onChange={e=>setNumOM(e.target.value.replace(/[^\d+]/g,""))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
+        <Fld label="Numéro Wave (optionnel)"><Inp value={numWave} onChange={e=>setNumWave(e.target.value.replace(/[^\d+]/g,""))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
+        <button onClick={saveNumeros} disabled={numBusy} style={{width:"100%",background:"transparent",border:"1px solid #FF6B00",borderRadius:10,padding:"9px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>{numBusy?"Enregistrement...":"Enregistrer"}</button>
+      </div>
       <div style={{padding:"20px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>CONTRIBUTIONS ({contributions.length})</p>
         {contributions.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucune contribution pour l instant</p>
@@ -3359,6 +3514,8 @@ const ModalCreerCagnotte = ({onClose,onCreate,user}) => {
   const [objectif,setObjectif]=useState("");
   const [beneficiaire,setBeneficiaire]=useState("");
   const [dateLimite,setDateLimite]=useState("");
+  const [numeroOrangeMoney,setNumeroOrangeMoney]=useState("");
+  const [numeroWave,setNumeroWave]=useState("");
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState("");
 
@@ -3366,7 +3523,7 @@ const ModalCreerCagnotte = ({onClose,onCreate,user}) => {
     if(!titre.trim())return setErr("Donne un titre a ta cagnotte");
     if(!objectif||Number(objectif)<1000)return setErr("Objectif minimum 1000 FCFA");
     setBusy(true);
-    const payload={user_id:user.id,titre:s(titre.trim()),description:s(description||""),objectif:Number(objectif),beneficiaire:s(beneficiaire||""),date_limite:dateLimite||null,montant_collecte:0};
+    const payload={user_id:user.id,titre:s(titre.trim()),description:s(description||""),objectif:Number(objectif),beneficiaire:s(beneficiaire||""),date_limite:dateLimite||null,montant_collecte:0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null};
     const {data,error}=await supabase.from("cagnottes").insert(payload).select().single();
     setBusy(false);
     if(error)return setErr("Erreur technique : "+(error.message||"inconnue"));
@@ -3382,6 +3539,8 @@ const ModalCreerCagnotte = ({onClose,onCreate,user}) => {
       <Fld label="Description (optionnel)"><textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} placeholder="Details de l occasion..." style={{width:"100%",background:"#212121",border:"1px solid #3D3D3D",borderRadius:12,padding:"12px 14px",color:"#FFFFFF",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
       <Fld label="Objectif (FCFA)"><Inp value={objectif} onChange={e=>setObjectif(e.target.value.replace(/\D/g,""))} placeholder="Ex: 200000" inputMode="numeric"/></Fld>
       <Fld label="Date limite (optionnel)"><Inp value={dateLimite} onChange={e=>setDateLimite(e.target.value)} type="date"/></Fld>
+      <Fld label="Numéro Orange Money (optionnel)"><Inp value={numeroOrangeMoney} onChange={e=>setNumeroOrangeMoney(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les dons" inputMode="tel"/></Fld>
+      <Fld label="Numéro Wave (optionnel)"><Inp value={numeroWave} onChange={e=>setNumeroWave(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les dons" inputMode="tel"/></Fld>
       <ErrBox msg={err}/>
       <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer la cagnotte"}</Btn>
     </Modal>
@@ -3394,6 +3553,8 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const [freq,setFreq]=useState("Mensuel");
   const [echeance,setEcheance]=useState("");
   const [montantInitial,setMontantInitial]=useState("");
+  const [numeroOrangeMoney,setNumeroOrangeMoney]=useState("");
+  const [numeroWave,setNumeroWave]=useState("");
   const [err,setErr]=useState("");
   const [busy,setBusy]=useState(false);
   const [limitReached,setLimitReached]=useState(false);
@@ -3403,13 +3564,13 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
     if(user.plan==="free"&&user.groupesCount>=1){setErr("");setLimitReached(true);return;}
     setBusy(true);
-    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#FF6B00",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0};
+    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#FF6B00",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
     if(error){setBusy(false);return setErr("Erreur technique : "+(error.message||"inconnue"));}
     const {data:moi}=await supabase.from("membres").insert({groupe_id:data.id,prenom:s(user.prenom)+" (moi)",tel:user.tel,quartier:"",photo_url:user.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:0,user_id:user.id}).select().single();
     setBusy(false);
     const moiMembre=moi?{id:moi.id,userId:user.id,prenom:moi.prenom,tel:moi.tel,quartier:"",photo:moi.photo_url,paye:false,score:80,versements:0,cyclesPaies:0,cyclesTotal:12,evenement:null}:null;
-    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,montantInitial:Number(data.montant_initial)||0,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
+    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,montantInitial:Number(data.montant_initial)||0,numeroOrangeMoney:data.numero_orange_money||null,numeroWave:data.numero_wave||null,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
     onClose();
   };
   if(limitReached)return <Modal onClose={onClose}>
@@ -3438,6 +3599,8 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <Fld label="Date d'échéance mensuelle"><Inp value={echeance} onChange={e=>setEcheance(e.target.value)} placeholder="Ex: 2026-07-01" type="date"/></Fld>
     <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#FF6B00":"#2A2A2A",color:freq===f?"#0D0D0D":"#FFFFFF",borderColor:freq===f?"#FF6B00":"#3D3D3D"}}>{f}</button>)}</div></Fld>
     <Fld label="Argent déjà collecté avant l'app (optionnel)"><Inp value={montantInitial} onChange={e=>setMontantInitial(e.target.value.replace(/\D/g,""))} placeholder="Ex: 50000 - laisser vide si aucun" inputMode="numeric"/></Fld>
+    <Fld label="Numéro Orange Money (optionnel)"><Inp value={numeroOrangeMoney} onChange={e=>setNumeroOrangeMoney(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les cotisations" inputMode="tel"/></Fld>
+    <Fld label="Numéro Wave (optionnel)"><Inp value={numeroWave} onChange={e=>setNumeroWave(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les cotisations" inputMode="tel"/></Fld>
     <ErrBox msg={err}/>
     <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer ma tontine"}</Btn>
   </Modal>;
@@ -3519,6 +3682,7 @@ function AppInner() {
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
+        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,
         membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,score:m.score||80,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
@@ -3546,6 +3710,7 @@ function AppInner() {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
+        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,
         prochainTour:gagnant?gagnant.prenom:"A tirer au sort",
         membres:mm,
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),

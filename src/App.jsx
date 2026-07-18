@@ -559,12 +559,20 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,
         {numeroWave&&<button onClick={()=>montantNum&&setOuvert(ouvert==="wave"?null:"wave")} disabled={!montantNum} style={{flex:1,background:ouvert==="wave"?"#2A9DF4":"#212121",border:"1px solid #2A9DF4",borderRadius:10,padding:"10px 6px",color:ouvert==="wave"?"#0D0D0D":"#2A9DF4",fontWeight:700,fontSize:12,cursor:montantNum?"pointer":"not-allowed",opacity:montantNum?1:.5}}>🔵 Wave</button>}
       </div>
       {ouvert==="om"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
-        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Ouvre toi-même Orange Money (compose <b>#144#</b>) et envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroOrangeMoney}</b>.</p>
-        <button onClick={()=>copier(numeroOrangeMoney)} style={{width:"100%",background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier le numéro</button>
+        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroOrangeMoney}</b> via Orange Money.</p>
+        <div style={{display:"flex",gap:8}}>
+          <a href="tel:%23144%23" style={{flex:1,textAlign:"center",background:"#FF6B00",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>☎️ Ouvrir Orange Money</a>
+          <button onClick={()=>copier(numeroOrangeMoney)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
+        </div>
+        <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Ça ouvre le menu Orange Money (#144#) -- choisis "Transfert d'argent" et entre le numéro et le montant toi-même.</p>
       </div>}
       {ouvert==="wave"&&<div style={{background:"#0D0D0D",borderRadius:10,padding:12,marginBottom:10}}>
-        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Ouvre toi-même l'app Wave et envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroWave}</b>.</p>
-        <button onClick={()=>copier(numeroWave)} style={{width:"100%",background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier le numéro</button>
+        <p style={{margin:"0 0 8px",color:"#FFFFFF",fontSize:12}}>Envoie <b>{fmtFCFA(montantNum)}</b> au <b>{numeroWave}</b> via Wave.</p>
+        <div style={{display:"flex",gap:8}}>
+          <a href="https://pay.wave.com/" style={{flex:1,textAlign:"center",background:"#2A9DF4",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,textDecoration:"none"}}>📱 Ouvrir Wave</a>
+          <button onClick={()=>copier(numeroWave)} style={{flex:1,background:"transparent",border:"1px solid #3D3D3D",borderRadius:8,padding:"9px",color:"#9CA89F",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copier</button>
+        </div>
+        <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Si ça n'ouvre pas l'app Wave directement, ouvre-la toi-même et envoie au numéro copié.</p>
       </div>}
       {onDeclarer&&ouvert&&<label style={{display:"block",background:"#0D0D0D",border:"1px dashed #FF6B00",borderRadius:10,padding:preuvePreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden",marginBottom:10}}>
         <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>

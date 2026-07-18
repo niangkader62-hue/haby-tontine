@@ -111,6 +111,9 @@ Workflow token GitHub : Kader cree un Personal Access Token (classic, scope "rep
 8. Test reel avec un vrai contact externe -- **0 utilisateur reel a ce jour**, fortement recommande avant tout lancement serieux
 9. Reliquat mineur d'accents francais si Kader en repere encore au fil de l'usage
 
+## ⚠️ A faire EN PREMIER avant toute nouvelle tache
+Avant d'entamer les points ci-dessus, Kader demande une **revue complete du code existant** : parcourir toutes les sections de `src/App.jsx` (et les Edge Functions) pour identifier tout bug, incoherence ou probleme latent -- pas seulement les zones touchees par les dernieres sessions. Objectif : repartir sur une base propre avant d'ajouter de nouvelles fonctionnalites. Documenter ce qui est trouve (meme si non corrige immediatement) avant de commencer les nouvelles demandes.
+
 ## Notes pour la prochaine conversation
 - **Ne JAMAIS `git push` sans l'accord explicite de Kader donne dans la conversation en cours, meme pour un petit correctif** -- preparer/committer localement si besoin, mais demander le feu vert avant de pousser
 - Toujours lire les fichiers `SKILL.md` pertinents avant toute tache de creation de fichier

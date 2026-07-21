@@ -86,7 +86,27 @@ Depot : `niangkader62-hue/haby-tontine`. Site : `https://haby-tontine.netlify.ap
 
 **Nouvelle consigne de Kader (a partir de cette session) :** ne plus pousser sur GitHub/Netlify sans son accord explicite prealable -- batcher les changements et demander le feu vert avant chaque `git push`, meme pour de petits correctifs.
 
-## Fonctions serveur (Supabase Edge Functions)
+## Lot Claude Code : theme clair + paiement simplifie + recu par messagerie (session la plus recente)
+Prepare par Claude Code (session ordinateur de Kader, sans acces push GitHub direct) sous forme de "paquet de publication" (zip avec 4 fichiers finaux + instructions), transmis a cette session (chat, avec acces push) pour verification et publication. Base de depart : commit `d3128b6`.
+
+**Verifie et publie (commit `01ae2f6`) :**
+1. **Paiement mobile simplifie** : decision produit de Kader -- pas de redirection vers les apps Orange Money/Wave (verifie non fiable sur telephone reel apres plusieurs tentatives ratees). `BoutonsPaiementMobile` n'a plus qu'un affichage des numeros + bouton Copier, puis la zone photo obligatoire + declaration. LigdiCash ecarte pour les depots/retraits (cumul de frais avec Orange/Wave), reserve aux futurs abonnements premium.
+2. **Theme clair** : fond blanc sur toute l'app (mapping de couleurs complet applique a `App.jsx`), couleurs d'accent (orange, rouge, vert, bleu Wave) inchangees. Verifie visuellement par Claude Code (Playwright) sur les ecrans sans compte (accueil, connexion, inscription) ; **pas encore verifie par un humain** sur les ecrans avec compte connecte (tontine, cagnotte, admin, HABY) -- a confirmer par Kader.
+3. **Recu integre a la messagerie interne** : "Enregistrer + Recu" envoie desormais le recu en message prive au membre (necessite `messages.image_url`, voir SQL ci-dessous) ; "Recu + Partager" inchange (partage natif WhatsApp etc.)
+4. **Compression photo automatique** : redimensionnement 1024px + reencodage JPEG qualite 0.82, remplace le rejet brutal a 4 Mo
+5. **Rappels automatiques ajustes** (`daily-reminders`) : J-2/J-1/J0 avant echeance, retard seulement J+1 et J+2 (avant : tous les 3 jours indefiniment)
+
+**Bugs trouves et corriges pendant la revue de ce lot (avant publication)**, a savoir pour de futures sessions qu'un lot prepare par une autre session Claude doit toujours etre relu, pas applique aveuglement :
+- Le nouveau bouton envoie `moyen='mobile_money'`, incompatible avec la contrainte SQL existante sur `declarations_paiement` (n'autorisait que `orange_money`/`wave`) -- aurait bloque toute nouvelle declaration. Corrige via `supabase_declarations_moyen_generique.sql`.
+- L'insertion du message-recu ne verifiait pas l'erreur retournee par Supabase et affichait "recu envoye" meme en cas d'echec silencieux (ex: colonne `image_url` pas encore creee). Corrige pour verifier l'erreur et afficher le vrai statut.
+
+**SQL a executer (dans cet ordre), statut a confirmer par Kader :**
+1. `supabase_messages_images.sql` (colonne `messages.image_url`)
+2. `supabase_declarations_moyen_generique.sql` (elargit la contrainte `moyen` de `declarations_paiement`)
+
+**A tester par Kader :** thème clair sur ecrans avec compte connecte, bouton paiement simplifie (photo + declaration seulement), envoi du recu via "Enregistrer + Recu".
+
+
 - `send-push`, `daily-reminders`, `haby-chat` (Gemini)
 - `cinetpay-init` / `cinetpay-webhook` : paiement en ligne -- **PAS ENCORE CONFIGURE**, cle CinetPay manquante. C'est la prochaine grosse etape.
 - `cagnotte-contribute` : point d'entree public pour les contributions

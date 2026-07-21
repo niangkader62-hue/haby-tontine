@@ -1,3 +1,8 @@
+-- ATTENTION : NE PAS RELANCER CE FICHIER SEUL. Les policies groupes_select et
+-- membres_select ci-dessous font une sous-requete croisee groupes<->membres qui
+-- provoque une boucle infinie RLS (deja arrive). Elles sont corrigees pour de bon
+-- dans supabase_fix_liaison_v2.sql (utilise is_owner_of/is_membre_of) -- c'est ce
+-- fichier corrige (ou SCHEMA_COMPLET.sql en entier) qu'il faut lancer.
 -- A coller dans un nouvel onglet SQL Editor -> RUN
 -- Sans danger : n'efface rien
 

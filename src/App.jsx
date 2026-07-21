@@ -779,6 +779,10 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
         <span style={{color:"#6B7280",fontSize:12}}>Versements recus</span>
         <span style={{color:"#22C55E",fontWeight:700,fontSize:12}}>{fmtFCFA(m.versements||0)}</span>
       </div>
+      {m.dette>0&&<div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+        <span style={{color:"#EF4444",fontSize:12}}>Dette (cycles precedents)</span>
+        <span style={{color:"#EF4444",fontWeight:700,fontSize:12}}>{fmtFCFA(m.dette)}</span>
+      </div>}
     </div>
     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
       <button onClick={onWA} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"8px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>WhatsApp</button>
@@ -822,6 +826,10 @@ const MembreRowLecture = ({m,montant}) => (
         <span style={{color:"#6B7280",fontSize:12}}>Versements recus</span>
         <span style={{color:"#22C55E",fontWeight:700,fontSize:12}}>{fmtFCFA(m.versements||0)}</span>
       </div>
+      {m.dette>0&&<div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+        <span style={{color:"#EF4444",fontSize:12}}>Dette (cycles precedents)</span>
+        <span style={{color:"#EF4444",fontWeight:700,fontSize:12}}>{fmtFCFA(m.dette)}</span>
+      </div>}
     </div>
   </div>
 );
@@ -1107,7 +1115,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     doc.setFontSize(11);doc.text(`Genere le ${new Date().toLocaleDateString("fr-FR")}`,14,y);y+=12;
     doc.setFontSize(13);doc.text(`Bilan - Cycle ${groupe.cycle}/${groupe.totalCycles}`,14,y);y+=8;
     doc.setFontSize(10);
-    [["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres a jour",`${aJourP.length}/${groupe.membres.length}`],["Cycles restants",String(groupe.totalCycles-groupe.cycle)]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
+    [["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres a jour",`${aJourP.length}/${groupe.membres.length}`],["Cycles restants",String(groupe.totalCycles-groupe.cycle)],["Dettes cumulees (cycles precedents)",fmtFCFA(groupe.membres.reduce((s,m)=>s+(m.dette||0),0))]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
     y+=6;
     doc.setFontSize(13);doc.text("Suivi par membre",14,y);y+=8;
     doc.setFontSize(10);
@@ -1353,7 +1361,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>
         <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:16,padding:16,marginBottom:14}}>
           <p style={{color:"#FF6B00",fontWeight:800,margin:"0 0 14px",fontSize:15}}>Bilan - Cycle {groupe.cycle}/{groupe.totalCycles}</p>
-          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJourP.length}/${groupe.membres.length}`],["Cycles restants",groupe.totalCycles-groupe.cycle]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #E5E7EB"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#111827",fontWeight:700,fontSize:13}}>{v}</span></div>)}
+          {[["Total collecte ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres a jour",`${aJourP.length}/${groupe.membres.length}`],["Cycles restants",groupe.totalCycles-groupe.cycle],["Dettes cumulees (cycles precedents)",fmtFCFA(groupe.membres.reduce((s,m)=>s+(m.dette||0),0))]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #E5E7EB"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#111827",fontWeight:700,fontSize:13}}>{v}</span></div>)}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
         {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #E5E7EB"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#111827",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{fmtFCFA((m.cyclesPaies||0)*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies||0}/{groupe.totalCycles} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
@@ -1690,7 +1698,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         const path=`prets/${groupe.id}/${newPret.membreId}-${Date.now()}.jpg`;
         const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
         if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
-      }catch{}
+      }catch{onToast("Photo non envoyee, le pret est quand meme enregistre","error");}
     }
     const {data,error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:newPret.membreId,montant:Number(newPret.montant),taux_interet:Number(newPret.taux)||0,date_echeance:newPret.echeance||null,statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString()}).select().single();
     setPretBusy(false);
@@ -1714,7 +1722,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         const path=`prets/${groupe.id}/${accepterM.membre_id}-${Date.now()}.jpg`;
         const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
         if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
-      }catch{}
+      }catch{onToast("Photo non envoyee, le pret est quand meme verse","error");}
     }
     const {error}=await supabase.from("prets").update({statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString(),taux_interet:Number(accepterTaux)||0,date_echeance:accepterEcheance||null}).eq("id",accepterM.id);
     setPretBusy(false);
@@ -1767,7 +1775,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     doc.setFontSize(11);doc.text(`Genere le ${new Date().toLocaleDateString("fr-FR")}`,14,y);y+=12;
     doc.setFontSize(13);doc.text(`Bilan - Cycle ${groupe.cycle}/${groupe.totalCycles}`,14,y);y+=8;
     doc.setFontSize(10);
-    [["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",String(groupe.totalCycles-groupe.cycle)]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
+    [["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux de ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",String(groupe.totalCycles-groupe.cycle)],["Dettes cumulees (cycles precedents)",fmtFCFA(groupe.membres.reduce((s,m)=>s+(m.dette||0),0))]].forEach(([l,v])=>{doc.text(`${l} : ${v}`,14,y);y+=7;});
     y+=6;
     doc.setFontSize(13);doc.text("Suivi par membre",14,y);y+=8;
     doc.setFontSize(10);
@@ -2050,7 +2058,7 @@ THT - Tontine Habi Traore`;
         const path=`versements/${groupe.id}/${versM.id}-${Date.now()}.jpg`;
         const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
         if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
-      }catch{}
+      }catch{onToast("Photo non envoyee, le versement est quand meme enregistre","error");}
     }
     await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,recu_envoye:mode==="partager"});
     setGroupe(g=>({...g,
@@ -2447,7 +2455,7 @@ THT - Tontine Habi Traore`;
       {tab==="rapport"&&<div style={{padding:"14px 16px 0"}}>
         <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:16,padding:16,marginBottom:14}}>
           <p style={{color:"#FF6B00",fontWeight:800,margin:"0 0 14px",fontSize:15}}>Bilan - Cycle {groupe.cycle}/{groupe.totalCycles}</p>
-          {[["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #E5E7EB"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#111827",fontWeight:700,fontSize:13}}>{v}</span></div>)}
+          {[["Total collecté ce cycle",fmtFCFA(collecte)],["Total cotisations (calcul auto)",fmtFCFA(cagnotteTour)],["Caisse sociale",fmtFCFA(groupe.caisseSociale)],["Taux ponctualite",`${taux}%`],["Membres à jour",`${aJour.length}/${groupe.membres.length}`],["Prochain tour",groupe.prochainTour],["Cycles restants",groupe.totalCycles-groupe.cycle],["Total fin de cycle",fmtFCFA(groupe.membres.reduce((s,m)=>s+montantDu(m),0)*groupe.totalCycles)],["Dettes cumulees (cycles precedents)",fmtFCFA(groupe.membres.reduce((s,m)=>s+(m.dette||0),0))]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #E5E7EB"}}><span style={{color:"#6B7280",fontSize:13}}>{l}</span><span style={{color:"#111827",fontWeight:700,fontSize:13}}>{v}</span></div>)}
         </div>
         <p style={{color:"#6B7280",fontSize:12,fontWeight:700,marginBottom:8}}>SUIVI PAR MEMBRE</p>
         {groupe.membres.map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #E5E7EB"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Avatar prenom={m.prenom} size={32}/><p style={{margin:0,color:"#111827",fontSize:13}}>{m.prenom}</p></div><div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{fmtFCFA(m.cyclesPaies*montantDu(m))}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.cyclesPaies}/{m.cyclesTotal} cycles{m.montantPerso?` - ${fmtFCFA(m.montantPerso)}/cycle`:""}</p></div></div>)}
@@ -3761,7 +3769,7 @@ function AppInner() {
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
         numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,
-        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,score:m.score||80,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur})),
+        membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,score:m.score||80,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur,dette:Number(m.dette)||0})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
         elections:(elections||[]).map(e=>({...e,dejaVote:(mesVotes||[]).some(v=>v.election_id===e.id)})),
@@ -3781,7 +3789,7 @@ function AppInner() {
       const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
-      const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur}));
+      const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur,dette:Number(m.dette)||0}));
       const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+((m.montantPerso??Number(g.montant)??0)),0)+(Number(g.montant_initial)||0);
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {

@@ -2,6 +2,13 @@
 -- CHECKLIST DE SUIVI DES VERSEMENTS + ROLE COLLECTEUR — sans danger
 -- A coller dans un NOUVEL onglet Supabase SQL Editor -> RUN
 -- ============================================================
+-- ATTENTION : NE PAS RELANCER CE FICHIER SEUL. La policy "membres_update"
+-- ci-dessous fait une sous-requete directe sur la table membres, ce qui
+-- provoque une boucle infinie RLS ("Versement impossible"). Elle est
+-- corrigee pour de bon dans supabase_fix_collecteur_recursion.sql (fonction
+-- is_collecteur_of) -- c'est ce fichier corrige (ou SCHEMA_COMPLET.sql en
+-- entier) qu'il faut lancer.
+-- ============================================================
 
 -- 1) Chaque versement peut avoir une photo de preuve (argent recu en main propre,
 --    depot Orange Money/Wave...) et un suivi "recu envoye au client"

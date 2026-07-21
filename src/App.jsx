@@ -1970,7 +1970,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const addM=async()=>{
     if(pickerBusyRef.current)return;
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prénom et téléphone requis","error");
-    if(user.plan==="free"&&groupe.membres.length>=15){setShowAdd(false);setShowUpgrade(true);return;}
+    if(user.plan==="free"&&user.role!=="admin"&&groupe.membres.length>=15){setShowAdd(false);setShowUpgrade(true);return;}
     pickerBusyRef.current=true;setPickerBusy(true);
     const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length,montant_perso:newM.montantPerso?Number(newM.montantPerso):null};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
@@ -1999,7 +1999,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       .filter(c=>c.prenom.trim()&&c.tel.replace(/\D/g,"").length>=8)
       .filter(c=>{if(dejaTels.has(c.tel)||vus.has(c.tel))return false;vus.add(c.tel);return true;});
     if(candidats.length===0)return onToast("Aucun contact valide (nom + numéro) dans la sélection","error");
-    const placesRestantes=user.plan==="free"?Math.max(0,15-groupe.membres.length):candidats.length;
+    const placesRestantes=(user.plan==="free"&&user.role!=="admin")?Math.max(0,15-groupe.membres.length):candidats.length;
     if(placesRestantes===0){setShowAdd(false);setShowUpgrade(true);return;}
     const aTraiter=candidats.slice(0,placesRestantes);
     const ignoresLimite=candidats.length-aTraiter.length;
@@ -2256,7 +2256,7 @@ THT - Tontine Habi Traore`;
         </div>}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
-          <button onClick={()=>{if(user.plan==="free"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
+          <button onClick={()=>{if(user.plan==="free"&&user.role!=="admin"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
         {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}
         {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</>}
@@ -3377,7 +3377,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           </div>
           <button onClick={partagerCode} style={{width:"100%",background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager mon code sur WhatsApp</button>
         </div>
-        {user.plan==="free"&&<div style={{background:"linear-gradient(135deg,#FEF2F2,#FED7AA)",border:"1px solid #FF6B00",borderRadius:18,padding:18,marginBottom:16}}>
+        {user.plan==="free"&&user.role!=="admin"&&<div style={{background:"linear-gradient(135deg,#FEF2F2,#FED7AA)",border:"1px solid #FF6B00",borderRadius:18,padding:18,marginBottom:16}}>
           <p style={{margin:"0 0 4px",color:"#FF6B00",fontWeight:800,fontSize:16}}>Passer a THT Premium</p>
           <p style={{margin:"0 0 14px",color:"#111827",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
           <div style={{background:"#FFFFFF",borderRadius:12,padding:14,marginBottom:14}}>
@@ -3755,7 +3755,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const handle=async()=>{
     if(!nom.trim())return setErr("Donne un nom a ta tontine");
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
-    if(user.plan==="free"&&user.groupesCount>=1){setErr("");setLimitReached(true);return;}
+    if(user.plan==="free"&&user.role!=="admin"&&user.groupesCount>=1){setErr("");setLimitReached(true);return;}
     setBusy(true);
     const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#FF6B00",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();

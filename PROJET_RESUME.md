@@ -1,5 +1,50 @@
 # THT (Tontine Habi Traore) — Etat complet du projet
 
+## ⭐ MISE A JOUR (21/07/2026) — a lire en priorite
+
+**Deploye et en ligne (commit 586ebda) :**
+- Carrousel d'accueil : les 4 slides sont passes en brun `linear-gradient(135deg,#5C3A00,#8B5A00)`, texte blanc (fini le slide HABY blanc au texte invisible).
+- Paiement (tontines ET cagnottes) : ajout de **Moov Money** (numero a copier) + boutons **"Ouvrir Wave / Orange Money"** qui ouvrent l'appli SI la beneficiaire a colle un vrai **lien de paiement** (Wave "lien de paiement" / Orange "OM Business"). Un lien fabrique a partir d'un simple numero ne marche PAS (Android refuse) et le USSD reste abandonne — decision confirmee.
+- Reçu : ajout de l'**heure** + correction d'un vrai bug (textes blancs invisibles sur fond blanc du reçu).
+- Date + heure : deja affichees sur l'historique et le Suivi.
+
+**SQL — statut :**
+- `supabase_moov_et_liens_paiement.sql` : **DEJA EXECUTE** par Kader (colonnes `numero_moov_money`, `lien_wave`, `lien_orange` sur `groupes` et `cagnottes` ; `moov_money` ajoute a la contrainte de `declarations_paiement`).
+- `supabase_prets_votes.sql` : **PAS ENCORE EXECUTE** — a lancer avant la Tache 1 ci-dessous.
+
+**A FAIRE ENSUITE (idealement sur ordinateur avec Claude Code, pour tester avec plusieurs comptes) :**
+
+1. **Vote democratique des prets** (PAS commence cote code — seulement le SQL est pret).
+   - Executer `supabase_prets_votes.sql`.
+   - Eligibles = tous les membres SAUF le demandeur. Majorite absolue : OUI gagne si `oui*2 > eligible` ; refuse des que `non*2 >= eligible` (donc 50/50 = refus) ; abstention = Non une fois la majorite atteinte.
+   - OUI gagnant -> la creatrice **verse ensuite avec photo** (circuit `accepterEtVerserPret` INCHANGE). Refus -> statut `refuse`.
+   - UI membre (onglet prets, prets `en_attente`) : compteur (oui/non, x/eligible), gros bouton VERT Oui / ROUGE Non ; le demandeur voit "En attente du vote" ; qui a vote voit son vote.
+   - UI creatrice (section DEMANDES EN ATTENTE) : meme compteur + resultat ; **vote par procuration** = liste des membres pas encore votes avec "Voter Oui/Non" en leur nom (enregistrer `vote_par_admin_id`) ; n'activer "Accepter et verser" que si OUI l'emporte ; auto-refus si refus.
+   - Un helper `calcVotePret(pret, votesList, nbMembres)` est deja concu (voir ci-dessous), a re-implementer.
+   - TESTER avec plusieurs comptes avant de valider.
+
+2. **Reçu AUTOMATIQUE a la confirmation d'une declaration** : quand la creatrice confirme une `declarations_paiement` (creation de la transaction), generer et envoyer le reçu automatiquement (reutiliser `genererRecuImage` + l'envoi de reçu existant). Ajouter sur le bouton de confirmation le rappel : "Verifie que tu as bien reçu l'argent avant de confirmer."
+   - NB important a redire a Kader : une declaration ne credite RIEN toute seule ; seule la confirmation de la creatrice compte. Aucun code ne peut verifier un vrai transfert Orange/Wave sans l'API PayDunya. La photo est une aide, pas une preuve automatique.
+
+3. **Panneau admin financier (PLUS TARD — premature aujourd'hui, 0 utilisateur reel + PayDunya pas live)** : RBAC (role `admin`/`super_admin` + routes protegees /admin), Revenu Brut vs Net (-1,5 a 2% commission), MRR (abonnements actifs x 1000 FCFA), taux de conversion, churn (rouge si hausse), onglet transactions echouees (date/heure, nom, telephone, motif, bouton WhatsApp de relance + "marquer resolu"). NE PAS creer de widgets vides avant d'avoir les donnees.
+
+Helper de calcul du vote (a re-creer au niveau module) :
+```
+const calcVotePret = (pret, votesList, nbMembres) => {
+  const eligible = Math.max(0, (nbMembres||0) - 1);
+  const vs = votesList || [];
+  const oui = vs.filter(v => v.valeur==="oui").length;
+  const non = vs.filter(v => v.valeur==="non").length;
+  const total = oui + non;
+  const majoriteOui = eligible>0 && oui*2 > eligible;
+  const majoriteNon = eligible>0 && total>0 && non*2 >= eligible;
+  const decision = majoriteOui ? "accepte" : (majoriteNon ? "refuse" : "en_cours");
+  return { eligible, oui, non, total, decision };
+};
+```
+
+---
+
 ## Contexte
 App PWA de gestion de tontines, cagnottes solidaires et epargne pour l'Afrique de l'Ouest francophone (Mali principalement). Nommee en hommage a Habi Traore, la mere de Kader (proprietaire/createur, non-developpeur). Stack : React + Vite (frontend), Supabase (base de donnees + fonctions serveur + stockage), Netlify (hebergement, deploiement automatique sur push vers `main`).
 

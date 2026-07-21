@@ -18,19 +18,19 @@ const genererRecuImage=async({nomTontine,prenom,montantRecu,montantDu,totalVerse
       <p style="margin:4px 0 0;color:#6B7280;font-size:11px;letter-spacing:1px;">TONTINE HABI TRAORE</p>
     </div>
     <div style="padding:28px 40px;">
-      <p style="margin:0 0 4px;color:#FFFFFF;font-size:19px;font-weight:700;text-align:center;">Recu de paiement</p>
+      <p style="margin:0 0 4px;color:#111827;font-size:19px;font-weight:700;text-align:center;">Recu de paiement</p>
       <p style="margin:0 0 24px;color:#6B7280;font-size:12px;text-align:center;">${date} - Ref ${ref}</p>
       <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:16px;padding:20px 22px;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Membre</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${prenom}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Tontine</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${nomTontine}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Cycle</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${cycle} / ${totalCycles}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;"><span style="color:#6B7280;font-size:13px;">Montant du</span><span style="color:#FFFFFF;font-weight:700;font-size:13px;">${montantDu}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Membre</span><span style="color:#111827;font-weight:700;font-size:13px;">${prenom}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Tontine</span><span style="color:#111827;font-weight:700;font-size:13px;">${nomTontine}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB;"><span style="color:#6B7280;font-size:13px;">Cycle</span><span style="color:#111827;font-weight:700;font-size:13px;">${cycle} / ${totalCycles}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;"><span style="color:#6B7280;font-size:13px;">Montant du</span><span style="color:#111827;font-weight:700;font-size:13px;">${montantDu}</span></div>
       </div>
       <div style="background:linear-gradient(135deg,#E5E7EB,#FFFFFF);border:1px solid #FF6B00;border-radius:16px;padding:22px;text-align:center;margin-bottom:16px;">
         <p style="margin:0;color:#9CA89F;font-size:11px;letter-spacing:1px;">MONTANT RECU</p>
         <p style="margin:6px 0 0;color:#FF6B00;font-size:32px;font-weight:900;">${montantRecu}</p>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6B7280;font-size:12px;">Total verse ce cycle</span><span style="color:#FFFFFF;font-size:12px;font-weight:700;">${totalVerse}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6B7280;font-size:12px;">Total verse ce cycle</span><span style="color:#111827;font-size:12px;font-weight:700;">${totalVerse}</span></div>
       <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6B7280;font-size:12px;">Statut</span><span style="color:${statut.includes("PAYE")?"#22C55E":"#FF6B00"};font-size:12px;font-weight:800;">${statut}</span></div>
     </div>
     <div style="padding:16px 40px 30px;text-align:center;border-top:1px solid #E5E7EB;">
@@ -554,12 +554,13 @@ const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0
 // preuve (capture d'ecran de la transaction) est OBLIGATOIRE avant de pouvoir declarer le paiement --
 // ca ne peut pas etre valide sans preuve, exactement comme pour les cagnottes et les versements geres
 // par la creatrice.
-const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,declareLabel,dejaDeclare,busy}) => {
+const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,numeroMoovMoney,lienWave,lienOrange,onDeclarer,declareLabel,dejaDeclare,busy}) => {
   const [preuve,setPreuve]=useState(null);
   const [preuvePreview,setPreuvePreview]=useState(null);
-  if(!numeroOrangeMoney&&!numeroWave)return null;
+  if(!numeroOrangeMoney&&!numeroWave&&!numeroMoovMoney&&!lienWave&&!lienOrange)return null;
   const montantNum=Number(montant)||0;
   const copier=async(txt)=>{try{await navigator.clipboard.writeText(txt);}catch{}};
+  const ouvrirLien=(u)=>{const url=(u||"").trim();if(/^https?:\/\//i.test(url)){window.open(url,"_blank","noopener");}};
   const choisirPreuve=(e)=>{
     const f=e.target.files?.[0];
     if(!f)return;
@@ -580,7 +581,16 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,onDeclarer,
         <p style={{margin:0,color:"#111827",fontSize:12}}>Wave : <b>{numeroWave}</b></p>
         <button onClick={()=>copier(numeroWave)} style={{background:"transparent",border:"none",color:"#2A9DF4",fontWeight:700,fontSize:11,cursor:"pointer"}}>📋 Copier</button>
       </div>}
-      <p style={{margin:"4px 0 10px",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Envoie {montantNum?fmtFCFA(montantNum):"le montant"} toi-même depuis Orange Money ou Wave, puis confirme ci-dessous.</p>
+      {numeroMoovMoney&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#F3F4F6",borderRadius:8,padding:"8px 12px",marginBottom:8}}>
+        <p style={{margin:0,color:"#111827",fontSize:12}}>Moov Money : <b>{numeroMoovMoney}</b></p>
+        <button onClick={()=>copier(numeroMoovMoney)} style={{background:"transparent",border:"none",color:"#F7941E",fontWeight:700,fontSize:11,cursor:"pointer"}}>📋 Copier</button>
+      </div>}
+      {(lienOrange||lienWave)&&<div style={{marginBottom:8}}>
+        <p style={{margin:"0 0 6px",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Ou paie en un tap (ouvre l'application) :</p>
+        {lienOrange&&<button onClick={()=>ouvrirLien(lienOrange)} style={{width:"100%",background:"#FF6B00",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:8}}>🟠 Ouvrir Orange Money pour payer</button>}
+        {lienWave&&<button onClick={()=>ouvrirLien(lienWave)} style={{width:"100%",background:"#1DAEFF",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>🌊 Ouvrir Wave pour payer</button>}
+      </div>}
+      <p style={{margin:"4px 0 10px",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Envoie {montantNum?fmtFCFA(montantNum):"le montant"} toi-même depuis ton application (Orange Money, Wave ou Moov), puis confirme ci-dessous.</p>
       {onDeclarer&&<label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:10,padding:preuvePreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden",marginBottom:10}}>
         <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>
         {preuvePreview?<img src={preuvePreview} alt="Preuve" style={{width:"100%",maxHeight:180,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Capture d'écran du paiement (obligatoire)</span>}
@@ -869,10 +879,10 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
       </div>
       {nbRet>0&&<div style={{margin:"14px 16px 0",background:"#FEF2F2",border:"1px solid #C1440E",borderRadius:14,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:20}}>⚠️</span><div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>{nbRet} {t("membresEnRetard")}</p><p style={{margin:0,color:"#6B7280",fontSize:12}}>{t("cliquezTontine")}</p></div></div>}
       <Carousel slides={[
-        {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#E5E7EB,#D1D5DB)",onClick:onProfil},
+        {titre:"Invite tes proches",texte:"Parraine tes amis et ta famille sur THT",emoji:"🤝",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onProfil},
         {titre:"Cagnottes solidaires",texte:"Mariage, santé, études... crée un lien de contribution",emoji:"🎁",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onOpenCagnottes},
-        {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#FFFFFF,#E5E7EB)",onClick:onOpenHaby},
-        {titre:"Versements securises",texte:"Photo de preuve a chaque cotisation enregistree",emoji:"📸",bg:"linear-gradient(135deg,#3D2B00,#6B4A00)"},
+        {titre:"HABY, ton assistante",texte:"Une question sur tes finances ? Demande-lui",emoji:"🤖",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)",onClick:onOpenHaby},
+        {titre:"Versements securises",texte:"Photo de preuve a chaque cotisation enregistree",emoji:"📸",bg:"linear-gradient(135deg,#5C3A00,#8B5A00)"},
       ]}/>
       <div style={{padding:"20px 16px 0"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
@@ -1168,11 +1178,14 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
             </div>
           </div>}
         </div>}
-        {groupe.moi&&!groupe.moi.paye&&(groupe.numeroOrangeMoney||groupe.numeroWave)&&
+        {groupe.moi&&!groupe.moi.paye&&(groupe.numeroOrangeMoney||groupe.numeroWave||groupe.numeroMoovMoney||groupe.lienWave||groupe.lienOrange)&&
           <BoutonsPaiementMobile
             montant={groupe.moi.montantPerso??groupe.montant}
             numeroOrangeMoney={groupe.numeroOrangeMoney}
             numeroWave={groupe.numeroWave}
+            numeroMoovMoney={groupe.numeroMoovMoney}
+            lienWave={groupe.lienWave}
+            lienOrange={groupe.lienOrange}
             onDeclarer={(moyen,preuve)=>declarerPaiement(moyen,preuve)}
             dejaDeclare={!!declarationEnAttente}
             busy={declareBusy}
@@ -1417,7 +1430,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [evtM,setEvtM]=useState(null);
   const [evtTxt,setEvtTxt]=useState("");
   const [showEdit,setShowEdit]=useState(false);
-  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence,dateEcheance:gInit.dateEcheance||"",numeroOrangeMoney:gInit.numeroOrangeMoney||"",numeroWave:gInit.numeroWave||""});
+  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence,dateEcheance:gInit.dateEcheance||"",numeroOrangeMoney:gInit.numeroOrangeMoney||"",numeroWave:gInit.numeroWave||"",numeroMoovMoney:gInit.numeroMoovMoney||"",lienWave:gInit.lienWave||"",lienOrange:gInit.lienOrange||""});
   const [editBusy,setEditBusy]=useState(false);
   const [tirages,setTirages]=useState([]);
   const [tirageAnim,setTirageAnim]=useState(false);
@@ -1465,11 +1478,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!editG.nom.trim())return onToast("Le nom est requis","error");
     if(!editG.montant||Number(editG.montant)<500)return onToast("Montant minimum 500 FCFA","error");
     setEditBusy(true);
-    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null,numero_orange_money:editG.numeroOrangeMoney.trim()||null,numero_wave:editG.numeroWave.trim()||null}).eq("id",groupe.id);
+    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null,numero_orange_money:editG.numeroOrangeMoney.trim()||null,numero_wave:editG.numeroWave.trim()||null,numero_moov_money:editG.numeroMoovMoney.trim()||null,lien_wave:editG.lienWave.trim()||null,lien_orange:editG.lienOrange.trim()||null}).eq("id",groupe.id);
     setEditBusy(false);
     if(error)return onToast("Modification impossible","error");
-    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null}));
-    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null});
+    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null}));
+    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null});
     setShowEdit(false);onToast("Tontine modifiée !");
   };
 
@@ -1966,7 +1979,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         nomTontine:groupe.nom,prenom:histoM.prenom,montantRecu:fmtFCFA(h.montant),montantDu:fmtFCFA(montantDu(histoM)),
         totalVerse:fmtFCFA(h.montant),statut:h.statut==="paye"?"PAYE CE CYCLE":"VERSEMENT PARTIEL",
         cycle:h.cycle||groupe.cycle,totalCycles:groupe.totalCycles,
-        ref,date:d.toLocaleDateString("fr-FR")
+        ref,date:d.toLocaleDateString("fr-FR")+(h.heure?" à "+h.heure:"")
       });
       const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${histoM.prenom} - ${groupe.nom}`);
       onToast(shared?"Reçu prêt à partager !":"Recu telecharge ! Envoie-le depuis tes fichiers.");
@@ -2054,7 +2067,7 @@ THT - Tontine Habi Traore`;
       const blob=await genererRecuImage({
         nomTontine:groupe.nom,prenom:versM.prenom,montantRecu:fmtFCFA(amt),montantDu:fmtFCFA(montantDu(versM)),
         totalVerse:fmtFCFA(newVersements),statut:paye?"PAYE CE CYCLE":"VERSEMENT PARTIEL",cycle:groupe.cycle,totalCycles:groupe.totalCycles,
-        ref,date:now.toLocaleDateString("fr-FR")
+        ref,date:now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
       });
       if(mode==="partager"){
         const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${versM.prenom} - ${groupe.nom}`);
@@ -2606,6 +2619,10 @@ THT - Tontine Habi Traore`;
         <Fld label="Date d'échéance (prochain versement)"><Inp value={editG.dateEcheance} onChange={e=>setEditG(g=>({...g,dateEcheance:e.target.value}))} type="date"/></Fld>
         <Fld label="Numéro Orange Money (optionnel)"><Inp value={editG.numeroOrangeMoney} onChange={e=>setEditG(g=>({...g,numeroOrangeMoney:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
         <Fld label="Numéro Wave (optionnel)"><Inp value={editG.numeroWave} onChange={e=>setEditG(g=>({...g,numeroWave:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
+        <Fld label="Numéro Moov Money (optionnel)"><Inp value={editG.numeroMoovMoney} onChange={e=>setEditG(g=>({...g,numeroMoovMoney:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 60123456" inputMode="tel"/></Fld>
+        <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,padding:"10px 12px",marginBottom:10}}><p style={{margin:0,color:"#9A5B00",fontSize:11,lineHeight:1.5}}>💡 Liens de paiement (optionnel) : génère un <b>lien de paiement Wave</b> depuis ton appli Wave, ou un lien <b>OM Business</b> depuis Orange Money, et colle-le ici. Les membres pourront payer en ouvrant directement l'application. Teste le lien sur ton téléphone avant de t'y fier.</p></div>
+        <Fld label="Lien de paiement Orange Money (optionnel)"><Inp value={editG.lienOrange} onChange={e=>setEditG(g=>({...g,lienOrange:e.target.value}))} placeholder="https://..." inputMode="url"/></Fld>
+        <Fld label="Lien de paiement Wave (optionnel)"><Inp value={editG.lienWave} onChange={e=>setEditG(g=>({...g,lienWave:e.target.value}))} placeholder="https://pay.wave.com/..." inputMode="url"/></Fld>
         <p style={{color:"#6B7280",fontSize:11,margin:"-8px 0 14px",lineHeight:1.5}}>Renseigne ces numéros pour afficher les boutons de paiement direct aux membres. L'argent part directement sur ces numéros, jamais sur l'app.</p>
         <Btn onClick={saveEdit} disabled={editBusy}>{editBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
@@ -3408,7 +3425,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
           <Fld label="Ton nom (optionnel)"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Diallo" maxLength={30}/></Fld>
           <Fld label="Ton numéro (optionnel)"><PhoneInput value={tel} onChange={setTel}/></Fld>
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
-          <BoutonsPaiementMobile montant={montant} numeroOrangeMoney={cagnotte.numero_orange_money} numeroWave={cagnotte.numero_wave}/>
+          <BoutonsPaiementMobile montant={montant} numeroOrangeMoney={cagnotte.numero_orange_money} numeroWave={cagnotte.numero_wave} numeroMoovMoney={cagnotte.numero_moov_money} lienWave={cagnotte.lien_wave} lienOrange={cagnotte.lien_orange}/>
           <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
             <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
               <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>
@@ -3432,15 +3449,18 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
   const [notifBusy,setNotifBusy]=useState(false);
   const [numOM,setNumOM]=useState(cInit.numero_orange_money||"");
   const [numWave,setNumWave]=useState(cInit.numero_wave||"");
+  const [numMoov,setNumMoov]=useState(cInit.numero_moov_money||"");
+  const [lienW,setLienW]=useState(cInit.lien_wave||"");
+  const [lienO,setLienO]=useState(cInit.lien_orange||"");
   const [numBusy,setNumBusy]=useState(false);
 
   const saveNumeros=async()=>{
     setNumBusy(true);
-    const {error}=await supabase.from("cagnottes").update({numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null}).eq("id",cagnotte.id);
+    const {error}=await supabase.from("cagnottes").update({numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null,numero_moov_money:numMoov.trim()||null,lien_wave:lienW.trim()||null,lien_orange:lienO.trim()||null}).eq("id",cagnotte.id);
     setNumBusy(false);
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
-    setCagnotte(c=>({...c,numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null}));
-    onUpdate(cagnotte.id,{numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null});
+    setCagnotte(c=>({...c,numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null,numero_moov_money:numMoov.trim()||null,lien_wave:lienW.trim()||null,lien_orange:lienO.trim()||null}));
+    onUpdate(cagnotte.id,{numero_orange_money:numOM.trim()||null,numero_wave:numWave.trim()||null,numero_moov_money:numMoov.trim()||null,lien_wave:lienW.trim()||null,lien_orange:lienO.trim()||null});
     onToast("Numéros de réception enregistrés !");
   };
 
@@ -3524,6 +3544,9 @@ const CagnotteScreen = ({cagnotte:cInit,user,onBack,onToast,onUpdate,onDelete}) 
         <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:11,lineHeight:1.5}}>Affichés aux contributeurs comme boutons de paiement direct. L'argent part directement sur ces numéros, jamais sur l'app.</p>
         <Fld label="Numéro Orange Money (optionnel)"><Inp value={numOM} onChange={e=>setNumOM(e.target.value.replace(/[^\d+]/g,""))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
         <Fld label="Numéro Wave (optionnel)"><Inp value={numWave} onChange={e=>setNumWave(e.target.value.replace(/[^\d+]/g,""))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
+        <Fld label="Numéro Moov Money (optionnel)"><Inp value={numMoov} onChange={e=>setNumMoov(e.target.value.replace(/[^\d+]/g,""))} placeholder="Ex: 60123456" inputMode="tel"/></Fld>
+        <Fld label="Lien de paiement Orange Money (optionnel)"><Inp value={lienO} onChange={e=>setLienO(e.target.value)} placeholder="https://..." inputMode="url"/></Fld>
+        <Fld label="Lien de paiement Wave (optionnel)"><Inp value={lienW} onChange={e=>setLienW(e.target.value)} placeholder="https://pay.wave.com/..." inputMode="url"/></Fld>
         <button onClick={saveNumeros} disabled={numBusy} style={{width:"100%",background:"transparent",border:"1px solid #FF6B00",borderRadius:10,padding:"9px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>{numBusy?"Enregistrement...":"Enregistrer"}</button>
       </div>
       <div style={{padding:"20px 16px 0"}}>
@@ -3625,7 +3648,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     const {data:moi}=await supabase.from("membres").insert({groupe_id:data.id,prenom:s(user.prenom)+" (moi)",tel:user.tel,quartier:"",photo_url:user.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:0,user_id:user.id}).select().single();
     setBusy(false);
     const moiMembre=moi?{id:moi.id,userId:user.id,prenom:moi.prenom,tel:moi.tel,quartier:"",photo:moi.photo_url,paye:false,score:80,versements:0,cyclesPaies:0,cyclesTotal:12,evenement:null}:null;
-    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,montantInitial:Number(data.montant_initial)||0,numeroOrangeMoney:data.numero_orange_money||null,numeroWave:data.numero_wave||null,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
+    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,montantInitial:Number(data.montant_initial)||0,numeroOrangeMoney:data.numero_orange_money||null,numeroWave:data.numero_wave||null,numeroMoovMoney:data.numero_moov_money||null,lienWave:data.lien_wave||null,lienOrange:data.lien_orange||null,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
     onClose();
   };
   if(limitReached)return <Modal onClose={onClose}>
@@ -3737,7 +3760,7 @@ function AppInner() {
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
-        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,
+        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,
         membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,score:m.score||80,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
@@ -3765,7 +3788,7 @@ function AppInner() {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
-        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,
+        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,
         prochainTour:gagnant?gagnant.prenom:"A tirer au sort",
         membres:mm,
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),

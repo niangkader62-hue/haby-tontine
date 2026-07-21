@@ -106,7 +106,9 @@ Depot : `niangkader62-hue/haby-tontine`. Site : `https://haby-tontine.netlify.ap
 - Error Boundary React, audit ESLint (`no-undef`/`no-redeclare`) systematique avant chaque push
 - Performance : jsPDF et html2canvas charges a la demande
 
-## Paiement mobile direct (session la plus recente)
+## Paiement mobile direct (ANCIENNE section — voir "MISE A JOUR 21/07" en haut)
+
+> ⚠️ SUPERSEDED : la partie "Ouvrir l'appli" via `intent://` / USSD est **ABANDONNEE**. L'ouverture d'appli passe desormais UNIQUEMENT par un lien de paiement Wave / OM Business colle par la beneficiaire (livre le 21/07). Le texte ci-dessous est conserve pour historique seulement.
 **Fonctionnel et deploye :**
 - Numero Orange Money / Wave configurable sur chaque tontine (creation + Modifier la tontine) et chaque cagnotte (creation + section "Numeros de reception" dans CagnotteScreen)
 - Composant reutilisable `BoutonsPaiementMobile` (definie juste apres `ErrBox`) : affiche le numero du beneficiaire, boutons de redirection, et si `onDeclarer` est fourni, exige une photo de preuve avant de pouvoir declarer
@@ -153,7 +155,7 @@ Prepare par Claude Code (session ordinateur de Kader, sans acces push GitHub dir
 
 
 - `send-push`, `daily-reminders`, `haby-chat` (Gemini)
-- `cinetpay-init` / `cinetpay-webhook` : paiement en ligne -- **PAS ENCORE CONFIGURE**, cle CinetPay manquante. C'est la prochaine grosse etape.
+- `cinetpay-init` / `cinetpay-webhook` : **ecarte** (CinetPay deprioritise — liquidite/legal 2025-2026). Le paiement en ligne des abonnements passera par **PayDunya** (bloque sur OTP). Voir section 21/07.
 - `cagnotte-contribute` : point d'entree public pour les contributions
 - `admin-reset-data` : remise a zero -- fonctionnelle depuis la correction de la contrainte `votes` (voir plus haut)
 
@@ -166,9 +168,9 @@ Netlify facture au credit (15 credits/deploiement). Regle : grouper plusieurs ch
 Workflow token GitHub : Kader cree un Personal Access Token (classic, scope "repo" uniquement, expiration courte) a chaque session ou un push est necessaire, le colle dans le chat, puis le revoque une fois le push confirme.
 
 ## Ce qui reste a faire (par priorite)
-1. **Deep link Orange Money/Wave** : decider si on pousse la tentative 3 (syntaxe `intent://` corrigee) ou si on abandonne l'auto-ouverture au profit du "Copier le numero" seul -- voir section dediee plus haut
-2. **CinetPay** : creation du compte marchand par Kader (cinetpay.com), puis integration reelle des paiements en ligne
-3. **PayDunya** : creation de compte bloquee sur reception du code OTP -- alternative preferee a CinetPay (liquidite), a reprendre
+1. **Vote democratique des prets** + **Reçu automatique a la confirmation** — voir section "MISE A JOUR 21/07" en haut (SQL `prets_votes` pret, code a faire dans Claude Code, tester avec plusieurs comptes).
+2. **Deep link / USSD Orange Money/Wave : ABANDONNE (point clos).** L'auto-ouverture d'appli passe UNIQUEMENT par un vrai lien de paiement Wave / OM Business colle par la beneficiaire (deja livre le 21/07). Ne pas retenter la syntaxe `intent://` ni le USSD.
+3. **PayDunya** (retenu ; CinetPay ecarte — liquidite/legal 2025-2026) : creation de compte bloquee sur OTP, a reprendre. Prerequis du panneau admin financier.
 4. Bouton annuler/modifier un versement mal confirme (design a valider, voir section dediee)
 5. Verifier configuration Supabase des rappels automatiques (cron + secrets, voir section dediee)
 6. Suivi de la caisse sociale par membre individuel (actuellement solde global gere par la creatrice uniquement)

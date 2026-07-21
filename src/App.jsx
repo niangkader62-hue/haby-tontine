@@ -78,6 +78,18 @@ const compressImage = (file, maxDim = 1024, quality = 0.82) => new Promise((reso
   img.src = url;
 });
 
+const calcVotePret = (pret, votesList, nbMembres) => {
+  const eligible = Math.max(0, (nbMembres||0) - 1);
+  const vs = votesList || [];
+  const oui = vs.filter(v => v.valeur==="oui").length;
+  const non = vs.filter(v => v.valeur==="non").length;
+  const total = oui + non;
+  const majoriteOui = eligible>0 && oui*2 > eligible;
+  const majoriteNon = eligible>0 && total>0 && non*2 >= eligible;
+  const decision = majoriteOui ? "accepte" : (majoriteNon ? "refuse" : "en_cours");
+  return { eligible, oui, non, total, decision };
+};
+
 const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
 const sPhone = (p) => String(p).replace(/[^\d+\s]/g, "").slice(0, 16);
 const sPin = (p) => String(p).replace(/\D/g, "").slice(0, 4);
@@ -992,6 +1004,24 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       supabase.functions.invoke("send-push",{body:{user_id:groupe.createurUserId,title:"THT - Demande de pret",body:`${user.prenom} demande un pret de ${fmtFCFA(Number(pretMontant))} pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
     }
   };
+  const [pretsVotes,setPretsVotes]=useState({});
+  const [voteBusy,setVoteBusy]=useState(null);
+  useEffect(()=>{
+    supabase.from("prets_votes").select("*").eq("groupe_id",groupe.id).then(({data})=>{
+      const parPret={};
+      (data||[]).forEach(v=>{(parPret[v.pret_id]=parPret[v.pret_id]||[]).push(v);});
+      setPretsVotes(parPret);
+    });
+  },[groupe.id]);
+  const voterPret=async(pret,valeur)=>{
+    if(!groupe.moi?.id)return;
+    setVoteBusy(pret.id);
+    const {data,error}=await supabase.from("prets_votes").insert({pret_id:pret.id,groupe_id:groupe.id,voter_membre_id:groupe.moi.id,valeur}).select().single();
+    setVoteBusy(null);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    setPretsVotes(pv=>({...pv,[pret.id]:[...(pv[pret.id]||[]),data]}));
+    onToast(valeur==="oui"?"Vote Oui enregistre !":"Vote Non enregistre !");
+  };
   useEffect(()=>{
     if(!groupe.moi?.id)return;
     supabase.from("transactions").select("*").eq("membre_id",groupe.moi.id).order("created_at",{ascending:false}).limit(1).maybeSingle().then(({data})=>{
@@ -1288,6 +1318,24 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
             <p style={{margin:"8px 0 0",color:"#6B7280",fontSize:12}}>{fmtFCFA(p.montant)} demande{p.statut==="en_cours"||p.statut==="rembourse"?` - ${fmtFCFA(Math.max(0,reste))} restant`:""}</p>
             {(p.statut==="en_cours"||p.statut==="rembourse")&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11}}>{p.taux_interet>0?`${p.taux_interet}% d'intérêt`:"Sans intérêt"}{p.date_echeance?` - Échéance : ${new Date(p.date_echeance).toLocaleDateString("fr-FR")}`:""}</p>}
             {p.motif&&<p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11,fontStyle:"italic"}}>{p.motif}</p>}
+            {p.statut==="en_attente"&&(p.membre_id===groupe.moi?.id?(
+              <p style={{margin:"10px 0 0",color:"#FF6B00",fontSize:12,fontWeight:700}}>⏳ En attente du vote des membres</p>
+            ):(()=>{
+              const {eligible,oui,non}=calcVotePret(p,pretsVotes[p.id],groupe.membres.length);
+              const monVote=(pretsVotes[p.id]||[]).find(v=>v.voter_membre_id===groupe.moi?.id);
+              return(<div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #E5E7EB"}}>
+                <div style={{display:"flex",gap:10,marginBottom:8}}>
+                  <span style={{color:"#22C55E",fontSize:12,fontWeight:700}}>✅ {oui}</span>
+                  <span style={{color:"#EF4444",fontSize:12,fontWeight:700}}>❌ {non}</span>
+                  <span style={{color:"#6B7280",fontSize:12}}>sur {eligible} éligible(s)</span>
+                </div>
+                {monVote?<p style={{margin:0,color:"#6B7280",fontSize:12}}>Tu as voté : <b style={{color:monVote.valeur==="oui"?"#22C55E":"#EF4444"}}>{monVote.valeur==="oui"?"Oui":"Non"}</b></p>
+                :<div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>voterPret(p,"oui")} disabled={voteBusy===p.id} style={{flex:1,background:"#22C55E",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>✅ Oui</button>
+                  <button onClick={()=>voterPret(p,"non")} disabled={voteBusy===p.id} style={{flex:1,background:"#EF4444",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>❌ Non</button>
+                </div>}
+              </div>);
+            })())}
           </div>
         );})}
       </div>}
@@ -1622,11 +1670,27 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     setGroupe(g=>({...g,cagnotte:g.cagnotte+amt,membres:g.membres.map(m=>m.id===membre.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)}));
     setDeclarations(ds=>ds.filter(x=>x.id!==d.id));
     loadSuivi();
-    setDeclBusy(null);
     onToast("Paiement confirmé !");
     if(membre.userId){
       supabase.functions.invoke("send-push",{body:{user_id:membre.userId,title:"THT - Paiement confirmé",body:`Ton paiement de ${fmtFCFA(amt)} pour "${groupe.nom}" a été confirmé.`,url:`/?g=${groupe.id}&tab=membres`}}).catch(()=>{});
+      try{
+        const now=new Date();
+        const ref=`THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${membre.id.slice(-4).toUpperCase()}`;
+        const blob=await genererRecuImage({
+          nomTontine:groupe.nom,prenom:membre.prenom,montantRecu:fmtFCFA(amt),montantDu:fmtFCFA(montantDu(membre)),
+          totalVerse:fmtFCFA(newVersements),statut:paye?"PAYE CE CYCLE":"VERSEMENT PARTIEL",cycle:groupe.cycle,totalCycles:groupe.totalCycles,
+          ref,date:now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
+        });
+        const path=`recus/${groupe.id}/${membre.id}-${Date.now()}.png`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/png",upsert:true});
+        if(!upErr){
+          const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
+          const {error:msgErr}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",image_url:pub.publicUrl,destinataire_user_id:membre.userId});
+          if(!msgErr)notifyMessage([membre.userId],user.prenom,false,`/?g=${groupe.id}&tab=social&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`);
+        }
+      }catch{}
     }
+    setDeclBusy(null);
   };
   const rejeterDeclaration=async(d)=>{
     setDeclBusy(d.id);
@@ -1738,6 +1802,35 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Demande de pret refusee",body:`Ta demande de pret de ${fmtFCFA(p.montant)} pour "${groupe.nom}" n a pas ete acceptee.`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
     }
   };
+
+  const [pretsVotes,setPretsVotes]=useState({});
+  const [voteBusy,setVoteBusy]=useState(null);
+  const loadPretsVotes=async()=>{
+    const {data}=await supabase.from("prets_votes").select("*").eq("groupe_id",groupe.id);
+    const parPret={};
+    (data||[]).forEach(v=>{(parPret[v.pret_id]=parPret[v.pret_id]||[]).push(v);});
+    setPretsVotes(parPret);
+  };
+  useEffect(()=>{loadPretsVotes();},[groupe.id]);
+  const voterProcuration=async(pret,membre,valeur)=>{
+    setVoteBusy(membre.id);
+    const moiMembre=groupe.membres.find(m=>m.userId===user.id);
+    const {data,error}=await supabase.from("prets_votes").insert({pret_id:pret.id,groupe_id:groupe.id,voter_membre_id:membre.id,valeur,vote_par_admin_id:moiMembre?.id||null}).select().single();
+    setVoteBusy(null);
+    if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    setPretsVotes(pv=>({...pv,[pret.id]:[...(pv[pret.id]||[]),data]}));
+  };
+  const autoRefuseDoneRef=useRef(new Set());
+  useEffect(()=>{
+    prets.filter(p=>p.statut==="en_attente").forEach(p=>{
+      if(autoRefuseDoneRef.current.has(p.id))return;
+      const {decision}=calcVotePret(p,pretsVotes[p.id],groupe.membres.length);
+      if(decision==="refuse"){
+        autoRefuseDoneRef.current.add(p.id);
+        refuserPret(p);
+      }
+    });
+  },[prets,pretsVotes,groupe.membres.length]);
 
   const rembourserPret=async()=>{
     const amt=Number(remboAmt);
@@ -2184,6 +2277,7 @@ THT - Tontine Habi Traore`;
                   </div>
                 </div>
                 {d.photo_url&&<a href={d.photo_url} target="_blank" rel="noreferrer" style={{display:"block",marginBottom:10}}><img src={d.photo_url} alt="Preuve du paiement" style={{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,border:"1px solid #D1D5DB"}}/></a>}
+                <p style={{margin:"0 0 8px",color:"#EF4444",fontSize:11,fontWeight:600,lineHeight:1.4}}>⚠️ Vérifie que tu as bien reçu l'argent avant de confirmer.</p>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>confirmerDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"#FF6B00",border:"none",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>{declBusy===d.id?"...":"✅ Confirmer"}</button>
                   <button onClick={()=>rejeterDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"transparent",border:"1px solid #EF4444",borderRadius:8,padding:"9px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>✕ Rejeter</button>
@@ -2301,10 +2395,31 @@ THT - Tontine Habi Traore`;
           <div key={p.id} style={{background:"#F3F4F6",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:10}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Avatar prenom={m?.prenom||"?"} photo={m?.photo} size={36}/><div><p style={{margin:0,color:"#111827",fontWeight:700,fontSize:14}}>{m?.prenom||"?"}</p><p style={{margin:0,color:"#FF6B00",fontWeight:700,fontSize:13}}>{fmtFCFA(p.montant)}</p></div></div>
             {p.motif&&<p style={{margin:"0 0 10px",color:"#6B7280",fontSize:12,fontStyle:"italic"}}>{p.motif}</p>}
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>{setAccepterM(p);setPretPhoto(null);setPretPhotoPreview(null);}} style={{flex:1,background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:10,padding:"9px",color:"#0D0D0D",fontWeight:800,fontSize:12,cursor:"pointer"}}>Accepter et verser</button>
-              <button onClick={()=>refuserPret(p)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"9px 14px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Refuser</button>
-            </div>
+            {(()=>{
+              const {eligible,oui,non,decision}=calcVotePret(p,pretsVotes[p.id],groupe.membres.length);
+              const votants=new Set((pretsVotes[p.id]||[]).map(v=>v.voter_membre_id));
+              const enAttenteDeVote=groupe.membres.filter(mm=>mm.id!==p.membre_id&&!votants.has(mm.id));
+              return(<>
+                <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+                  <span style={{background:"#FFFFFF",color:"#22C55E",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:8}}>✅ {oui} Oui</span>
+                  <span style={{background:"#FFFFFF",color:"#EF4444",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:8}}>❌ {non} Non</span>
+                  <span style={{background:"#FFFFFF",color:"#6B7280",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:8}}>sur {eligible} éligible(s)</span>
+                </div>
+                {decision==="accepte"&&<div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>{setAccepterM(p);setPretPhoto(null);setPretPhotoPreview(null);}} style={{flex:1,background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:10,padding:"9px",color:"#0D0D0D",fontWeight:800,fontSize:12,cursor:"pointer"}}>✅ Vote favorable - Accepter et verser</button>
+                </div>}
+                {decision==="en_cours"&&enAttenteDeVote.length>0&&<div>
+                  <p style={{margin:"0 0 6px",color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5}}>VOTE PAR PROCURATION (pas encore voté)</p>
+                  {enAttenteDeVote.map(mm=>(
+                    <div key={mm.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                      <p style={{margin:0,color:"#111827",fontSize:12,flex:1}}>{mm.prenom}</p>
+                      <button onClick={()=>voterProcuration(p,mm,"oui")} disabled={voteBusy===mm.id} style={{background:"#22C55E",border:"none",borderRadius:8,padding:"6px 10px",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}}>Voter Oui</button>
+                      <button onClick={()=>voterProcuration(p,mm,"non")} disabled={voteBusy===mm.id} style={{background:"#EF4444",border:"none",borderRadius:8,padding:"6px 10px",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}}>Voter Non</button>
+                    </div>
+                  ))}
+                </div>}
+              </>);
+            })()}
           </div>
         );})}
         {prets.filter(p=>p.statut!=="en_attente").length===0&&prets.filter(p=>p.statut==="en_attente").length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",marginTop:20}}>Aucun pret pour le moment</p>

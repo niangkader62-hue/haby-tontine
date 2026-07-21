@@ -561,6 +561,24 @@ const Btn = ({onClick,children,disabled}) => (
 
 const ErrBox = ({msg}) => msg?<p style={{color:"#EF4444",fontSize:13,margin:"0 0 12px",fontWeight:600,background:"#FEF2F2",padding:"8px 12px",borderRadius:8}}>{msg}</p>:null;
 
+// Selecteur unique Orange Money / Wave / Moov Money : un clic choisit le moyen, un seul champ
+// numero s'affiche a la fois. Au moins un des 3 doit etre rempli pour valider le formulaire parent.
+const SelecteurPaiement = ({numeroOrangeMoney,setNumeroOrangeMoney,numeroWave,setNumeroWave,numeroMoovMoney,setNumeroMoovMoney}) => {
+  const [choix,setChoix]=useState(numeroWave?"wave":numeroMoovMoney?"moov":"orange");
+  const OPTIONS=[["orange","🟠 Orange Money","#FF6B00",numeroOrangeMoney,setNumeroOrangeMoney],["wave","🔵 Wave","#2A9DF4",numeroWave,setNumeroWave],["moov","🟣 Moov Money","#F7941E",numeroMoovMoney,setNumeroMoovMoney]];
+  const actif=OPTIONS.find(([id])=>id===choix);
+  return(
+    <Fld label="Numero de reception - Orange Money, Wave ou Moov Money (obligatoire, au moins un)">
+      <div style={{display:"flex",gap:8,marginBottom:8}}>
+        {OPTIONS.map(([id,label,couleur])=>(
+          <button key={id} type="button" onClick={()=>setChoix(id)} style={{flex:1,background:choix===id?couleur:"#F3F4F6",border:`1px solid ${couleur}`,borderRadius:10,padding:"9px 4px",color:choix===id?"#0D0D0D":couleur,fontWeight:700,fontSize:11,cursor:"pointer"}}>{label}</button>
+        ))}
+      </div>
+      <Inp value={actif[3]} onChange={e=>actif[4](e.target.value.replace(/[^\d+]/g,""))} placeholder="Ex: 70123456" inputMode="tel"/>
+    </Fld>
+  );
+};
+
 // Boutons de paiement mobile (Orange Money / Wave) : affiche le numero du beneficiaire pour un
 // paiement manuel (l'argent ne transite jamais par l'app). Si onDeclarer est fourni, une photo de
 // preuve (capture d'ecran de la transaction) est OBLIGATOIRE avant de pouvoir declarer le paiement --
@@ -3709,14 +3727,16 @@ const ModalCreerCagnotte = ({onClose,onCreate,user}) => {
   const [dateLimite,setDateLimite]=useState("");
   const [numeroOrangeMoney,setNumeroOrangeMoney]=useState("");
   const [numeroWave,setNumeroWave]=useState("");
+  const [numeroMoovMoney,setNumeroMoovMoney]=useState("");
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState("");
 
   const handle=async()=>{
     if(!titre.trim())return setErr("Donne un titre a ta cagnotte");
     if(!objectif||Number(objectif)<1000)return setErr("Objectif minimum 1000 FCFA");
+    if(!numeroOrangeMoney.trim()&&!numeroWave.trim()&&!numeroMoovMoney.trim())return setErr("Ajoute au moins un numero de reception (Orange Money, Wave ou Moov Money)");
     setBusy(true);
-    const payload={user_id:user.id,titre:s(titre.trim()),description:s(description||""),objectif:Number(objectif),beneficiaire:s(beneficiaire||""),date_limite:dateLimite||null,montant_collecte:0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null};
+    const payload={user_id:user.id,titre:s(titre.trim()),description:s(description||""),objectif:Number(objectif),beneficiaire:s(beneficiaire||""),date_limite:dateLimite||null,montant_collecte:0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null,numero_moov_money:numeroMoovMoney.trim()||null};
     const {data,error}=await supabase.from("cagnottes").insert(payload).select().single();
     setBusy(false);
     if(error)return setErr("Erreur technique : "+(error.message||"inconnue"));
@@ -3732,8 +3752,7 @@ const ModalCreerCagnotte = ({onClose,onCreate,user}) => {
       <Fld label="Description (optionnel)"><textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} placeholder="Details de l occasion..." style={{width:"100%",background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px 14px",color:"#111827",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}}/></Fld>
       <Fld label="Objectif (FCFA)"><Inp value={objectif} onChange={e=>setObjectif(e.target.value.replace(/\D/g,""))} placeholder="Ex: 200000" inputMode="numeric"/></Fld>
       <Fld label="Date limite (optionnel)"><Inp value={dateLimite} onChange={e=>setDateLimite(e.target.value)} type="date"/></Fld>
-      <Fld label="Numéro Orange Money (optionnel)"><Inp value={numeroOrangeMoney} onChange={e=>setNumeroOrangeMoney(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les dons" inputMode="tel"/></Fld>
-      <Fld label="Numéro Wave (optionnel)"><Inp value={numeroWave} onChange={e=>setNumeroWave(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les dons" inputMode="tel"/></Fld>
+      <SelecteurPaiement numeroOrangeMoney={numeroOrangeMoney} setNumeroOrangeMoney={setNumeroOrangeMoney} numeroWave={numeroWave} setNumeroWave={setNumeroWave} numeroMoovMoney={numeroMoovMoney} setNumeroMoovMoney={setNumeroMoovMoney}/>
       <ErrBox msg={err}/>
       <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer la cagnotte"}</Btn>
     </Modal>
@@ -3748,6 +3767,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const [montantInitial,setMontantInitial]=useState("");
   const [numeroOrangeMoney,setNumeroOrangeMoney]=useState("");
   const [numeroWave,setNumeroWave]=useState("");
+  const [numeroMoovMoney,setNumeroMoovMoney]=useState("");
   const [err,setErr]=useState("");
   const [busy,setBusy]=useState(false);
   const [limitReached,setLimitReached]=useState(false);
@@ -3755,9 +3775,10 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const handle=async()=>{
     if(!nom.trim())return setErr("Donne un nom a ta tontine");
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
+    if(!numeroOrangeMoney.trim()&&!numeroWave.trim()&&!numeroMoovMoney.trim())return setErr("Ajoute au moins un numero de reception (Orange Money, Wave ou Moov Money)");
     if(user.plan==="free"&&user.role!=="admin"&&user.groupesCount>=1){setErr("");setLimitReached(true);return;}
     setBusy(true);
-    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#FF6B00",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null};
+    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#FF6B00",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null,numero_moov_money:numeroMoovMoney.trim()||null};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
     if(error){setBusy(false);return setErr("Erreur technique : "+(error.message||"inconnue"));}
     const {data:moi}=await supabase.from("membres").insert({groupe_id:data.id,prenom:s(user.prenom)+" (moi)",tel:user.tel,quartier:"",photo_url:user.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:0,user_id:user.id}).select().single();
@@ -3792,8 +3813,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <Fld label="Date d'échéance mensuelle"><Inp value={echeance} onChange={e=>setEcheance(e.target.value)} placeholder="Ex: 2026-07-01" type="date"/></Fld>
     <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#FF6B00":"#E5E7EB",color:freq===f?"#0D0D0D":"#111827",borderColor:freq===f?"#FF6B00":"#D1D5DB"}}>{f}</button>)}</div></Fld>
     <Fld label="Argent déjà collecté avant l'app (optionnel)"><Inp value={montantInitial} onChange={e=>setMontantInitial(e.target.value.replace(/\D/g,""))} placeholder="Ex: 50000 - laisser vide si aucun" inputMode="numeric"/></Fld>
-    <Fld label="Numéro Orange Money (optionnel)"><Inp value={numeroOrangeMoney} onChange={e=>setNumeroOrangeMoney(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les cotisations" inputMode="tel"/></Fld>
-    <Fld label="Numéro Wave (optionnel)"><Inp value={numeroWave} onChange={e=>setNumeroWave(e.target.value.replace(/[^\d+]/g,""))} placeholder="Pour recevoir les cotisations" inputMode="tel"/></Fld>
+    <SelecteurPaiement numeroOrangeMoney={numeroOrangeMoney} setNumeroOrangeMoney={setNumeroOrangeMoney} numeroWave={numeroWave} setNumeroWave={setNumeroWave} numeroMoovMoney={numeroMoovMoney} setNumeroMoovMoney={setNumeroMoovMoney}/>
     <ErrBox msg={err}/>
     <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer ma tontine"}</Btn>
   </Modal>;

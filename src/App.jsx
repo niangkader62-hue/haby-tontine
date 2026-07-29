@@ -102,6 +102,38 @@ const fmtFCFA = (n) => Number(n).toLocaleString("fr-FR") + " FCFA";
 // Base : 15 membres. Bonus de parrainage : +1 membre tous les 5 filleul(e)s qui ont
 // cree un compte avec le code de l'utilisatrice (5 -> 16, 10 -> 17, 15 -> 18...).
 // Le plan Premium et les admins n'ont aucune limite.
+// --- Pastilles "non lu" --------------------------------------------------------
+// Le badge du systeme sur l'icone de l'app (ex: "2") ne dit pas OU regarder une fois
+// l'application ouverte. On garde donc, sur le telephone de chacune, la date de
+// derniere visite de chaque section pour pouvoir afficher une pastille au bon endroit.
+// Stockage local volontaire : c'est propre a l'appareil et ca evite d'ecrire en base
+// a chaque ouverture d'onglet.
+const cleVu = (userId, groupeId, section) => `tht:vu:${userId}:${groupeId}:${section}`;
+
+const dateVu = (userId, groupeId, section) => {
+  try { return localStorage.getItem(cleVu(userId, groupeId, section)) || null; }
+  catch { return null; }
+};
+
+const marquerVu = (userId, groupeId, section) => {
+  try { localStorage.setItem(cleVu(userId, groupeId, section), new Date().toISOString()); }
+  catch { /* mode prive / stockage plein : la pastille restera, sans gravite */ }
+};
+
+// Pastille ronde : un nombre si on sait compter, sinon un simple point d'alerte.
+const Pastille = ({ n, point=false }) => {
+  if (!point && !(n > 0)) return null;
+  const commun = { position:"absolute", top:-5, right:-5, background:"#EF4444", color:"#fff",
+                   borderRadius:99, border:"2px solid #FFFFFF", lineHeight:1, fontWeight:800 };
+  if (point) return <span aria-label="nouveau" style={{...commun, width:12, height:12}}/>;
+  return (
+    <span aria-label={`${n} non lu`} style={{...commun, minWidth:19, height:19, fontSize:10.5,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:"0 4px"}}>
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+};
+
 const LIMITE_MEMBRES_BASE = 15;
 const FILLEULS_PAR_MEMBRE_BONUS = 5;
 const bonusParrainage = (user) => Math.floor((user?.filleulsCount || 0) / FILLEULS_PAR_MEMBRE_BONUS);
@@ -956,7 +988,7 @@ const Carousel = ({slides}) => {
   );
 };
 
-const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation,onOpenHaby,onOpenCagnottes}) => {
+const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations,onSelectParticipation,onOpenHaby,onOpenCagnottes,nonLus={}}) => {
   const totalEp=groupes.reduce((a,g)=>a+g.cagnotte,0);
   const totalCS=groupes.reduce((a,g)=>a+g.caisseSociale,0);
   const nbRet=groupes.reduce((a,g)=>a+g.membres.filter(m=>!m.paye).length,0);
@@ -999,7 +1031,8 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
           const pct=Math.round((g.cycle/g.totalCycles)*100);
           const ret=g.membres.filter(m=>!m.paye).length;
           return(
-            <div key={g.id} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #E5E7EB",cursor:"pointer"}} onClick={()=>onSelectGroupe(g)}>
+            <div key={g.id} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:nonLus[g.id]>0?"1px solid #EF4444":"1px solid #E5E7EB",cursor:"pointer",position:"relative"}} onClick={()=>onSelectGroupe(g)}>
+              <Pastille n={nonLus[g.id]}/>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:12,height:12,borderRadius:"50%",background:g.couleur,flexShrink:0}}/><div><p style={{margin:0,color:"#111827",fontWeight:800,fontSize:15}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{g.membres.length} membres - {g.frequence}</p></div></div>
                 <div style={{textAlign:"right"}}><p style={{margin:0,color:"#FF6B00",fontWeight:800,fontSize:15}}>{fmtFCFA(g.montant)}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>par cotisation</p></div>
@@ -1019,7 +1052,8 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
         <h3 style={{color:"#111827",fontSize:16,fontWeight:800,margin:"0 0 14px"}}>Tontines ou je participe</h3>
         <div className="tht-grid">
         {participations.map(g=>(
-          <div key={g.id} onClick={()=>onSelectParticipation(g)} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #D1D5DB",cursor:"pointer"}}>
+          <div key={g.id} onClick={()=>onSelectParticipation(g)} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:nonLus[g.id]>0?"1px solid #EF4444":"1px solid #D1D5DB",cursor:"pointer",position:"relative"}}>
+            <Pastille n={nonLus[g.id]}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:12,height:12,borderRadius:"50%",background:g.couleur,flexShrink:0}}/><div><p style={{margin:0,color:"#111827",fontWeight:800,fontSize:15}}>{g.nom}</p><p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{g.membres.length} membres - {g.frequence}</p></div></div>
               <span style={{background:g.moi?.paye?"#22C55E":"#C1440E",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:99}}>{g.moi?.paye?"A jour":"En retard"}</span>
@@ -1255,6 +1289,34 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
   const PRIMARY_TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["rapport",t("tabRapport")]];
   const SECONDARY_TABS=[["suivi","Suivi","📋"],["bureau",t("tabBureau"),"🏛️"],["tirage",t("tabTirage"),"🎯"],["prets",t("tabPrets"),"💵"],["reunions",t("tabReunions"),"📝"],["events",t("tabEvenements"),"🎉"],["checklist",t("tabTaches"),"✅"]];
   const inSecondary=SECONDARY_TABS.some(([id])=>id===tab);
+
+  // --- Pastilles "non lu" par section -------------------------------------------
+  // messagesNonLus vient d'une petite requete dediee (on ne charge en memoire que le
+  // fil ouvert) ; les autres compteurs se deduisent des donnees deja chargees.
+  const [messagesNonLus,setMessagesNonLus]=useState(0);
+  const compterMessagesNonLus=useCallback(async()=>{
+    const depuis=dateVu(user.id,groupe.id,"social");
+    let q=supabase.from("messages").select("*",{count:"exact",head:true})
+      .eq("groupe_id",groupe.id).neq("auteur_user_id",user.id)
+      .or(`destinataire_user_id.is.null,destinataire_user_id.eq.${user.id}`);
+    if(depuis)q=q.gt("created_at",depuis);
+    const {count,error}=await q;
+    if(!error)setMessagesNonLus(count||0);
+  },[groupe.id,user.id]);
+  useEffect(()=>{compterMessagesNonLus();},[compterMessagesNonLus]);
+
+  // Quand on ouvre une section, elle est consideree comme vue.
+  useEffect(()=>{
+    marquerVu(user.id,groupe.id,tab);
+    if(tab==="social")setMessagesNonLus(0);
+  },[tab,groupe.id,user.id]);
+
+  // Compteur par onglet (vue membre) : ce sur quoi je dois encore me prononcer.
+  const alertes={
+    social:{n:messagesNonLus},
+    prets:{n:(groupe.prets||[]).filter(p=>p.statut==="en_attente"&&p.membre_id!==groupe.moi?.id&&!(pretsVotes[p.id]||[]).some(v=>v.voter_membre_id===groupe.moi?.id)).length},
+    bureau:{n:(groupe.elections||[]).filter(e=>!e.dejaVote).length},
+  };
   return(
     <div style={{paddingBottom:90}}>
       <div style={{background:"#FFFFFF",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #E5E7EB"}}>
@@ -1269,15 +1331,15 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         ))}
       </div>
       <div style={{display:"flex",gap:6,padding:"14px 16px 0"}}>
-        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#FFFFFF",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#E5E7EB"}}>{lbl}</button>)}
-        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#FFFFFF",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#E5E7EB"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
+        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#FFFFFF",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#E5E7EB",position:"relative"}}>{lbl}{tab!==id&&<Pastille n={alertes[id]?.n} point={alertes[id]?.point}/>}</button>)}
+        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#FFFFFF",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#E5E7EB",position:"relative"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}{!showMoreTabs&&<Pastille n={SECONDARY_TABS.reduce((t2,[id])=>t2+(id===tab?0:(alertes[id]?.n||0)),0)} point={SECONDARY_TABS.some(([id])=>id!==tab&&alertes[id]?.point)&&!SECONDARY_TABS.some(([id])=>id!==tab&&alertes[id]?.n>0)}/>}</button>
       </div>
       {(showMoreTabs||inSecondary)&&<div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5,margin:"0 0 10px"}}>SECTIONS</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
           {SECONDARY_TABS.map(([id,lbl,icon])=>(
             <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0}}>
-              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#FFFFFF",border:tab===id?"none":"1px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{icon}</div>
+              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#FFFFFF",border:tab===id?"none":"1px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,position:"relative"}}>{icon}{tab!==id&&<Pastille n={alertes[id]?.n} point={alertes[id]?.point}/>}</div>
               <span style={{color:tab===id?"#FF6B00":"#6B7280",fontSize:11,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{lbl}</span>
             </button>
           ))}
@@ -2413,6 +2475,35 @@ THT - Tontine Habi Traore`;
   const PRIMARY_TABS=[["membres",t("tabMembres")],["social",t("tabSocial")],["rapport",t("tabRapport")]];
   const SECONDARY_TABS=[["suivi","Suivi","📋"],["bureau",t("tabBureau"),"🏛️"],["tirage",t("tabTirage"),"🎯"],["prets",t("tabPrets"),"💵"],["reunions",t("tabReunions"),"📝"],["events",t("tabEvenements"),"🎉"],["checklist",t("tabTaches"),"✅"]];
   const inSecondary=SECONDARY_TABS.some(([id])=>id===tab);
+
+  // --- Pastilles "non lu" par section -------------------------------------------
+  // messagesNonLus vient d'une petite requete dediee (on ne charge en memoire que le
+  // fil ouvert) ; les autres compteurs se deduisent des donnees deja chargees.
+  const [messagesNonLus,setMessagesNonLus]=useState(0);
+  const compterMessagesNonLus=useCallback(async()=>{
+    const depuis=dateVu(user.id,groupe.id,"social");
+    let q=supabase.from("messages").select("*",{count:"exact",head:true})
+      .eq("groupe_id",groupe.id).neq("auteur_user_id",user.id)
+      .or(`destinataire_user_id.is.null,destinataire_user_id.eq.${user.id}`);
+    if(depuis)q=q.gt("created_at",depuis);
+    const {count,error}=await q;
+    if(!error)setMessagesNonLus(count||0);
+  },[groupe.id,user.id]);
+  useEffect(()=>{compterMessagesNonLus();},[compterMessagesNonLus]);
+
+  // Quand on ouvre une section, elle est consideree comme vue.
+  useEffect(()=>{
+    marquerVu(user.id,groupe.id,tab);
+    if(tab==="social")setMessagesNonLus(0);
+  },[tab,groupe.id,user.id]);
+
+  // Compteur par onglet. Nombre quand c'est comptable, simple point sinon.
+  const alertes={
+    social:{n:messagesNonLus},
+    prets:{n:prets.filter(p=>p.statut==="en_attente").length},
+    membres:{n:declarations.length},
+    tirage:{point:!gagnantCycleActuel&&groupe.membres.length>0&&tab!=="tirage"},
+  };
   return(
     <div style={{paddingBottom:90}}>
       <div style={{background:"#FFFFFF",padding:"44px 16px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #E5E7EB"}}>
@@ -2428,15 +2519,15 @@ THT - Tontine Habi Traore`;
       </div>
       <div style={{margin:"12px 16px 0"}}><button onClick={sendWAG} style={{width:"100%",background:"#075E54",border:"none",borderRadius:12,padding:"12px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>Rappel WhatsApp au groupe complet</button></div>
       <div style={{display:"flex",gap:6,padding:"14px 16px 0"}}>
-        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#FFFFFF",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#E5E7EB"}}>{lbl}</button>)}
-        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#FFFFFF",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#E5E7EB"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}</button>
+        {PRIMARY_TABS.map(([id,lbl])=><button key={id} onClick={()=>{setTab(id);setShowMoreTabs(false);}} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:tab===id?"#FF6B00":"#FFFFFF",color:tab===id?"#0D0D0D":"#6B7280",borderColor:tab===id?"#FF6B00":"#E5E7EB",position:"relative"}}>{lbl}{tab!==id&&<Pastille n={alertes[id]?.n} point={alertes[id]?.point}/>}</button>)}
+        <button onClick={()=>setShowMoreTabs(v=>!v)} style={{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:inSecondary||showMoreTabs?"#FF6B00":"#FFFFFF",color:inSecondary||showMoreTabs?"#0D0D0D":"#6B7280",borderColor:inSecondary||showMoreTabs?"#FF6B00":"#E5E7EB",position:"relative"}}>{inSecondary?SECONDARY_TABS.find(([id])=>id===tab)[1]:"⋯ Plus"}{!showMoreTabs&&<Pastille n={SECONDARY_TABS.reduce((t2,[id])=>t2+(id===tab?0:(alertes[id]?.n||0)),0)} point={SECONDARY_TABS.some(([id])=>id!==tab&&alertes[id]?.point)&&!SECONDARY_TABS.some(([id])=>id!==tab&&alertes[id]?.n>0)}/>}</button>
       </div>
       {(showMoreTabs||inSecondary)&&<div style={{padding:"14px 16px 0"}}>
         <p style={{color:"#6B7280",fontSize:11,fontWeight:700,letterSpacing:.5,margin:"0 0 10px"}}>SECTIONS</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
           {SECONDARY_TABS.map(([id,lbl,icon])=>(
             <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0}}>
-              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#FFFFFF",border:tab===id?"none":"1px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{icon}</div>
+              <div style={{width:56,height:56,borderRadius:"50%",background:tab===id?"#FF6B00":"#FFFFFF",border:tab===id?"none":"1px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,position:"relative"}}>{icon}{tab!==id&&<Pastille n={alertes[id]?.n} point={alertes[id]?.point}/>}</div>
               <span style={{color:tab===id?"#FF6B00":"#6B7280",fontSize:11,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{lbl}</span>
             </button>
           ))}
@@ -4242,6 +4333,9 @@ function AppInner() {
   // Nombre de filleul(e)s ayant cree un compte avec mon code de parrainage.
   // Sert a calculer le bonus de places de membres (voir limiteMembres()).
   const [filleulsCount,setFilleulsCount]=useState(0);
+  // Nombre de messages non lus par tontine, pour afficher une pastille des l'accueil :
+  // le badge du systeme sur l'icone de l'app ne dit pas DANS QUELLE tontine il faut aller.
+  const [nonLusParGroupe,setNonLusParGroupe]=useState({});
   const [selCagnotte,setSelCagnotte]=useState(null);
   const [showCagnotteModal,setShowCagnotteModal]=useState(false);
   const [adminUnlocked,setAdminUnlocked]=useState(false);
@@ -4256,6 +4350,24 @@ function AppInner() {
     setAppLang(l);setLang(l);
     if(user)await supabase.from("users").update({langue:l}).eq("id",user.id);
   },[user]);
+
+  const compterNonLus=useCallback(async(uid,ids)=>{
+    if(!ids||ids.length===0){setNonLusParGroupe({});return;}
+    // On ne remonte que les 30 derniers jours : au-dela, un message n'est plus "nouveau".
+    const limite=new Date(Date.now()-30*86400000).toISOString();
+    const {data,error}=await supabase.from("messages")
+      .select("groupe_id,created_at,destinataire_user_id")
+      .in("groupe_id",ids).neq("auteur_user_id",uid).gt("created_at",limite);
+    if(error)return;
+    const parGroupe={};
+    (data||[]).forEach(m=>{
+      if(m.destinataire_user_id&&m.destinataire_user_id!==uid)return; // prive destine a quelqu'un d'autre
+      const vu=dateVu(uid,m.groupe_id,"social");
+      if(vu&&m.created_at<=vu)return;
+      parGroupe[m.groupe_id]=(parGroupe[m.groupe_id]||0)+1;
+    });
+    setNonLusParGroupe(parGroupe);
+  },[]);
 
   const loadFilleuls=useCallback(async(uid)=>{
     const {count,error}=await supabase.from("parrainages").select("*",{count:"exact",head:true}).eq("parrain_id",uid);
@@ -4393,6 +4505,7 @@ function AppInner() {
       if(sessionUser){
         setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");
         const [gs,parts]=await Promise.all([loadGroupes(sessionUser.id),loadParticipations(sessionUser.id),loadCagnottes(sessionUser.id),loadFilleuls(sessionUser.id)]);
+        compterNonLus(sessionUser.id,[...new Set([...(gs||[]).map(g=>g.id),...(parts||[]).map(g=>g.id)])]);
         openFromUrl(window.location.search,gs,parts);
       }
       setChecking(false);
@@ -4426,7 +4539,8 @@ function AppInner() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id),loadFilleuls(u.id)]);if(u.linkedCount>0)showToast(`Bienvenue ! Tu as ete ajoute(e) a ${u.linkedCount} tontine(s) !`);}}/>;
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");const [gs2,parts2]=await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id),loadFilleuls(u.id)]);
+      compterNonLus(u.id,[...new Set([...(gs2||[]).map(g=>g.id),...(parts2||[]).map(g=>g.id)])]);if(u.linkedCount>0)showToast(`Bienvenue ! Tu as ete ajoute(e) a ${u.linkedCount} tontine(s) !`);}}/>;
   const cu={...user,groupesCount:groupes.length,filleulsCount};
   const NAV=[["home","🏠",t("accueil")],["cagnottes","🎁",t("cagnottesNav")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
@@ -4468,7 +4582,7 @@ input::placeholder{color:#D1D5DB;}
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} user={cu} onBack={backTap} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
         :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={backTap} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
         :sel?<GroupeScreen groupe={sel} deepLink={deepLink} onBack={backTap} onToast={showToast} user={cu} onDeleteGroupe={(gid)=>{setGroupes(gs=>gs.filter(g=>g.id!==gid));setSel(null);}} onUpdateGroupe={(gid,upd)=>{setGroupes(gs=>gs.map(g=>g.id===gid?{...g,...upd}:g));setSel(s=>s&&s.id===gid?{...s,...upd}:s);}}/>
-        :nav==="home"?<HomeScreen user={cu} groupes={groupes} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);});setSelPart(g);}} onOpenHaby={()=>setNav("haby")} onOpenCagnottes={()=>setNav("cagnottes")}/>
+        :nav==="home"?<HomeScreen user={cu} groupes={groupes} nonLus={nonLusParGroupe} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);compterNonLus(cu.id,[...new Set([...groupes.map(x=>x.id),...participations.map(x=>x.id)])]);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);compterNonLus(cu.id,[...new Set([...groupes.map(x=>x.id),...participations.map(x=>x.id)])]);});setSelPart(g);}} onOpenHaby={()=>setNav("haby")} onOpenCagnottes={()=>setNav("cagnottes")}/>
         :nav==="cagnottes"?<CagnottesScreen cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>

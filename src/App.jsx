@@ -98,6 +98,16 @@ const sPhone = (p) => String(p).replace(/[^\d+\s]/g, "").slice(0, 16);
 const sPin = (p) => String(p).replace(/\D/g, "").slice(0, 4);
 const fmtFCFA = (n) => Number(n).toLocaleString("fr-FR") + " FCFA";
 
+// --- Limite de membres par tontine (plan gratuit) ------------------------------
+// Base : 15 membres. Bonus de parrainage : +1 membre tous les 5 filleul(e)s qui ont
+// cree un compte avec le code de l'utilisatrice (5 -> 16, 10 -> 17, 15 -> 18...).
+// Le plan Premium et les admins n'ont aucune limite.
+const LIMITE_MEMBRES_BASE = 15;
+const FILLEULS_PAR_MEMBRE_BONUS = 5;
+const bonusParrainage = (user) => Math.floor((user?.filleulsCount || 0) / FILLEULS_PAR_MEMBRE_BONUS);
+const estIllimite = (user) => user?.plan === "premium" || user?.role === "admin";
+const limiteMembres = (user) => estIllimite(user) ? Infinity : LIMITE_MEMBRES_BASE + bonusParrainage(user);
+
 // Date d'echeance du cycle suivant. MEME logique que l'Edge Function rollover-cycles
 // (supabase/functions/rollover-cycles/index.ts) : les deux doivent rester identiques,
 // sinon la cloture manuelle et la cloture automatique donneraient des dates differentes.
@@ -2109,7 +2119,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const addM=async()=>{
     if(pickerBusyRef.current)return;
     if(!newM.prenom.trim()||newM.tel.replace(/\D/g,"").length<8)return onToast("Prénom et téléphone requis","error");
-    if(user.plan==="free"&&user.role!=="admin"&&groupe.membres.length>=15){setShowAdd(false);setShowUpgrade(true);return;}
+    if(groupe.membres.length>=limiteMembres(user)){setShowAdd(false);setShowUpgrade(true);return;}
     pickerBusyRef.current=true;setPickerBusy(true);
     const payload={groupe_id:groupe.id,prenom:s(newM.prenom.trim()),tel:sPhone(newM.tel),quartier:s(newM.quartier||""),photo_url:newM.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:groupe.membres.length,montant_perso:newM.montantPerso?Number(newM.montantPerso):null};
     const {data,error}=await supabase.from("membres").insert(payload).select().single();
@@ -2138,7 +2148,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       .filter(c=>c.prenom.trim()&&c.tel.replace(/\D/g,"").length>=8)
       .filter(c=>{if(dejaTels.has(c.tel)||vus.has(c.tel))return false;vus.add(c.tel);return true;});
     if(candidats.length===0)return onToast("Aucun contact valide (nom + numéro) dans la sélection","error");
-    const placesRestantes=(user.plan==="free"&&user.role!=="admin")?Math.max(0,15-groupe.membres.length):candidats.length;
+    const placesRestantes=estIllimite(user)?candidats.length:Math.max(0,limiteMembres(user)-groupe.membres.length);
     if(placesRestantes===0){setShowAdd(false);setShowUpgrade(true);return;}
     const aTraiter=candidats.slice(0,placesRestantes);
     const ignoresLimite=candidats.length-aTraiter.length;
@@ -2456,7 +2466,7 @@ THT - Tontine Habi Traore`;
         </div>}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
-          <button onClick={()=>{if(user.plan==="free"&&user.role!=="admin"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
+          <button onClick={()=>{if(groupe.membres.length>=limiteMembres(user)){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
         <div className="tht-grid">{aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} tx={suivi[m.id]&&suivi[m.id].cycle===groupe.cycle?suivi[m.id]:null} onAjouterPhotoPreuve={ajouterPhotoPreuve} onEnvoyerRecu={envoyerRecuApres} preuveBusy={preuveBusy} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</div>
         {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p><div className="tht-grid">{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} tx={suivi[m.id]&&suivi[m.id].cycle===groupe.cycle?suivi[m.id]:null} onAjouterPhotoPreuve={ajouterPhotoPreuve} onEnvoyerRecu={envoyerRecuApres} preuveBusy={preuveBusy} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</div></>}
@@ -2908,8 +2918,9 @@ THT - Tontine Habi Traore`;
       {showUpgrade&&<Modal onClose={()=>setShowUpgrade(false)}>
         <MH title="Limite atteinte" onClose={()=>setShowUpgrade(false)}/>
         <div style={{textAlign:"center",padding:"10px 0 4px"}}><p style={{fontSize:40,margin:0}}>🔒</p></div>
-        <p style={{color:"#111827",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>15 membres, c'est le maximum en gratuit</p>
-        <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour ajouter des membres illimites dans cette tontine, et beneficier de toutes les autres fonctionnalites avancees.</p>
+        <p style={{color:"#111827",fontSize:15,fontWeight:700,textAlign:"center",margin:"8px 0 4px"}}>{limiteMembres(user)} membres, c'est ton maximum en gratuit</p>
+        <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:12}}>Passe a THT Premium pour ajouter des membres illimites dans cette tontine, et beneficier de toutes les autres fonctionnalites avancees.</p>
+        <p style={{color:"#9A3412",fontSize:12,textAlign:"center",lineHeight:1.6,marginBottom:20,background:"#FFF7ED",border:"1px solid #FF6B00",borderRadius:10,padding:"9px 11px"}}>👥 Ou gagne des places gratuitement : partage ton code de parrainage depuis ton Profil. Chaque {FILLEULS_PAR_MEMBRE_BONUS} ami(e)s qui creent un compte te donnent <strong>+1 place</strong>.</p>
         <button onClick={async()=>{
           setPayBusy(true);
           const {data,error}=await supabase.functions.invoke("cinetpay-init",{body:{formule:"mensuel"}});
@@ -3679,6 +3690,18 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
             <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Filleul(e)s</p><p style={{margin:"2px 0 0",color:"#111827",fontWeight:800,fontSize:16}}>{parrainages.length}</p></div>
             <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Devenus Premium</p><p style={{margin:"2px 0 0",color:"#22C55E",fontWeight:800,fontSize:16}}>{parrainages.filter(p=>p.statut==="premium").length}</p></div>
           </div>
+          {!estIllimite(user)&&(()=>{
+            const filleuls=user.filleulsCount||0;
+            const bonus=bonusParrainage(user);
+            const manque=FILLEULS_PAR_MEMBRE_BONUS-(filleuls%FILLEULS_PAR_MEMBRE_BONUS);
+            return(
+              <div style={{background:"#FFF7ED",border:"1px solid #FF6B00",borderRadius:10,padding:"10px 12px",marginBottom:10}}>
+                <p style={{margin:0,color:"#9A3412",fontSize:12,fontWeight:700}}>👥 Chaque {FILLEULS_PAR_MEMBRE_BONUS} filleul(e)s inscrit(e)s = +1 place dans ta tontine</p>
+                <p style={{margin:"5px 0 0",color:"#111827",fontSize:12}}>Tu peux ajouter <strong>{limiteMembres(user)} membres</strong> {bonus>0?<>(15 de base <strong style={{color:"#22C55E"}}>+{bonus} gagnée{bonus>1?"s":""}</strong>)</>:"pour l instant"}.</p>
+                <p style={{margin:"3px 0 0",color:"#6B7280",fontSize:11}}>Encore {manque} filleul(e){manque>1?"s":""} pour gagner une place de plus.</p>
+              </div>
+            );
+          })()}
           <button onClick={partagerCode} style={{width:"100%",background:"#075E54",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Partager mon code sur WhatsApp</button>
         </div>
         {user.plan==="free"&&user.role!=="admin"&&<div style={{background:"linear-gradient(135deg,#FEF2F2,#FED7AA)",border:"1px solid #FF6B00",borderRadius:18,padding:18,marginBottom:16}}>
@@ -3686,7 +3709,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           <p style={{margin:"0 0 14px",color:"#111827",fontSize:13,lineHeight:1.6}}>Debloque toutes les fonctionnalites pour developper tes tontines !</p>
           <div style={{background:"#FFFFFF",borderRadius:12,padding:14,marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"flex-end",gap:20,marginBottom:8}}><span style={{color:"#6B7280",fontSize:11,fontWeight:700,width:70,textAlign:"center"}}>GRATUIT</span><span style={{color:"#FF6B00",fontSize:11,fontWeight:800,width:80,textAlign:"center"}}>PREMIUM</span></div>
-            {[["Tontines actives","1 max","Illimité"],["Membres/groupe","15 max","Illimité"],["HABY IA","Basique","Prioritaire"],["Support","Standard","24h"]].map(([f,fr,pr])=>(
+            {[["Tontines actives","1 max","Illimité"],["Membres/groupe",`${limiteMembres(user)} max`,"Illimité"],["HABY IA","Basique","Prioritaire"],["Support","Standard","24h"]].map(([f,fr,pr])=>(
               <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #E5E7EB",fontSize:12}}>
                 <span style={{color:"#6B7280"}}>{f}</span>
                 <div style={{display:"flex",gap:20}}><span style={{color:fr==="Non"?"#EF4444":"#6B7280",width:70,textAlign:"center"}}>{fr}</span><span style={{color:"#FF6B00",fontWeight:700,width:80,textAlign:"center"}}>{pr}</span></div>
@@ -4140,6 +4163,9 @@ function AppInner() {
   const [selPart,setSelPart]=useState(null);
   const [deepLink,setDeepLink]=useState(null);
   const [cagnottes,setCagnottes]=useState([]);
+  // Nombre de filleul(e)s ayant cree un compte avec mon code de parrainage.
+  // Sert a calculer le bonus de places de membres (voir limiteMembres()).
+  const [filleulsCount,setFilleulsCount]=useState(0);
   const [selCagnotte,setSelCagnotte]=useState(null);
   const [showCagnotteModal,setShowCagnotteModal]=useState(false);
   const [adminUnlocked,setAdminUnlocked]=useState(false);
@@ -4154,6 +4180,11 @@ function AppInner() {
     setAppLang(l);setLang(l);
     if(user)await supabase.from("users").update({langue:l}).eq("id",user.id);
   },[user]);
+
+  const loadFilleuls=useCallback(async(uid)=>{
+    const {count,error}=await supabase.from("parrainages").select("*",{count:"exact",head:true}).eq("parrain_id",uid);
+    if(!error)setFilleulsCount(count||0);
+  },[]);
 
   const loadCagnottes=useCallback(async(uid)=>{
     const {data,error}=await supabase.from("cagnottes").select("*").eq("user_id",uid).order("created_at",{ascending:false});
@@ -4285,7 +4316,7 @@ function AppInner() {
       const sessionUser=await getSession();
       if(sessionUser){
         setUser(sessionUser);setAppLang(sessionUser.langue||"fr");setLang(sessionUser.langue||"fr");
-        const [gs,parts]=await Promise.all([loadGroupes(sessionUser.id),loadParticipations(sessionUser.id),loadCagnottes(sessionUser.id)]);
+        const [gs,parts]=await Promise.all([loadGroupes(sessionUser.id),loadParticipations(sessionUser.id),loadCagnottes(sessionUser.id),loadFilleuls(sessionUser.id)]);
         openFromUrl(window.location.search,gs,parts);
       }
       setChecking(false);
@@ -4319,8 +4350,8 @@ function AppInner() {
     </div>;
   }
 
-  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id)]);if(u.linkedCount>0)showToast(`Bienvenue ! Tu as ete ajoute(e) a ${u.linkedCount} tontine(s) !`);}}/>;
-  const cu={...user,groupesCount:groupes.length};
+  if(!user)return <AuthScreen onLogin={async(u)=>{setUser(u);setAppLang(u.langue||"fr");setLang(u.langue||"fr");await Promise.all([loadGroupes(u.id),loadParticipations(u.id),loadCagnottes(u.id),loadFilleuls(u.id)]);if(u.linkedCount>0)showToast(`Bienvenue ! Tu as ete ajoute(e) a ${u.linkedCount} tontine(s) !`);}}/>;
+  const cu={...user,groupesCount:groupes.length,filleulsCount};
   const NAV=[["home","🏠",t("accueil")],["cagnottes","🎁",t("cagnottesNav")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
   return(

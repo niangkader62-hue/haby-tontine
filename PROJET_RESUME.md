@@ -1,52 +1,38 @@
 # THT (Tontine Habi Traore) — Etat complet du projet
 
-## ⭐ MISE A JOUR (21/07/2026) — a lire en priorite
+## ⭐ MISE A JOUR (29/07/2026) — a lire en priorite
 
-**Deploye et en ligne (commit 586ebda) :**
-- Carrousel d'accueil : les 4 slides sont passes en brun `linear-gradient(135deg,#5C3A00,#8B5A00)`, texte blanc (fini le slide HABY blanc au texte invisible).
-- Paiement (tontines ET cagnottes) : ajout de **Moov Money** (numero a copier) + boutons **"Ouvrir Wave / Orange Money"** qui ouvrent l'appli SI la beneficiaire a colle un vrai **lien de paiement** (Wave "lien de paiement" / Orange "OM Business"). Un lien fabrique a partir d'un simple numero ne marche PAS (Android refuse) et le USSD reste abandonne — decision confirmee.
-- Reçu : ajout de l'**heure** + correction d'un vrai bug (textes blancs invisibles sur fond blanc du reçu).
-- Date + heure : deja affichees sur l'historique et le Suivi.
+**Hebergement : Netlify est ABANDONNE.** Les 3 projets sont passes sur **Cloudflare Pages**.
+Domaine acheté : `kbsdigitalagency.com` — `kbsdigitalagency.com` (vitrine), `app.kbsdigitalagency.com` (KBSAuto), **`tontine.kbsdigitalagency.com` (THT)**.
+Deploiement AUTOMATIQUE a chaque push sur `main` : plus rien a faire cote hebergement, plus de credits factures par deploiement.
+`netlify.toml` a ete supprime et remplace par `public/_redirects` (routage SPA Cloudflare).
+
+**Livre et deploye (commit 2f26fe0) — 9 demandes + bugs trouves en audit :**
+
+1. **Prets** — le formulaire de demande ne demande plus de photo (aucun argent n'a encore change de main a ce stade). La demande part au vote, puis la photo de l'argent remis est **OBLIGATOIRE** (choix confirme par Kader) au moment de "Accepter et verser". Le taux d'interet et l'echeance ont aussi ete deplaces a ce moment-la.
+2. **Tirage** — le code etait deja equitable et sans remise ; le "biais" percu venait du faible nombre de membres en test. Renforce quand meme : generateur cryptographique sans biais de modulo, dedoublonnage des membres, index unique `(groupe_id, cycle)` en base contre le double-tirage, et etat "🔒 verrouille" affiche explicitement jusqu'au cycle suivant.
+3. **Messages prives — CAUSE RACINE EN BASE.** La policy `membres_select` empechait un membre de voir les autres membres de sa tontine (il ne voyait que lui-meme) : d'ou la liste de destinataires vide/incomplete. Corrigee via `is_membre_of`. Cote app : liste dedoublonnee (la creatrice n'apparait plus deux fois) et membres sans compte affiches grises au lieu d'etre invisibles.
+4. **Notifications privees** — un message prive recu pendant qu'on regardait un autre fil ne declenchait aucune notification dans l'app. Corrige sur les deux ecrans.
+5. **Flux de versement** — une fois le versement confirme, "+ Versement" disparait et laisse place a "🧾 Ajouter le recu" et "📷 Ajouter la photo de l'argent". Le formulaire revient une fois les preuves completes, ou au cycle suivant.
+6. **Epargne (Ma Tirelire)** — l'historique n'existait nulle part en base (seul un total etait stocke) : nouvelle table `objectif_versements`. Chaque depot affiche date + heure precises dans un historique repliable. Animation ajoutee : la main descend, depose l'argent, la tirelire tressaute, une piece tombe.
+7. **Profil — section "Membres de la tontine"** : photo, prenom, quartier, date d'ajout, repliable par tontine.
+8. **Responsive desktop** — l'app etait figee a 440px. Desormais 600px (tablette), 1040px (ordinateur), 1280px (tres grand ecran), listes sur 2 puis 3 colonnes, barre de navigation resserree. Verifie au navigateur sur 4 largeurs, sans debordement horizontal. Le zoom n'est plus bloque (accessibilite).
+9. **Verifications demandees** : le rappel automatique (J-2, J-1, jour J + relances de retard) et l'export PDF cote membre **existaient deja et fonctionnent**. Ajout d'un vrai encart "🎁 C'est au tour de X", visible par la creatrice ET les membres.
+
+**Bugs supplementaires trouves pendant l'audit complet et corriges :**
+- **Le plus serieux** : la cloture manuelle d'un cycle ne reportait pas les impayes en dette et ne faisait pas avancer la date d'echeance — le renouvellement automatique quotidien pouvait donc faire avancer le cycle une SECONDE fois. Les deux logiques (manuelle + Edge Function `rollover-cycles`) sont maintenant alignees.
+- Une demande de pret dans une tontine sans autre membre restait bloquee pour toujours (aucun vote possible) : la creatrice tranche desormais directement.
+- La date d'echeance n'etait pas chargee cote membre (encart et rappels muets de ce cote).
+- Etat `suivi` initialise en tableau alors qu'il sert de dictionnaire.
 
 **SQL — statut :**
-- `supabase_moov_et_liens_paiement.sql` : **DEJA EXECUTE** par Kader (colonnes `numero_moov_money`, `lien_wave`, `lien_orange` sur `groupes` et `cagnottes` ; `moov_money` ajoute a la contrainte de `declarations_paiement`).
-- `supabase_prets_votes.sql` : **PAS ENCORE EXECUTE** — a lancer avant la Tache 1 ci-dessous.
-
-**A FAIRE ENSUITE (idealement sur ordinateur avec Claude Code, pour tester avec plusieurs comptes) :**
-
-1. **Vote democratique des prets** (PAS commence cote code — seulement le SQL est pret).
-   - Executer `supabase_prets_votes.sql`.
-   - Eligibles = tous les membres SAUF le demandeur. Majorite absolue : OUI gagne si `oui*2 > eligible` ; refuse des que `non*2 >= eligible` (donc 50/50 = refus) ; abstention = Non une fois la majorite atteinte.
-   - OUI gagnant -> la creatrice **verse ensuite avec photo** (circuit `accepterEtVerserPret` INCHANGE). Refus -> statut `refuse`.
-   - UI membre (onglet prets, prets `en_attente`) : compteur (oui/non, x/eligible), gros bouton VERT Oui / ROUGE Non ; le demandeur voit "En attente du vote" ; qui a vote voit son vote.
-   - UI creatrice (section DEMANDES EN ATTENTE) : meme compteur + resultat ; **vote par procuration** = liste des membres pas encore votes avec "Voter Oui/Non" en leur nom (enregistrer `vote_par_admin_id`) ; n'activer "Accepter et verser" que si OUI l'emporte ; auto-refus si refus.
-   - Un helper `calcVotePret(pret, votesList, nbMembres)` est deja concu (voir ci-dessous), a re-implementer.
-   - TESTER avec plusieurs comptes avant de valider.
-
-2. **Reçu AUTOMATIQUE a la confirmation d'une declaration** : quand la creatrice confirme une `declarations_paiement` (creation de la transaction), generer et envoyer le reçu automatiquement (reutiliser `genererRecuImage` + l'envoi de reçu existant). Ajouter sur le bouton de confirmation le rappel : "Verifie que tu as bien reçu l'argent avant de confirmer."
-   - NB important a redire a Kader : une declaration ne credite RIEN toute seule ; seule la confirmation de la creatrice compte. Aucun code ne peut verifier un vrai transfert Orange/Wave sans l'API PayDunya. La photo est une aide, pas une preuve automatique.
-
-3. **Panneau admin financier (PLUS TARD — premature aujourd'hui, 0 utilisateur reel + PayDunya pas live)** : RBAC (role `admin`/`super_admin` + routes protegees /admin), Revenu Brut vs Net (-1,5 a 2% commission), MRR (abonnements actifs x 1000 FCFA), taux de conversion, churn (rouge si hausse), onglet transactions echouees (date/heure, nom, telephone, motif, bouton WhatsApp de relance + "marquer resolu"). NE PAS creer de widgets vides avant d'avoir les donnees.
-
-Helper de calcul du vote (a re-creer au niveau module) :
-```
-const calcVotePret = (pret, votesList, nbMembres) => {
-  const eligible = Math.max(0, (nbMembres||0) - 1);
-  const vs = votesList || [];
-  const oui = vs.filter(v => v.valeur==="oui").length;
-  const non = vs.filter(v => v.valeur==="non").length;
-  const total = oui + non;
-  const majoriteOui = eligible>0 && oui*2 > eligible;
-  const majoriteNon = eligible>0 && total>0 && non*2 >= eligible;
-  const decision = majoriteOui ? "accepte" : (majoriteNon ? "refuse" : "en_cours");
-  return { eligible, oui, non, total, decision };
-};
-```
+- `supabase_A_LANCER_MAINTENANT.sql` : **DEJA EXECUTE par Kader le 29/07** (policy `membres_select`, index unique du tirage, table `objectif_versements`).
+- Rappel : le vote des prets et le renouvellement automatique de cycle sont deja en place depuis les sessions precedentes.
 
 ---
 
 ## Contexte
-App PWA de gestion de tontines, cagnottes solidaires et epargne pour l'Afrique de l'Ouest francophone (Mali principalement). Nommee en hommage a Habi Traore, la mere de Kader (proprietaire/createur, non-developpeur). Stack : React + Vite (frontend), Supabase (base de donnees + fonctions serveur + stockage), Netlify (hebergement, deploiement automatique sur push vers `main`).
+App PWA de gestion de tontines, cagnottes solidaires et epargne pour l'Afrique de l'Ouest francophone (Mali principalement). Nommee en hommage a Habi Traore, la mere de Kader (proprietaire/createur, non-developpeur). Stack : React + Vite (frontend), Supabase (base de donnees + fonctions serveur + stockage), **Cloudflare Pages** (hebergement, deploiement automatique sur push vers `main`).
 
 Kader ne code pas lui-meme. Un assistant Claude ecrit tout le code, commit et pousse directement sur GitHub avec un token temporaire fourni par Kader a chaque session (le token doit etre revoque par Kader une fois le push termine). Kader teste principalement sur telephone Android (Chrome), communique via captures d'ecran ou voix. Il a aussi un ordinateur avec Claude Code installe, utilisable en parallele sur le meme depot -- toujours demander en debut de session s'il est sur telephone ou ordinateur.
 
@@ -163,23 +149,24 @@ Prepare par Claude Code (session ordinateur de Kader, sans acces push GitHub dir
 Le fichier `SCHEMA_COMPLET.sql` fait foi pour la structure de reference. `supabase_fix_votes_cascade.sql` (cette session) corrige la contrainte de cle etrangere sur `votes.candidate_membre_id`. De nombreux autres scripts `supabase_*.sql` existent dans l'historique du depot (fixes ponctuels) ; en cas de doute sur l'etat reel de la base, ne pas supposer qu'un script a ete execute -- demander confirmation a Kader ou verifier directement le schema.
 
 ## Discipline de deploiement
-Netlify facture au credit (15 credits/deploiement). Regle : grouper plusieurs changements de code en un seul commit/push. Les correctifs SQL (comme celui des votes) s'executent directement dans Supabase SQL Editor et ne necessitent PAS de deploiement Netlify.
+**Cloudflare Pages** : deploiement automatique a chaque push sur `main`, sans facturation au deploiement (l'ancienne contrainte Netlify des 15 credits n'existe plus). Grouper les changements reste une bonne pratique, mais ce n'est plus une contrainte de cout. Les correctifs SQL s'executent directement dans Supabase SQL Editor et ne necessitent aucun deploiement.
 
 Workflow token GitHub : Kader cree un Personal Access Token (classic, scope "repo" uniquement, expiration courte) a chaque session ou un push est necessaire, le colle dans le chat, puis le revoque une fois le push confirme.
 
 ## Ce qui reste a faire (par priorite)
-1. **Vote democratique des prets** + **Reçu automatique a la confirmation** — voir section "MISE A JOUR 21/07" en haut (SQL `prets_votes` pret, code a faire dans Claude Code, tester avec plusieurs comptes).
+1. **Reçu automatique a la confirmation d'une declaration de paiement** (le vote democratique des prets est FAIT et deploye). Quand la creatrice confirme une `declarations_paiement`, generer et envoyer le recu automatiquement. Rappel a afficher sur le bouton : "Verifie que tu as bien recu l'argent avant de confirmer."
 2. **Deep link / USSD Orange Money/Wave : ABANDONNE (point clos).** L'auto-ouverture d'appli passe UNIQUEMENT par un vrai lien de paiement Wave / OM Business colle par la beneficiaire (deja livre le 21/07). Ne pas retenter la syntaxe `intent://` ni le USSD.
 3. **PayDunya** (retenu ; CinetPay ecarte — liquidite/legal 2025-2026) : creation de compte bloquee sur OTP, a reprendre. Prerequis du panneau admin financier.
 4. Bouton annuler/modifier un versement mal confirme (design a valider, voir section dediee)
 5. Verifier configuration Supabase des rappels automatiques (cron + secrets, voir section dediee)
 6. Suivi de la caisse sociale par membre individuel (actuellement solde global gere par la creatrice uniquement)
-7. Renommage du sous-domaine Netlify
+7. ~~Renommage du sous-domaine~~ — FAIT : `tontine.kbsdigitalagency.com` (Cloudflare)
 8. Test reel avec un vrai contact externe -- **0 utilisateur reel a ce jour**, fortement recommande avant tout lancement serieux
 9. Reliquat mineur d'accents francais si Kader en repere encore au fil de l'usage
 
-## ⚠️ A faire EN PREMIER avant toute nouvelle tache
-Avant d'entamer les points ci-dessus, Kader demande une **revue complete du code existant** : parcourir toutes les sections de `src/App.jsx` (et les Edge Functions) pour identifier tout bug, incoherence ou probleme latent -- pas seulement les zones touchees par les dernieres sessions. Objectif : repartir sur une base propre avant d'ajouter de nouvelles fonctionnalites. Documenter ce qui est trouve (meme si non corrige immediatement) avant de commencer les nouvelles demandes.
+## ⚠️ Revue complete du code — FAITE le 29/07/2026
+La revue complete demandee a ete realisee (voir "MISE A JOUR 29/07" en haut : 4 bugs supplementaires trouves et corriges). Historique de la demande initiale ci-dessous.
+Kader avait demande une **revue complete du code existant** : parcourir toutes les sections de `src/App.jsx` (et les Edge Functions) pour identifier tout bug, incoherence ou probleme latent -- pas seulement les zones touchees par les dernieres sessions. Objectif : repartir sur une base propre avant d'ajouter de nouvelles fonctionnalites. Documenter ce qui est trouve (meme si non corrige immediatement) avant de commencer les nouvelles demandes.
 
 ## Notes pour la prochaine conversation
 - **Ne JAMAIS `git push` sans l'accord explicite de Kader donne dans la conversation en cours, meme pour un petit correctif** -- preparer/committer localement si besoin, mais demander le feu vert avant de pousser

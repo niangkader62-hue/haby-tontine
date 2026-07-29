@@ -86,7 +86,10 @@ const calcVotePret = (pret, votesList, nbMembres) => {
   const total = oui + non;
   const majoriteOui = eligible>0 && oui*2 > eligible;
   const majoriteNon = eligible>0 && total>0 && non*2 >= eligible;
-  const decision = majoriteOui ? "accepte" : (majoriteNon ? "refuse" : "en_cours");
+  // Cas particulier : personne d'autre que l'emprunteur dans la tontine, donc aucun
+  // vote possible. Sans cette regle la demande resterait bloquee indefiniment en
+  // attente ; c'est la creatrice qui tranche directement.
+  const decision = eligible===0 ? "accepte" : (majoriteOui ? "accepte" : (majoriteNon ? "refuse" : "en_cours"));
   return { eligible, oui, non, total, decision };
 };
 
@@ -94,6 +97,18 @@ const s = (str) => String(str ?? "").replace(/[<>"'`]/g, "").slice(0, 300);
 const sPhone = (p) => String(p).replace(/[^\d+\s]/g, "").slice(0, 16);
 const sPin = (p) => String(p).replace(/\D/g, "").slice(0, 4);
 const fmtFCFA = (n) => Number(n).toLocaleString("fr-FR") + " FCFA";
+
+// Date d'echeance du cycle suivant. MEME logique que l'Edge Function rollover-cycles
+// (supabase/functions/rollover-cycles/index.ts) : les deux doivent rester identiques,
+// sinon la cloture manuelle et la cloture automatique donneraient des dates differentes.
+const prochaineEcheance = (dateStr, frequence) => {
+  const d = dateStr ? new Date(dateStr + "T00:00:00Z") : new Date();
+  if (isNaN(d.getTime())) return null;
+  if (frequence === "Hebdo") d.setUTCDate(d.getUTCDate() + 7);
+  else if (frequence === "Bimensuel") d.setUTCDate(d.getUTCDate() + 15);
+  else d.setUTCMonth(d.getUTCMonth() + 1);
+  return d.toISOString().split("T")[0];
+};
 const genId = () => Date.now() + Math.random().toString(36).slice(2, 7);
 
 const uploadPhoto = async (file, prefix) => {
@@ -268,7 +283,7 @@ const Toast = ({msg,type="success",onClose}) => {
 
 const Modal = ({children,onClose}) => (
   <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
-    <div style={{background:"#FFFFFF",borderRadius:"24px 24px 0 0",padding:"20px 20px 44px",width:"100%",maxWidth:440,border:"1px solid #E5E7EB",borderBottom:"none",maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>{children}</div>
+    <div className="tht-modal" style={{background:"#FFFFFF",borderRadius:"24px 24px 0 0",padding:"20px 20px 44px",width:"100%",maxWidth:440,border:"1px solid #E5E7EB",borderBottom:"none",maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>{children}</div>
   </div>
 );
 
@@ -783,7 +798,36 @@ const AuthScreen = ({onLogin}) => {
   );
 };
 
-const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,onPhoto,onToggleCollecteur,onEdit}) => (
+// Encart "c'est au tour de X" : met clairement en avant qui recoit la cagnotte
+// a la fin du cycle en cours, au lieu de le noyer en petit texte.
+const ProchainBeneficiaire = ({gagnant,dateEcheance,cycle,totalCycles,frequence}) => {
+  const quand=dateEcheance?new Date(dateEcheance+"T00:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"}):null;
+  const periode=frequence==="Hebdo"?"cette semaine":frequence==="Bimensuel"?"cette quinzaine":"ce mois-ci";
+  if(!gagnant)return(
+    <div style={{background:"#F9FAFB",border:"1px dashed #9CA3AF",borderRadius:14,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:11}}>
+      <span style={{fontSize:26}} role="img" aria-hidden="true">🎲</span>
+      <div style={{minWidth:0}}>
+        <p style={{margin:0,color:"#111827",fontWeight:800,fontSize:13}}>Prochain bénéficiaire : pas encore désigné</p>
+        <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11.5}}>Lance le tirage au sort de l onglet Tirage pour savoir qui reçoit la cagnotte {periode}.</p>
+      </div>
+    </div>
+  );
+  return(
+    <div style={{background:"linear-gradient(135deg,#FFF7ED,#FFEDD5)",border:"1px solid #FF6B00",borderRadius:14,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:11}}>
+      <Avatar prenom={gagnant.prenom} photo={gagnant.photo} size={44}/>
+      <div style={{minWidth:0,flex:1}}>
+        <p style={{margin:0,color:"#9A3412",fontSize:11,fontWeight:700,letterSpacing:.4}}>🎁 C EST AU TOUR DE</p>
+        <p style={{margin:"1px 0 0",color:"#111827",fontWeight:900,fontSize:17,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gagnant.prenom}</p>
+        <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:11.5}}>Reçoit la cagnotte du cycle {cycle}/{totalCycles}{quand?` — échéance le ${quand}`:""}</p>
+      </div>
+    </div>
+  );
+};
+
+// `tx` = dernier versement enregistre pour le CYCLE EN COURS (null sinon). Tant qu'il
+// manque une preuve dessus (recu envoye / photo de l'argent), on remplace le formulaire
+// "+ Versement" par les deux actions ciblees -- sinon on le reaffiche normalement.
+const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,onPhoto,onToggleCollecteur,onEdit,tx,onAjouterPhotoPreuve,onEnvoyerRecu,preuveBusy}) => (
   <div style={{background:"#FFFFFF",border:`1px solid ${m.paye?"#E5E7EB":"#C1440E44"}`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
       <Avatar prenom={m.prenom} photo={m.photo} size={46}/>
@@ -814,9 +858,18 @@ const MembreRow = ({m,onToggle,onWA,montant,onVersement,onHistorique,onDelete,on
         <span style={{color:"#EF4444",fontWeight:700,fontSize:12}}>{fmtFCFA(m.dette)}</span>
       </div>}
     </div>
+    {tx&&(!tx.recu_envoye||!tx.photo_url)&&(
+      <div style={{background:"#FFF7ED",border:"1px solid #FF6B00",borderRadius:10,padding:"9px 11px",marginBottom:8}}>
+        <p style={{margin:"0 0 7px",color:"#9A3412",fontSize:11,fontWeight:700}}>✅ Versement de {fmtFCFA(Number(tx.montant)||0)} confirmé — il ne manque que la preuve :</p>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {!tx.recu_envoye&&<button onClick={()=>onEnvoyerRecu(m,tx)} disabled={preuveBusy===m.id} style={{flex:1,background:"#FF6B00",border:"none",borderRadius:9,padding:"8px",color:"#0D0D0D",fontSize:11,fontWeight:800,cursor:preuveBusy===m.id?"wait":"pointer",minWidth:120}}>{preuveBusy===m.id?"Envoi...":"🧾 Ajouter le reçu"}</button>}
+          {!tx.photo_url&&<label style={{flex:1,background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:9,padding:"8px",color:"#FF6B00",fontSize:11,fontWeight:800,cursor:"pointer",textAlign:"center",minWidth:120}}>📷 Ajouter la photo de l'argent<input type="file" accept="image/*" hidden disabled={preuveBusy===m.id} onChange={e=>onAjouterPhotoPreuve(m,tx,e)}/></label>}
+        </div>
+      </div>
+    )}
     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
       <button onClick={onWA} style={{flex:1,background:"#075E54",border:"none",borderRadius:10,padding:"8px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>WhatsApp</button>
-      <button onClick={()=>onVersement(m)} style={{flex:1,background:"#F3F4F6",border:"1px solid #FF6B00",borderRadius:10,padding:"8px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>+ Versement</button>
+      {!(tx&&(!tx.recu_envoye||!tx.photo_url))&&<button onClick={()=>onVersement(m)} style={{flex:1,background:"#F3F4F6",border:"1px solid #FF6B00",borderRadius:10,padding:"8px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>+ Versement</button>}
       <button onClick={()=>onHistorique(m)} style={{flex:1,background:"#F3F4F6",border:"1px solid #6B7280",borderRadius:10,padding:"8px",color:"#111827",fontSize:11,fontWeight:700,cursor:"pointer",minWidth:70}}>Historique</button>
       <label style={{background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"center"}}>📷<input type="file" accept="image/*" hidden onChange={e=>onPhoto(m.id,e)}/></label>
       {onEdit&&<button onClick={()=>onEdit(m)} style={{background:"#F3F4F6",border:"1px solid #6B7280",borderRadius:10,padding:"8px 10px",color:"#111827",fontSize:11,fontWeight:700,cursor:"pointer"}}>✏️ Modifier</button>}
@@ -928,6 +981,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
           <button onClick={onCreer} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ {t("creer")}</button>
         </div>
         {groupes.length===0&&<div style={{textAlign:"center",padding:"40px 20px",color:"#9CA3AF"}}><p style={{fontSize:40}}>🏺</p><p style={{fontWeight:700,color:"#111827"}}>Aucune tontine</p><p style={{fontSize:13}}>Cree ta premiere tontine</p></div>}
+        <div className="tht-grid">
         {groupes.map(g=>{
           const pct=Math.round((g.cycle/g.totalCycles)*100);
           const ret=g.membres.filter(m=>!m.paye).length;
@@ -945,10 +999,12 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
             </div>
           );
         })}
+        </div>
       </div>
 
       {participations&&participations.length>0&&<div style={{padding:"22px 16px 0"}}>
         <h3 style={{color:"#111827",fontSize:16,fontWeight:800,margin:"0 0 14px"}}>Tontines ou je participe</h3>
+        <div className="tht-grid">
         {participations.map(g=>(
           <div key={g.id} onClick={()=>onSelectParticipation(g)} style={{background:"#FFFFFF",borderRadius:16,padding:16,marginBottom:10,border:"1px solid #D1D5DB",cursor:"pointer"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -957,6 +1013,7 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
             </div>
           </div>
         ))}
+        </div>
       </div>}
     </div>
   );
@@ -1098,15 +1155,26 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     const ch=supabase.channel(`msgs-part-${groupe.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
       const m=payload.new;
       const th=threadRef.current;
-      const belongsHere=th?((m.auteur_user_id===user.id&&m.destinataire_user_id===th.userId)||(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
-      if(!belongsHere)return;
-      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
-      if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
+      if(m.auteur_user_id===user.id)return; // mes propres messages sont deja affiches
+      const belongsHere=th?(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id):!m.destinataire_user_id;
+      if(belongsHere){
+        setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
+        onToast(`Nouveau message de ${m.auteur_nom}`);
+        return;
+      }
+      // Message qui n'appartient pas a la conversation ouverte : on previent quand meme
+      // si je suis concerne. Avant, un message PRIVE recu alors qu'on regardait le fil
+      // de groupe (ou une autre conversation) ne declenchait aucune notification.
+      if(m.destinataire_user_id===user.id)onToast(`🔒 Message privé de ${m.auteur_nom}`);
+      else if(!m.destinataire_user_id)onToast(`Nouveau message de groupe de ${m.auteur_nom}`);
     }).subscribe();
     return()=>{supabase.removeChannel(ch);};
   },[groupe.id,user.id]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
   const [sendingAudio,setSendingAudio]=useState(false);
+  // Liste des autres participants (hors moi, hors creatrice qui a deja son bouton dedie),
+  // dedoublonnee par membre pour ne jamais afficher deux fois la meme personne.
+  const autresMembres=[...new Map(groupe.membres.filter(m=>m.userId!==user.id&&(!groupe.createurUserId||m.userId!==groupe.createurUserId)).map(m=>[m.id,m])).values()];
   const getRecipients=()=>thread?[thread.userId]:[groupe.createurUserId,...groupe.membres.map(m=>m.userId)].filter(uid=>uid&&uid!==user.id);
   const getDeepLink=()=>`/?g=${groupe.id}&tab=social`+(thread?`&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`:"");
   const sendMsg=async()=>{
@@ -1204,6 +1272,9 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       </div>}
 
       {tab==="membres"&&<div style={{padding:"14px 16px 0"}}>
+        {/* Meme encart "c'est au tour de X" que pour la creatrice : les membres
+            voient exactement la meme information, en toute transparence. */}
+        <ProchainBeneficiaire gagnant={(()=>{const t=(groupe.tirages||[]).find(x=>x.cycle===groupe.cycle);return t?groupe.membres.find(m=>m.id===t.membre_id):null;})()} dateEcheance={groupe.dateEcheance} cycle={groupe.cycle} totalCycles={groupe.totalCycles} frequence={groupe.frequence}/>
         <div style={{background:"linear-gradient(135deg,#FFFFFF,#F3F4F6)",border:"1px solid #FF6B00",borderRadius:14,padding:14,marginBottom:16}}>
           <p style={{margin:"0 0 10px",color:"#FF6B00",fontWeight:800,fontSize:13}}>Budget du groupe</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
@@ -1408,11 +1479,15 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10,marginBottom:6}}>
           <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#FF6B00":"#FFFFFF",border:"1px solid "+(!thread?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"7px 14px",color:!thread?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
           {groupe.createurUserId&&groupe.createurUserId!==user.id&&<button onClick={()=>setThread({userId:groupe.createurUserId,prenom:groupe.createurNom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===groupe.createurUserId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===groupe.createurUserId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===groupe.createurUserId?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={groupe.createurNom} photo={groupe.createurPhoto} size={22}/>{groupe.createurNom} (creatrice)</button>}
-          {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).map(m=>(
-            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===m.userId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
+          {/* Tous les autres membres. Ceux qui n'ont pas encore de compte THT restent
+              visibles (grises) : la liste est ainsi complete et comprehensible, au lieu
+              de faire disparaitre des gens sans explication. La creatrice est exclue ici
+              car elle a deja son propre bouton juste au-dessus (evite le doublon). */}
+          {autresMembres.map(m=>(
+            <button key={m.id} onClick={()=>m.userId?setThread({userId:m.userId,prenom:m.prenom}):onToast(`${m.prenom} n'a pas encore de compte THT : impossible de lui écrire en privé`,"error")} title={m.userId?`Message privé à ${m.prenom}`:`${m.prenom} n'a pas encore de compte THT`} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId&&m.userId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===m.userId&&m.userId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:!m.userId?"#9CA3AF":(thread?.userId===m.userId?"#0D0D0D":"#111827"),fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",opacity:m.userId?1:0.55}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}{!m.userId&&" (sans compte)"}</button>
           ))}
         </div>
-        {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun autre membre n a encore de compte THT relie pour recevoir un message prive.</p>}
+        {autresMembres.length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Tu es pour l instant la seule personne inscrite dans cette tontine.</p>}
         {thread&&<p style={{color:"#FF6B00",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={32}/><div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:"0 14px 14px 14px",padding:"8px 12px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><p style={{margin:0,color:"#FF6B00",fontSize:11,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:10}}>{m.time}</p></div>{m.imageUrl?<img src={m.imageUrl} alt="Recu" style={{width:"100%",maxWidth:220,borderRadius:10,display:"block"}}/>:m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#111827",fontSize:13}}>{m.texte}</p>}</div></div>)}
@@ -1517,7 +1592,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [electionBusy,setElectionBusy]=useState(false);
   const [prets,setPrets]=useState([]);
   const [showPret,setShowPret]=useState(false);
-  const [newPret,setNewPret]=useState({membreId:"",montant:"",taux:"0",echeance:""});
+  const [newPret,setNewPret]=useState({membreId:"",montant:"",motif:""});
   const [pretPhoto,setPretPhoto]=useState(null);
   const [pretPhotoPreview,setPretPhotoPreview]=useState(null);
   const choisirPretPhoto=(e)=>{
@@ -1576,18 +1651,37 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   useEffect(()=>{loadTirages();loadElections();},[groupe.id]);
 
   const dejaGagnants=new Set(tirages.map(t=>t.membre_id));
-  const eligibles=groupe.membres.filter(m=>!dejaGagnants.has(m.id));
+  // Anti-doublon : si un meme membre existe en double en base (probleme deja rencontre
+  // sur ce projet), il ne doit pas avoir deux fois plus de chances d'etre tire.
+  const membresUniques=[...new Map(groupe.membres.map(m=>[m.id,m])).values()];
+  const eligibles=membresUniques.filter(m=>!dejaGagnants.has(m.id));
   const gagnantCycleActuel=tirages.find(t=>t.cycle===groupe.cycle);
+
+  // Tirage sans biais : on utilise le generateur cryptographique du navigateur et on
+  // rejette les valeurs qui tomberaient dans la "zone de debordement" du modulo
+  // (sinon les premiers membres de la liste seraient legerement favorises).
+  const indexAleatoire=(n)=>{
+    if(n<=1)return 0;
+    const crypto=globalThis.crypto;
+    if(!crypto?.getRandomValues)return Math.floor(Math.random()*n);
+    const max=Math.floor(0xFFFFFFFF/n)*n;
+    const buf=new Uint32Array(1);
+    let v=0;
+    do{crypto.getRandomValues(buf);v=buf[0];}while(v>=max);
+    return v%n;
+  };
 
   const lancerTirage=async()=>{
     if(eligibles.length===0)return onToast("Tout le monde a déjà reçu la cagnotte dans cette rotation","error");
     if(gagnantCycleActuel)return onToast("Le tirage a déjà été fait pour ce cycle","error");
     setTirageBusy(true);setTirageAnim(true);
     await new Promise(r=>setTimeout(r,1800));
-    const gagnant=eligibles[Math.floor(Math.random()*eligibles.length)];
+    const gagnant=eligibles[indexAleatoire(eligibles.length)];
+    // Verrou cote base : la contrainte d'unicite (groupe_id, cycle) empeche deux tirages
+    // sur le meme cycle, meme si deux personnes cliquent en meme temps sur deux telephones.
     const {data,error}=await supabase.from("tirages").insert({groupe_id:groupe.id,membre_id:gagnant.id,cycle:groupe.cycle}).select().single();
     setTirageBusy(false);
-    if(error){setTirageAnim(false);return onToast("Tirage impossible","error");}
+    if(error){setTirageAnim(false);loadTirages();return onToast(/duplicate|unique/i.test(error.message||"")?"Le tirage de ce cycle vient d'être fait":"Tirage impossible","error");}
     setTirages(t=>[...t,data]);
     onToast(`${gagnant.prenom} remporte la cagnotte de ce cycle !`);
     if(gagnant.userId){
@@ -1597,16 +1691,25 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   };
 
   const [clotureBusy,setClotureBusy]=useState(false);
+  // Cloture manuelle : doit se comporter EXACTEMENT comme la cloture automatique
+  // (Edge Function rollover-cycles), sinon les deux se marchent dessus -- le solde
+  // impaye devient une dette, les compteurs repartent a zero, et la date d'echeance
+  // avance (sans quoi la tache automatique referait avancer le cycle une 2e fois).
   const cloturerCycle=async()=>{
     if(!gagnantCycleActuel)return onToast("Fais d abord le tirage de ce cycle avant de cloturer","error");
     if(groupe.cycle>=groupe.totalCycles)return onToast("C etait le dernier cycle de cette tontine !","error");
     setClotureBusy(true);
     const nouveauCycle=groupe.cycle+1;
-    const {error:e1}=await supabase.from("groupes").update({cycle:nouveauCycle}).eq("id",groupe.id);
-    const {error:e2}=await supabase.from("membres").update({paye:false}).eq("groupe_id",groupe.id);
+    const nouvelleEcheance=prochaineEcheance(groupe.dateEcheance,groupe.frequence);
+    const {error:e1}=await supabase.from("groupes").update({cycle:nouveauCycle,date_echeance:nouvelleEcheance}).eq("id",groupe.id);
+    // Report des impayes en dette, membre par membre (montant du - deja verse)
+    const majDettes=await Promise.all(groupe.membres.map(m=>{
+      const manque=Math.max(0,montantDu(m)-(Number(m.versements)||0));
+      return supabase.from("membres").update({dette:(Number(m.dette)||0)+manque,versements:0,paye:false}).eq("id",m.id);
+    }));
     setClotureBusy(false);
-    if(e1||e2)return onToast("Erreur lors de la cloture du cycle","error");
-    setGroupe(g=>({...g,cycle:nouveauCycle,membres:g.membres.map(m=>({...m,paye:false}))}));
+    if(e1||majDettes.some(r=>r.error))return onToast("Erreur lors de la cloture du cycle","error");
+    setGroupe(g=>({...g,cycle:nouveauCycle,dateEcheance:nouvelleEcheance,membres:g.membres.map(m=>({...m,dette:(Number(m.dette)||0)+Math.max(0,montantDu(m)-(Number(m.versements)||0)),versements:0,paye:false}))}));
     onToast(`Cycle ${nouveauCycle}/${groupe.totalCycles} demarre !`);
     groupe.membres.filter(m=>m.userId).forEach(m=>{
       supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Nouveau cycle",body:`"${groupe.nom}" passe au cycle ${nouveauCycle}/${groupe.totalCycles}. Nouvelle cotisation a verser !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
@@ -1657,7 +1760,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   };
   useEffect(()=>{loadPrets();},[groupe.id]);
 
-  const [suivi,setSuivi]=useState([]);
+  const [suivi,setSuivi]=useState({}); // { [membre_id]: derniere transaction }
   const loadSuivi=async()=>{
     const {data}=await supabase.from("transactions").select("*").eq("groupe_id",groupe.id).order("created_at",{ascending:false});
     const dernierParMembre={};
@@ -1769,43 +1872,40 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     onToast("Reglement interieur enregistre !");
   };
 
+  // Une demande de pret n'est QU'UNE DEMANDE : aucun argent n'a encore change de main,
+  // donc aucune photo de preuve n'est demandee ici. La demande part en vote, et c'est
+  // seulement au moment de "Accepter et verser" (accepterEtVerserPret) que l'argent est
+  // reellement remis et que la photo de preuve est exigee.
   const creerPret=async()=>{
     if(!newPret.membreId)return onToast("Choisis un membre emprunteur","error");
     if(!newPret.montant||Number(newPret.montant)<500)return onToast("Montant minimum 500 FCFA","error");
     setPretBusy(true);
-    let photoUrl=null;
-    if(pretPhoto){
-      try{
-        const blobPhoto=await (await fetch(pretPhoto)).blob();
-        const path=`prets/${groupe.id}/${newPret.membreId}-${Date.now()}.jpg`;
-        const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
-        if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
-      }catch{onToast("Photo non envoyee, le pret est quand meme enregistre","error");}
-    }
-    const {data,error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:newPret.membreId,montant:Number(newPret.montant),taux_interet:Number(newPret.taux)||0,date_echeance:newPret.echeance||null,statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString()}).select().single();
+    const {data,error}=await supabase.from("prets").insert({groupe_id:groupe.id,membre_id:newPret.membreId,montant:Number(newPret.montant),motif:newPret.motif?.trim()||null,statut:"en_attente"}).select().single();
     setPretBusy(false);
-    if(error)return onToast("Impossible de créer le prêt","error");
+    if(error)return onToast("Impossible de créer la demande de prêt","error");
     setPrets(p=>[data,...p]);
-    setShowPret(false);setNewPret({membreId:"",montant:"",taux:"0",echeance:""});setPretPhoto(null);setPretPhotoPreview(null);
-    onToast("Pret enregistre !");
+    setShowPret(false);setNewPret({membreId:"",montant:"",motif:""});
+    onToast("Demande de prêt enregistrée, elle part au vote des membres");
     const emprunteur=groupe.membres.find(m=>m.id===newPret.membreId);
     if(emprunteur?.userId){
-      supabase.functions.invoke("send-push",{body:{user_id:emprunteur.userId,title:"THT - Pret verse",body:`Un pret de ${fmtFCFA(Number(newPret.montant))} t a ete verse pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
+      supabase.functions.invoke("send-push",{body:{user_id:emprunteur.userId,title:"THT - Demande de pret",body:`Une demande de pret de ${fmtFCFA(Number(newPret.montant))} a ete enregistree a ton nom pour "${groupe.nom}". Elle part au vote des membres.`,url:`/?g=${groupe.id}&tab=prets`}}).catch(()=>{});
     }
   };
 
+  // C'est ICI que l'argent change reellement de main : la photo de preuve est donc
+  // obligatoire a ce moment precis (et pas au moment de la simple demande).
   const accepterEtVerserPret=async()=>{
     if(!accepterM)return;
+    if(!pretPhoto)return onToast("La photo de l'argent remis est obligatoire pour verser le prêt","error");
     setPretBusy(true);
     let photoUrl=null;
-    if(pretPhoto){
-      try{
-        const blobPhoto=await (await fetch(pretPhoto)).blob();
-        const path=`prets/${groupe.id}/${accepterM.membre_id}-${Date.now()}.jpg`;
-        const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
-        if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
-      }catch{onToast("Photo non envoyee, le pret est quand meme verse","error");}
-    }
+    try{
+      const blobPhoto=await (await fetch(pretPhoto)).blob();
+      const path=`prets/${groupe.id}/${accepterM.membre_id}-${Date.now()}.jpg`;
+      const {error:upErr}=await supabase.storage.from("photos").upload(path,blobPhoto,{contentType:"image/jpeg",upsert:true});
+      if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
+    }catch{/* photoUrl reste null : on bloque juste en dessous */}
+    if(!photoUrl){setPretBusy(false);return onToast("Envoi de la photo impossible, réessaie avant de verser","error");}
     const {error}=await supabase.from("prets").update({statut:"en_cours",photo_url:photoUrl,date_versement:new Date().toISOString(),taux_interet:Number(accepterTaux)||0,date_echeance:accepterEcheance||null}).eq("id",accepterM.id);
     setPretBusy(false);
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
@@ -1953,14 +2053,24 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const ch=supabase.channel(`msgs-grp-${groupe.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`groupe_id=eq.${groupe.id}`},(payload)=>{
       const m=payload.new;
       const th=threadRef.current;
-      const belongsHere=th?((m.auteur_user_id===user.id&&m.destinataire_user_id===th.userId)||(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id)):!m.destinataire_user_id;
-      if(!belongsHere)return;
-      setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
-      if(m.auteur_user_id!==user.id)onToast(`Nouveau message de ${m.auteur_nom}`);
+      if(m.auteur_user_id===user.id)return; // mes propres messages sont deja affiches
+      const belongsHere=th?(m.auteur_user_id===th.userId&&m.destinataire_user_id===user.id):!m.destinataire_user_id;
+      if(belongsHere){
+        setMessages(prev=>prev.some(x=>x.id===m.id)?prev:[...prev,{id:m.id,auteur:m.auteur_nom,texte:m.texte,audioUrl:m.audio_url,imageUrl:m.image_url,time:new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}]);
+        onToast(`Nouveau message de ${m.auteur_nom}`);
+        return;
+      }
+      // Message qui n'appartient pas a la conversation ouverte : on previent quand meme
+      // si je suis concerne. Avant, un message PRIVE recu alors qu'on regardait le fil
+      // de groupe (ou une autre conversation) ne declenchait aucune notification.
+      if(m.destinataire_user_id===user.id)onToast(`🔒 Message privé de ${m.auteur_nom}`);
+      else if(!m.destinataire_user_id)onToast(`Nouveau message de groupe de ${m.auteur_nom}`);
     }).subscribe();
     return()=>{supabase.removeChannel(ch);};
   },[groupe.id,user.id]);
   const {recording,start:startRec,stop:stopRec}=useAudioRecorder();
+  // Tous les membres de la tontine sauf moi (la creatrice), dedoublonnes.
+  const autresMembres=[...new Map(groupe.membres.filter(m=>m.userId!==user.id).map(m=>[m.id,m])).values()];
   const getRecipients=()=>(thread?[thread.userId]:groupe.membres.map(m=>m.userId)).filter(uid=>uid&&uid!==user.id);
   const getDeepLink=()=>`/?g=${groupe.id}&tab=social`+(thread?`&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`:"");
   const sendMsg=async()=>{
@@ -2127,6 +2237,65 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     }catch{onToast("Cette photo n'a pas pu etre traitee, essaie une autre image","error");}
   };
 
+  // --- Ajout des preuves APRES un versement deja confirme ---------------------
+  // Avant, pour ajouter une photo ou un recu oublie, il fallait rouvrir tout le
+  // formulaire "+ Versement" (ce qui donnait l'impression d'enregistrer un 2e
+  // paiement). Desormais le formulaire disparait une fois le versement confirme et
+  // laisse place a deux actions ciblees, qui ne modifient QUE la preuve manquante.
+  const [preuveBusy,setPreuveBusy]=useState(null);
+
+  const ajouterPhotoPreuve=async(m,tx,e)=>{
+    const f=e.target.files?.[0];if(!f)return;
+    setPreuveBusy(m.id);
+    try{
+      const blob=await compressImage(f);
+      const path=`versements/${groupe.id}/${m.id}-${Date.now()}.jpg`;
+      const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/jpeg",upsert:true});
+      if(upErr)throw upErr;
+      const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
+      const {error}=await supabase.from("transactions").update({photo_url:pub.publicUrl}).eq("id",tx.id);
+      if(error)throw error;
+      setSuivi(s=>({...s,[m.id]:{...s[m.id],photo_url:pub.publicUrl}}));
+      onToast("Photo de l'argent ajoutée !");
+    }catch{onToast("Envoi de la photo impossible, réessaie","error");}
+    setPreuveBusy(null);
+  };
+
+  const envoyerRecuApres=async(m,tx)=>{
+    setPreuveBusy(m.id);
+    try{
+      const now=new Date();
+      const ref=`THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${m.id.slice(-4).toUpperCase()}`;
+      const blob=await genererRecuImage({
+        nomTontine:groupe.nom,prenom:m.prenom,montantRecu:fmtFCFA(Number(tx.montant)||0),montantDu:fmtFCFA(montantDu(m)),
+        totalVerse:fmtFCFA(m.versements||0),statut:m.paye?"PAYE CE CYCLE":"VERSEMENT PARTIEL",cycle:groupe.cycle,totalCycles:groupe.totalCycles,
+        ref,date:now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
+      });
+      let envoye=false;
+      if(m.userId){
+        const path=`recus/${groupe.id}/${m.id}-${Date.now()}.png`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/png",upsert:true});
+        if(!upErr){
+          const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
+          const {error:msgErr}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",image_url:pub.publicUrl,destinataire_user_id:m.userId});
+          if(!msgErr){
+            notifyMessage([m.userId],user.prenom,false,`/?g=${groupe.id}&tab=social&dm=${user.id}&dmName=${encodeURIComponent(user.prenom)}`);
+            envoye=true;
+            onToast("Reçu envoyé sur sa messagerie !");
+          }
+        }
+      }
+      if(!envoye){
+        const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${m.prenom} - ${groupe.nom}`);
+        onToast(shared?"Reçu prêt à partager !":"Reçu téléchargé !");
+      }
+      const {error}=await supabase.from("transactions").update({recu_envoye:true}).eq("id",tx.id);
+      if(error)throw error;
+      setSuivi(s=>({...s,[m.id]:{...s[m.id],recu_envoye:true}}));
+    }catch{onToast("Le reçu n'a pas pu être envoyé, réessaie","error");}
+    setPreuveBusy(null);
+  };
+
   const buildRecu=(m,amt,paye)=>{
     const now=new Date();
     const dateStr=now.toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
@@ -2276,6 +2445,8 @@ THT - Tontine Habi Traore`;
           <Bar pct={cagnotteTour>0?Math.round((collecte/cagnotteTour)*100):0} c="#FF6B00"/>
           <p style={{margin:"5px 0 0",color:"#6B7280",fontSize:11,textAlign:"right"}}>{cagnotteTour>0?Math.round((collecte/cagnotteTour)*100):0}% collecte ce cycle</p>
         </div>
+        {/* Encart bien visible : qui recoit la cagnotte a la fin de ce cycle. */}
+        <ProchainBeneficiaire gagnant={gagnantCycleActuel?groupe.membres.find(m=>m.id===gagnantCycleActuel.membre_id):null} dateEcheance={groupe.dateEcheance} cycle={groupe.cycle} totalCycles={groupe.totalCycles} frequence={groupe.frequence}/>
         {groupe.dateEcheance&&<div style={{background:"#FEF2F2",border:"1px solid #C1440E",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div><p style={{margin:0,color:"#EF4444",fontWeight:700,fontSize:13}}>Echeance : {groupe.dateEcheance}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{enRet.length} membre(s) pas encore paye</p></div>
           <button onClick={sendRappelEcheance} style={{background:"#C1440E",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Rappeler</button>
@@ -2284,8 +2455,8 @@ THT - Tontine Habi Traore`;
           <p style={{color:"#22C55E",fontSize:12,fontWeight:700,margin:0}}>A JOUR ({aJour.length})</p>
           <button onClick={()=>{if(user.plan==="free"&&user.role!=="admin"&&groupe.membres.length>=15){setShowUpgrade(true);}else{setShowAdd(true);}}} style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:8,padding:"5px 12px",color:"#FF6B00",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Membre</button>
         </div>
-        {aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}
-        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p>{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</>}
+        <div className="tht-grid">{aJour.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} tx={suivi[m.id]&&suivi[m.id].cycle===groupe.cycle?suivi[m.id]:null} onAjouterPhotoPreuve={ajouterPhotoPreuve} onEnvoyerRecu={envoyerRecuApres} preuveBusy={preuveBusy} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</div>
+        {enRet.length>0&&<><p style={{color:"#EF4444",fontSize:12,fontWeight:700,margin:"16px 0 8px"}}>EN RETARD ({enRet.length})</p><div className="tht-grid">{enRet.map(m=><MembreRow key={m.id} m={m} onToggle={()=>toggleP(m.id)} onWA={()=>sendWA(m)} montant={montantDu(m)} onVersement={openVers} onHistorique={openHisto} onDelete={delM} onPhoto={updatePhoto} onToggleCollecteur={toggleCollecteur} tx={suivi[m.id]&&suivi[m.id].cycle===groupe.cycle?suivi[m.id]:null} onAjouterPhotoPreuve={ajouterPhotoPreuve} onEnvoyerRecu={envoyerRecuApres} preuveBusy={preuveBusy} onEdit={mm=>setEditMembre({id:mm.id,prenom:mm.prenom,tel:mm.tel,quartier:mm.quartier||"",montantPerso:mm.montantPerso!=null?String(mm.montantPerso):""})}/>)}</div></>}
       </div>}
 
       {tab==="suivi"&&<div style={{padding:"14px 16px 0"}}>
@@ -2382,7 +2553,8 @@ THT - Tontine Habi Traore`;
             <p style={{margin:0,color:"#6B7280",fontSize:12,fontWeight:600}}>GAGNANTE DU CYCLE {groupe.cycle}</p>
             <div style={{margin:"12px auto 8px"}}><Avatar prenom={g?.prenom||"?"} photo={g?.photo} size={64}/></div>
             <p style={{margin:0,color:"#FF6B00",fontSize:20,fontWeight:900}}>{g?.prenom||"Membre retiré"}</p>
-            <p style={{margin:"4px 0 0",color:"#6B7280",fontSize:12}}>Tiree au sort le {new Date(gagnantCycleActuel.created_at).toLocaleDateString("fr-FR")}</p>
+            <p style={{margin:"4px 0 0",color:"#6B7280",fontSize:12}}>Tirée au sort le {new Date(gagnantCycleActuel.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</p>
+            <p style={{margin:"10px 0 0",color:"#22C55E",fontSize:12,fontWeight:700,background:"#F0FDF4",border:"1px solid #22C55E",borderRadius:8,padding:"7px 10px"}}>🔒 Tirage verrouillé pour le cycle {groupe.cycle} — il rouvrira au cycle suivant</p>
             {groupe.cycle<groupe.totalCycles?(
               <button onClick={cloturerCycle} disabled={clotureBusy} style={{marginTop:16,width:"100%",background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"12px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>{clotureBusy?"Cloture en cours...":`Cloturer le cycle ${groupe.cycle} et passer au cycle ${groupe.cycle+1}`}</button>
             ):(
@@ -2415,7 +2587,7 @@ THT - Tontine Habi Traore`;
         </div>}
       </div>}
       {tab==="prets"&&<div style={{padding:"14px 16px 0"}}>
-        <button onClick={()=>setShowPret(true)} style={{width:"100%",background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"10px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14}}>+ Nouveau pret</button>
+        <button onClick={()=>setShowPret(true)} style={{width:"100%",background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"10px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14}}>+ Nouvelle demande de pret</button>
         {prets.filter(p=>p.statut==="en_attente").length>0&&<p style={{color:"#FF6B00",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>DEMANDES EN ATTENTE ({prets.filter(p=>p.statut==="en_attente").length})</p>}
         {prets.filter(p=>p.statut==="en_attente").map(p=>{const m=groupe.membres.find(mm=>mm.id===p.membre_id);return(
           <div key={p.id} style={{background:"#F3F4F6",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:10}}>
@@ -2477,27 +2649,21 @@ THT - Tontine Habi Traore`;
         </div>
         <Fld label="Taux d'intérêt (%, optionnel)"><Inp value={accepterTaux} onChange={e=>setAccepterTaux(e.target.value.replace(/\D/g,""))} placeholder="0" inputMode="numeric"/></Fld>
         <Fld label="Date d'échéance du remboursement (optionnel)"><Inp value={accepterEcheance} onChange={e=>setAccepterEcheance(e.target.value)} type="date"/></Fld>
-        <Fld label="Photo de l'argent verse (recommande)">
-          <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
+        <Fld label="Photo de l'argent remis (obligatoire)">
+          <label style={{display:"block",background:"#FFFFFF",border:"1px dashed "+(pretPhotoPreview?"#22C55E":"#FF6B00"),borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
             <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
             {pretPhotoPreview?<img src={pretPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Photo de l'argent remis</span>}
           </label>
         </Fld>
-        <Btn onClick={accepterEtVerserPret} disabled={pretBusy}>{pretBusy?"Enregistrement...":"Confirmer le versement"}</Btn>
+        <Btn onClick={accepterEtVerserPret} disabled={pretBusy||!pretPhoto}>{pretBusy?"Enregistrement...":"Confirmer le versement"}</Btn>
       </Modal>}
       {showPret&&<Modal onClose={()=>setShowPret(false)}>
-        <MH title="Nouveau pret" onClose={()=>setShowPret(false)}/>
+        <MH title="Nouvelle demande de pret" onClose={()=>setShowPret(false)}/>
         <Fld label="Membre emprunteur"><select value={newPret.membreId} onChange={e=>setNewPret(p=>({...p,membreId:e.target.value}))} style={{width:"100%",background:"#F3F4F6",border:"1px solid #D1D5DB",borderRadius:12,padding:"13px 14px",color:"#111827",fontSize:14}}><option value="">Choisir...</option>{groupe.membres.map(m=><option key={m.id} value={m.id}>{m.prenom}</option>)}</select></Fld>
         <Fld label="Montant du pret (FCFA)"><Inp value={newPret.montant} onChange={e=>setNewPret(p=>({...p,montant:e.target.value.replace(/\D/g,"")}))} placeholder="Ex: 50000" inputMode="numeric"/></Fld>
-        <Fld label="Taux d'intérêt (%, optionnel)"><Inp value={newPret.taux} onChange={e=>setNewPret(p=>({...p,taux:e.target.value.replace(/\D/g,"")}))} placeholder="0" inputMode="numeric"/></Fld>
-        <Fld label="Date d'échéance (optionnel)"><Inp value={newPret.echeance} onChange={e=>setNewPret(p=>({...p,echeance:e.target.value}))} type="date"/></Fld>
-        <Fld label="Photo de l'argent verse (recommande)">
-          <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:pretPhotoPreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
-            <input type="file" accept="image/*" onChange={choisirPretPhoto} style={{display:"none"}}/>
-            {pretPhotoPreview?<img src={pretPhotoPreview} alt="Preuve" style={{width:"100%",maxHeight:160,objectFit:"contain",display:"block"}}/>:<span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>📷 Photo de l'argent remis</span>}
-          </label>
-        </Fld>
-        <Btn onClick={creerPret} disabled={pretBusy}>{pretBusy?"Enregistrement...":"Enregistrer le pret"}</Btn>
+        <Fld label="Motif (optionnel)"><Inp value={newPret.motif} onChange={e=>setNewPret(p=>({...p,motif:e.target.value}))} placeholder="Ex: frais de scolarite" maxLength={80}/></Fld>
+        <p style={{color:"#6B7280",fontSize:12,lineHeight:1.6,margin:"0 0 14px",background:"#F3F4F6",borderRadius:10,padding:"10px 12px"}}>ℹ️ La demande part d abord au vote des membres. Le taux d intérêt, l échéance et la photo de l argent remis seront demandés au moment de « Accepter et verser », quand l argent change réellement de main.</p>
+        <Btn onClick={creerPret} disabled={pretBusy}>{pretBusy?"Enregistrement...":"Envoyer la demande au vote"}</Btn>
       </Modal>}
       {remboM&&<Modal onClose={()=>setRemboM(null)}>
         <MH title="Enregistrer un remboursement" onClose={()=>setRemboM(null)}/>
@@ -2569,11 +2735,13 @@ THT - Tontine Habi Traore`;
       {tab==="social"&&<div style={{padding:"14px 16px 100px"}}>
         <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10,marginBottom:6}}>
           <button onClick={()=>setThread(null)} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:!thread?"#FF6B00":"#FFFFFF",border:"1px solid "+(!thread?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"7px 14px",color:!thread?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>💬 Groupe</button>
-          {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).map(m=>(
-            <button key={m.id} onClick={()=>setThread({userId:m.userId,prenom:m.prenom})} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===m.userId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:thread?.userId===m.userId?"#0D0D0D":"#111827",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}</button>
+          {/* Tous les membres de la tontine, y compris ceux qui n'ont pas encore de compte
+              THT (affiches grises) : la liste reste complete et explicite. */}
+          {autresMembres.map(m=>(
+            <button key={m.id} onClick={()=>m.userId?setThread({userId:m.userId,prenom:m.prenom}):onToast(`${m.prenom} n'a pas encore de compte THT : impossible de lui écrire en privé`,"error")} title={m.userId?`Message privé à ${m.prenom}`:`${m.prenom} n'a pas encore de compte THT`} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,background:thread?.userId===m.userId&&m.userId?"#FF6B00":"#FFFFFF",border:"1px solid "+(thread?.userId===m.userId&&m.userId?"#FF6B00":"#E5E7EB"),borderRadius:99,padding:"6px 14px 6px 6px",color:!m.userId?"#9CA3AF":(thread?.userId===m.userId?"#0D0D0D":"#111827"),fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",opacity:m.userId?1:0.55}}><Avatar prenom={m.prenom} photo={m.photo} size={22}/>{m.prenom}{!m.userId&&" (sans compte)"}</button>
           ))}
         </div>
-        {groupe.membres.filter(m=>m.userId&&m.userId!==user.id).length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Aucun autre membre n a encore de compte THT relie pour recevoir un message prive.</p>}
+        {autresMembres.length===0&&<p style={{color:"#6B7280",fontSize:11,margin:"0 0 10px",textAlign:"center"}}>Ajoute des membres à ta tontine pour pouvoir leur écrire.</p>}
         {thread&&<p style={{color:"#FF6B00",fontSize:11,fontWeight:700,margin:"0 0 10px",textAlign:"center"}}>🔒 Conversation privee avec {thread.prenom}</p>}
         {messages.length===0?<p style={{color:"#6B7280",fontSize:13,textAlign:"center",padding:10}}>Aucun message pour l instant</p>
         :messages.map(m=><div key={m.id} style={{display:"flex",gap:10,marginBottom:12}}><Avatar prenom={m.auteur} size={34} gold={m.auteur==="HABY"}/><div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:"0 14px 14px 14px",padding:"10px 14px",flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><p style={{margin:0,color:"#FF6B00",fontSize:12,fontWeight:700}}>{m.auteur}</p><p style={{margin:0,color:"#6B7280",fontSize:11}}>{m.time}</p></div>{m.imageUrl?<img src={m.imageUrl} alt="Recu" style={{width:"100%",maxWidth:220,borderRadius:10,display:"block"}}/>:m.audioUrl?<audio controls src={m.audioUrl} style={{width:"100%",height:34}}/>:<p style={{margin:0,color:"#111827",fontSize:14}}>{m.texte}</p>}</div></div>)}
@@ -2863,6 +3031,9 @@ const EpargneScreen = ({onToast,user}) => {
   const [versObj,setVersObj]=useState(null);
   const [versAmt,setVersAmt]=useState("");
   const [busy,setBusy]=useState(false);
+  const [mouvements,setMouvements]=useState({}); // { [objectif_id]: [versements horodates] }
+  const [animVersement,setAnimVersement]=useState(null);
+  const [historiqueOuvert,setHistoriqueOuvert]=useState(null);
   const totalEp=objs.reduce((a,o)=>a+o.actuel,0);
   const totalC=objs.reduce((a,o)=>a+o.cible,0);
 
@@ -2873,7 +3044,17 @@ const EpargneScreen = ({onToast,user}) => {
     else setObjs(data.map(o=>({...o,actuel:Number(o.actuel)||0,cible:Number(o.cible)||0})));
     setLoading(false);
   };
-  useEffect(()=>{loadObjs();},[user.id]);
+  // Historique horodate de chaque depot. Si la table n'a pas encore ete creee en base
+  // (script supabase_epargne_historique.sql pas encore lance), on ignore silencieusement :
+  // l'epargne continue de fonctionner, seul l'historique detaille reste vide.
+  const loadMouvements=async()=>{
+    const {data,error}=await supabase.from("objectif_versements").select("*").eq("user_id",user.id).order("created_at",{ascending:false});
+    if(error)return;
+    const parObjectif={};
+    (data||[]).forEach(v=>{(parObjectif[v.objectif_id]=parObjectif[v.objectif_id]||[]).push(v);});
+    setMouvements(parObjectif);
+  };
+  useEffect(()=>{loadObjs();loadMouvements();},[user.id]);
 
   const addObj=async()=>{
     if(!nObj.label.trim()||!nObj.cible)return onToast("Remplis tous les champs","error");
@@ -2899,8 +3080,14 @@ const EpargneScreen = ({onToast,user}) => {
     setBusy(true);
     const nouveauMontant=versObj.actuel+montant;
     const {data,error}=await supabase.from("objectifs").update({actuel:nouveauMontant}).eq("id",versObj.id).select().single();
+    if(error){setBusy(false);return onToast("Versement impossible","error");}
+    // Trace horodatee du depot (date + heure exactes), pour l'historique.
+    const {data:mvt}=await supabase.from("objectif_versements").insert({objectif_id:versObj.id,user_id:user.id,montant}).select().single();
+    if(mvt)setMouvements(list=>({...list,[versObj.id]:[mvt,...(list[versObj.id]||[])]}));
     setBusy(false);
-    if(error)return onToast("Versement impossible","error");
+    // Animation ludique : la main depose l'argent dans la tirelire.
+    setAnimVersement({montant,label:versObj.label,emoji:versObj.emoji});
+    setTimeout(()=>setAnimVersement(null),2200);
     setObjs(list=>list.map(o=>o.id===versObj.id?{...o,actuel:Number(data.actuel)||nouveauMontant}:o));
     onToast(nouveauMontant>=versObj.cible?"Objectif atteint ! 🎉":"Versement ajouté !");
     setVersObj(null);setVersAmt("");
@@ -2928,8 +3115,18 @@ const EpargneScreen = ({onToast,user}) => {
             {pct>=100?<p style={{color:"#22C55E",fontSize:12,margin:"8px 0 0",fontWeight:700}}>Objectif atteint !</p>:<p style={{color:"#6B7280",fontSize:11,margin:"6px 0 0"}}>Reste {fmtFCFA(o.cible-o.actuel)}</p>}
             <div style={{display:"flex",gap:8,marginTop:10}}>
               <button onClick={()=>openVersement(o)} style={{flex:1,background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>+ Versement</button>
+              <button onClick={()=>setHistoriqueOuvert(h=>h===o.id?null:o.id)} style={{background:"#F3F4F6",border:"1px solid #6B7280",borderRadius:10,padding:"8px 12px",color:"#111827",fontWeight:700,fontSize:12,cursor:"pointer"}}>{historiqueOuvert===o.id?"Masquer":"Historique"}{(mouvements[o.id]||[]).length>0?` (${mouvements[o.id].length})`:""}</button>
               <button onClick={()=>delObj(o)} style={{background:"transparent",border:"1px solid #C1440E",borderRadius:10,padding:"8px 12px",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Suppr.</button>
             </div>
+            {historiqueOuvert===o.id&&<div style={{marginTop:10,borderTop:"1px solid #E5E7EB",paddingTop:10}}>
+              {(mouvements[o.id]||[]).length===0?<p style={{color:"#6B7280",fontSize:12,margin:0,textAlign:"center"}}>Aucun versement enregistré pour l instant.</p>
+              :(mouvements[o.id]||[]).map(v=>(
+                <div key={v.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #F3F4F6"}}>
+                  <span style={{color:"#6B7280",fontSize:12}}>🕒 {new Date(v.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</span>
+                  <span style={{color:"#22C55E",fontWeight:700,fontSize:12}}>+{fmtFCFA(Number(v.montant)||0)}</span>
+                </div>
+              ))}
+            </div>}
           </div>
         );})}
       </div>
@@ -2950,6 +3147,26 @@ const EpargneScreen = ({onToast,user}) => {
         <Fld label="Montant du versement (FCFA)"><Inp value={versAmt} onChange={e=>setVersAmt(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric" autoFocus/></Fld>
         <Btn onClick={addVersement} disabled={busy}>{busy?"Enregistrement...":"Confirmer le versement"}</Btn>
       </Modal>}
+      {/* Animation ludique : la main descend et depose le billet dans la tirelire,
+          la tirelire tressaute a la reception, puis une piece tombe dedans. */}
+      {animVersement&&<div style={{position:"fixed",inset:0,background:"rgba(13,13,13,0.82)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
+        <style>{`
+          @keyframes thtMainDepose{0%{transform:translate(0,-120px) rotate(-12deg);opacity:0}25%{opacity:1}55%{transform:translate(0,-14px) rotate(0deg);opacity:1}75%{transform:translate(0,-40px) rotate(6deg);opacity:1}100%{transform:translate(0,-120px) rotate(-12deg);opacity:0}}
+          @keyframes thtTirelireRebond{0%,45%{transform:scale(1)}58%{transform:scale(1.16) rotate(-3deg)}70%{transform:scale(0.96) rotate(2deg)}100%{transform:scale(1)}}
+          @keyframes thtPieceTombe{0%,40%{transform:translateY(-46px) scale(0.7);opacity:0}55%{opacity:1}100%{transform:translateY(6px) scale(1);opacity:0}}
+          @keyframes thtMontantMonte{0%{transform:translateY(14px);opacity:0}30%{opacity:1}100%{transform:translateY(-22px);opacity:0}}
+        `}</style>
+        <div style={{textAlign:"center",position:"relative"}}>
+          <div style={{position:"relative",height:150,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+            <span style={{position:"absolute",top:0,fontSize:44,animation:"thtMainDepose 2.2s ease-in-out"}} role="img" aria-label="main qui depose l argent">🤲</span>
+            <span style={{position:"absolute",top:52,fontSize:26,animation:"thtPieceTombe 2.2s ease-in"}} role="img" aria-hidden="true">🪙</span>
+            <span style={{fontSize:74,animation:"thtTirelireRebond 2.2s ease-in-out"}} role="img" aria-label="tirelire">🐷</span>
+          </div>
+          <p style={{color:"#FF6B00",fontSize:24,fontWeight:900,margin:"4px 0 0",animation:"thtMontantMonte 2.2s ease-out"}}>+{fmtFCFA(animVersement.montant)}</p>
+          <p style={{color:"#FFFFFF",fontSize:14,fontWeight:700,margin:"8px 0 0"}}>{animVersement.emoji} {animVersement.label}</p>
+          <p style={{color:"#9CA3AF",fontSize:12,margin:"6px 0 0"}}>{new Date().toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</p>
+        </div>
+      </div>}
     </div>
   );
 };
@@ -3252,8 +3469,32 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       setParrainages(data||[]);
     })();
   },[user.id]);
+
+  // --- Trombinoscope : les membres de chaque tontine ou je suis impliquee ---------
+  // (celles que j'ai creees + celles ou je suis simplement participante)
+  const [tontinesMembres,setTontinesMembres]=useState([]);
+  const [membresLoading,setMembresLoading]=useState(true);
+  const [tontineOuverte,setTontineOuverte]=useState(null);
+  useEffect(()=>{
+    (async()=>{
+      setMembresLoading(true);
+      const [{data:miennes},{data:mesLignes}]=await Promise.all([
+        supabase.from("groupes").select("id,nom,couleur").eq("user_id",user.id),
+        supabase.from("membres").select("groupe_id").eq("user_id",user.id),
+      ]);
+      const ids=[...new Set([...(miennes||[]).map(g=>g.id),...(mesLignes||[]).map(m=>m.groupe_id)])];
+      if(ids.length===0){setTontinesMembres([]);setMembresLoading(false);return;}
+      const {data:groupes}=await supabase.from("groupes").select("id,nom,couleur").in("id",ids);
+      const {data:membres}=await supabase.from("membres").select("id,groupe_id,prenom,quartier,tel,photo_url,created_at,user_id").in("groupe_id",ids).order("created_at",{ascending:true});
+      setTontinesMembres((groupes||[]).map(g=>({
+        ...g,
+        membres:(membres||[]).filter(m=>m.groupe_id===g.id),
+      })).sort((a,b)=>a.nom.localeCompare(b.nom)));
+      setMembresLoading(false);
+    })();
+  },[user.id]);
   const partagerCode=()=>{
-    const msg=encodeURIComponent(`Rejoins-moi sur THT pour gerer tes tontines simplement !\n\nUtilise mon code de parrainage a l inscription : ${user.parrainCode}\n\nhttps://haby-tontine.netlify.app`);
+    const msg=encodeURIComponent(`Rejoins-moi sur THT pour gerer tes tontines simplement !\n\nUtilise mon code de parrainage a l inscription : ${user.parrainCode}\n\nhttps://tontine.kbsdigitalagency.com`);
     window.open(`https://wa.me/?text=${msg}`,"_blank");
   };
   const exporterDonnees=async()=>{
@@ -3389,6 +3630,37 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
               <button key={code} onClick={()=>onChangeLang(code)} style={{flex:"1 1 45%",minWidth:90,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:lang===code?"#FF6B00":"#E5E7EB",color:lang===code?"#0D0D0D":"#111827",borderColor:lang===code?"#FF6B00":"#D1D5DB"}}>{label}</button>
             ))}
           </div>
+        </div>
+        {/* Trombinoscope des membres, tontine par tontine (repliable). */}
+        <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14,marginBottom:16}}>
+          <p style={{margin:"0 0 4px",color:"#111827",fontWeight:800,fontSize:15}}>👥 Membres de la tontine</p>
+          <p style={{margin:"0 0 12px",color:"#6B7280",fontSize:12,lineHeight:1.5}}>Toutes les personnes qui participent aux tontines dont tu fais partie.</p>
+          {membresLoading?<p style={{color:"#6B7280",fontSize:13,margin:0,textAlign:"center",padding:"10px 0"}}>Chargement...</p>
+          :tontinesMembres.length===0?<p style={{color:"#6B7280",fontSize:13,margin:0,textAlign:"center",padding:"10px 0"}}>Tu ne participes à aucune tontine pour le moment.</p>
+          :tontinesMembres.map(tg=>(
+            <div key={tg.id} style={{border:"1px solid #E5E7EB",borderRadius:12,marginBottom:8,overflow:"hidden"}}>
+              <button onClick={()=>setTontineOuverte(o=>o===tg.id?null:tg.id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,background:"#F9FAFB",border:"none",padding:"11px 13px",cursor:"pointer",textAlign:"left"}}>
+                <span style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+                  <span style={{width:10,height:10,borderRadius:"50%",background:tg.couleur||"#FF6B00",flexShrink:0}}/>
+                  <span style={{color:"#111827",fontWeight:700,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tg.nom}</span>
+                </span>
+                <span style={{color:"#6B7280",fontSize:11,fontWeight:700,flexShrink:0}}>{tg.membres.length} membre{tg.membres.length>1?"s":""} {tontineOuverte===tg.id?"▲":"▼"}</span>
+              </button>
+              {tontineOuverte===tg.id&&<div style={{padding:"6px 13px 12px"}}>
+                {tg.membres.length===0?<p style={{color:"#6B7280",fontSize:12,margin:"8px 0 0"}}>Aucun membre enregistré.</p>
+                :tg.membres.map(mb=>(
+                  <div key={mb.id} style={{display:"flex",alignItems:"center",gap:11,padding:"9px 0",borderBottom:"1px solid #F3F4F6"}}>
+                    <Avatar prenom={mb.prenom} photo={mb.photo_url} size={42}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{margin:0,color:"#111827",fontWeight:700,fontSize:13}}>{mb.prenom}{mb.user_id===user.id?" (toi)":""}</p>
+                      <p style={{margin:"1px 0 0",color:"#FF6B00",fontSize:11,fontWeight:600}}>📍 {mb.quartier?mb.quartier:"Quartier non renseigné"}</p>
+                      <p style={{margin:"1px 0 0",color:"#6B7280",fontSize:11}}>🗓️ Ajouté(e) le {mb.created_at?new Date(mb.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"}):"date inconnue"}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>}
+            </div>
+          ))}
         </div>
         <div style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:16}}>
           <p style={{margin:"0 0 6px",color:"#FF6B00",fontWeight:800,fontSize:15}}>🎁 Parraine et gagne du Premium</p>
@@ -3900,7 +4172,7 @@ function AppInner() {
       const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso!=null?Number(m.montant_perso):(Number(g.montant)||0)),0)+(Number(g.montant_initial)||0);
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",
-        cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",
+        cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",dateEcheance:g.date_echeance,
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
         numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,
@@ -4046,8 +4318,39 @@ function AppInner() {
   const NAV=[["home","🏠",t("accueil")],["cagnottes","🎁",t("cagnottesNav")],["epargne","🏺",t("epargne")],["haby","🤖","HABY"],["profil","👤",t("profil")]];
 
   return(
-    <div style={{background:"#FFFFFF",minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');*{box-sizing:border-box;font-family:'Inter',sans-serif;}::-webkit-scrollbar{width:0;height:0;}input{-webkit-appearance:none;}input::placeholder{color:#D1D5DB;}`}</style>
+    <div className="tht-shell" style={{background:"#FFFFFF",minHeight:"100vh",margin:"0 auto",position:"relative",display:"flex",flexDirection:"column"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;font-family:'Inter',sans-serif;}
+::-webkit-scrollbar{width:0;height:0;}
+input{-webkit-appearance:none;}
+input::placeholder{color:#D1D5DB;}
+
+/* --- Affichage mobile par defaut (colonne etroite centree) --- */
+.tht-shell{max-width:440px;}
+.tht-nav{max-width:440px;}
+
+/* --- Tablette : on elargit un peu la colonne --- */
+@media (min-width:700px){
+  .tht-shell{max-width:600px;box-shadow:0 0 40px rgba(0,0,0,0.07);}
+  .tht-nav{max-width:600px;}
+}
+
+/* --- Ordinateur : vraie mise en page large, listes sur 2 colonnes --- */
+@media (min-width:1000px){
+  .tht-shell{max-width:1040px;box-shadow:0 0 50px rgba(0,0,0,0.09);}
+  /* La barre de navigation reste lisible : elle ne s'etire pas sur toute la largeur */
+  .tht-nav{max-width:660px;border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.10);}
+  /* Les listes de cartes passent sur 2 colonnes au lieu d'une longue colonne etroite */
+  .tht-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px;align-items:start;}
+  /* Les fenetres modales profitent aussi de la largeur disponible */
+  .tht-modal{max-width:560px;border-radius:20px;}
+}
+
+/* --- Tres grand ecran : 3 colonnes pour les listes --- */
+@media (min-width:1400px){
+  .tht-shell{max-width:1280px;}
+  .tht-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+}`}</style>
       <div style={{flex:1,overflowY:"auto",paddingBottom:nav==="haby"?0:72}}>
         {selCagnotte?<CagnotteScreen cagnotte={selCagnotte} user={cu} onBack={backTap} onToast={showToast} onUpdate={(id,upd)=>{setCagnottes(cs=>cs.map(c=>c.id===id?{...c,...upd}:c));setSelCagnotte(c=>c&&c.id===id?{...c,...upd}:c);}} onDelete={(id)=>{setCagnottes(cs=>cs.filter(c=>c.id!==id));setSelCagnotte(null);}}/>
         :selPart?<ParticipationScreen groupe={selPart} deepLink={deepLink} onBack={backTap} user={cu} onToast={showToast} onVoted={()=>loadParticipations(cu.id)}/>
@@ -4059,7 +4362,7 @@ function AppInner() {
         :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id} user={cu}/>
         :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){pushBack(()=>setNav("profil"));setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang}/>:null}
       </div>
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"#FFFFFF",borderTop:"1px solid #E5E7EB",display:"flex",padding:"8px 0 20px",zIndex:100}}>
+      <div className="tht-nav" style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",background:"#FFFFFF",borderTop:"1px solid #E5E7EB",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#FF6B00":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}
       </div>
       {showC&&<ModalCreer onClose={()=>setShowC(false)} onCreate={g=>{setGroupes(p=>[...p,g]);showToast("Tontine créée !");}} user={cu}/>}

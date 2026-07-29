@@ -2,7 +2,10 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- viewport-fit=cover pour les encoches iPhone. On n'interdit plus le zoom
+         (maximum-scale/user-scalable=no) : cela empechait d'agrandir le texte,
+         un vrai probleme pour les utilisatrices qui voient mal. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>THT - Ta tontine digitale</title>
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#FF6B00" />

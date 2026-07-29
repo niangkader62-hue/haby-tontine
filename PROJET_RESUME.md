@@ -50,7 +50,7 @@ App PWA de gestion de tontines, cagnottes solidaires et epargne pour l'Afrique d
 
 Kader ne code pas lui-meme. Un assistant Claude ecrit tout le code, commit et pousse directement sur GitHub avec un token temporaire fourni par Kader a chaque session (le token doit etre revoque par Kader une fois le push termine). Kader teste principalement sur telephone Android (Chrome), communique via captures d'ecran ou voix. Il a aussi un ordinateur avec Claude Code installe, utilisable en parallele sur le meme depot -- toujours demander en debut de session s'il est sur telephone ou ordinateur.
 
-Depot : `niangkader62-hue/haby-tontine`. Site : `https://haby-tontine.netlify.app`.
+Depot : `niangkader62-hue/haby-tontine`. Site : `https://tontine.kbsdigitalagency.com` (Cloudflare Pages, deploiement auto a chaque push sur main).
 
 ## Fonctionnalites (toutes construites et deployees)
 

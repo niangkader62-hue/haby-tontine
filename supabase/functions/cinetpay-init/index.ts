@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       customer_surname: "HABY",
       customer_phone_number: profile?.telephone || "",
       notify_url: `${projectUrl}/functions/v1/cinetpay-webhook`,
-      return_url: "https://haby-tontine.netlify.app",
+      return_url: "https://tontine.kbsdigitalagency.com",
       channels: "ALL",
       lang: "FR",
     };

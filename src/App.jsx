@@ -723,7 +723,10 @@ const AuthScreen = ({onLogin}) => {
   }
 
   if(step==="intro") return(
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#FFFFFF"}}>
+    // Largeur bornee : sur ordinateur, sans cette contrainte, la photo de couverture
+    // s'etirait sur tout l'ecran (1440px et plus) et repoussait le bouton "Continuer"
+    // en dehors de la zone visible. Un ecran d'accueil n'a pas besoin d'etre large.
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#FFFFFF",maxWidth:560,margin:"0 auto",boxShadow:"0 0 40px rgba(0,0,0,0.07)"}}>
       <style>{`
         @keyframes introLogoIn { 0%{opacity:0;transform:scale(0.5) translateY(10px);} 60%{opacity:1;transform:scale(1.1) translateY(0);} 100%{opacity:1;transform:scale(1) translateY(0);} }
         @keyframes introGlow { 0%,100%{box-shadow:0 8px 24px rgba(255,107,0,0.35);} 50%{box-shadow:0 8px 36px rgba(255,107,0,0.6);} }

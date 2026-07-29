@@ -3474,7 +3474,7 @@ const urlBase64ToUint8Array=(base64String)=>{
   return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
 };
 
-const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChangeLang}) => {
+const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChangeLang,onUpdateUser}) => {
   const [payBusy,setPayBusy]=useState(false);
   const [parrainages,setParrainages]=useState([]);
   useEffect(()=>{
@@ -3483,6 +3483,54 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       setParrainages(data||[]);
     })();
   },[user.id]);
+
+  // --- Modifier mon profil -------------------------------------------------------
+  // A l'inscription, beaucoup de personnes oublient leur photo ou ne mettent que leur
+  // prenom. Elles peuvent desormais completer leurs informations apres coup.
+  const [showEditProfil,setShowEditProfil]=useState(false);
+  const [editNom,setEditNom]=useState(user.prenom||"");
+  const [editPhotoFile,setEditPhotoFile]=useState(null);
+  const [editPhotoPreview,setEditPhotoPreview]=useState(null);
+  const [editProfilBusy,setEditProfilBusy]=useState(false);
+  const [editProfilErr,setEditProfilErr]=useState("");
+
+  const ouvrirEditProfil=()=>{
+    setEditNom(user.prenom||"");
+    setEditPhotoFile(null);setEditPhotoPreview(null);setEditProfilErr("");
+    setShowEditProfil(true);
+  };
+
+  const choisirPhotoProfil=(e)=>{
+    const f=e.target.files?.[0];if(!f)return;
+    if(f.size>8*1024*1024)return setEditProfilErr("Photo trop lourde (8 Mo maximum)");
+    setEditProfilErr("");
+    setEditPhotoFile(f);
+    const reader=new FileReader();
+    reader.onload=()=>setEditPhotoPreview(reader.result);
+    reader.readAsDataURL(f);
+  };
+
+  const enregistrerProfil=async()=>{
+    const nom=s(editNom.trim());
+    if(nom.length<2)return setEditProfilErr("Ton nom doit contenir au moins 2 caracteres");
+    setEditProfilBusy(true);setEditProfilErr("");
+    const maj={prenom:nom};
+    if(editPhotoFile){
+      try{
+        const blob=await compressImage(editPhotoFile);
+        maj.photo_url=await uploadPhoto(new File([blob],"profil.jpg",{type:"image/jpeg"}),"users");
+      }catch{
+        setEditProfilBusy(false);
+        return setEditProfilErr("L envoi de la photo a echoue, reessaie avec une autre image");
+      }
+    }
+    const {error}=await supabase.from("users").update(maj).eq("id",user.id);
+    setEditProfilBusy(false);
+    if(error)return setEditProfilErr("Enregistrement impossible : "+(error.message||"erreur inconnue"));
+    onUpdateUser({prenom:nom,...(maj.photo_url?{photo:maj.photo_url}:{})});
+    setShowEditProfil(false);
+    onToast("Profil mis a jour !");
+  };
 
   // --- Trombinoscope : les membres de chaque tontine ou je suis impliquee ---------
   // (celles que j'ai creees + celles ou je suis simplement participante)
@@ -3631,13 +3679,18 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
       <div style={{background:"linear-gradient(135deg,#FFFFFF,#E5E7EB)",padding:"44px 20px 30px"}}>
         <h2 style={{color:"#111827",margin:"0 0 20px",fontSize:20,fontWeight:800}}>{t("profil")}</h2>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <Avatar prenom={user.prenom} photo={user.photo} size={76} gold/>
-          <div>
+          <div onClick={ouvrirEditProfil} style={{position:"relative",cursor:"pointer",flexShrink:0}} title="Modifier ma photo">
+            <Avatar prenom={user.prenom} photo={user.photo} size={76} gold/>
+            {!user.photo&&<span style={{position:"absolute",right:-2,bottom:-2,background:"#FF6B00",color:"#0D0D0D",fontSize:13,width:26,height:26,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #FFFFFF"}}>📷</span>}
+          </div>
+          <div style={{minWidth:0}}>
             <p style={{margin:0,color:"#111827",fontSize:20,fontWeight:900}}>{user.prenom}</p>
             <p style={{margin:"3px 0 0",color:"#6B7280",fontSize:13}}>{user.tel}</p>
             <span style={{background:user.plan==="premium"?"#FF6B00":"#E5E7EB",color:user.plan==="premium"?"#0D0D0D":"#FF6B00",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,marginTop:6,display:"inline-block"}}>{user.plan==="premium"?t("premium"):t("gratuit")}</span>
           </div>
         </div>
+        <button onClick={ouvrirEditProfil} style={{width:"100%",marginTop:16,background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"11px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer"}}>✏️ Modifier mon profil</button>
+        {!user.photo&&<p style={{margin:"8px 0 0",color:"#9A3412",fontSize:11.5,textAlign:"center"}}>Ajoute ta photo pour que les membres te reconnaissent facilement.</p>}
       </div>
       <div style={{padding:"16px 16px 0"}}>
         <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14,marginBottom:16}}>
@@ -3687,8 +3740,15 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
             <span style={{color:"#6B7280",fontSize:11}}>Ton code</span>
           </div>
           <div style={{display:"flex",gap:16,marginBottom:12}}>
-            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Filleul(e)s</p><p style={{margin:"2px 0 0",color:"#111827",fontWeight:800,fontSize:16}}>{parrainages.length}</p></div>
+            <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Inscrit(e)s grace a toi</p><p style={{margin:"2px 0 0",color:"#111827",fontWeight:800,fontSize:16}}>{parrainages.length}</p></div>
             <div><p style={{margin:0,color:"#6B7280",fontSize:11}}>Devenus Premium</p><p style={{margin:"2px 0 0",color:"#22C55E",fontWeight:800,fontSize:16}}>{parrainages.filter(p=>p.statut==="premium").length}</p></div>
+          </div>
+          {/* Phrase explicite : on dit noir sur blanc combien de personnes ont rejoint
+              l'application grace au code, plutot qu'un simple chiffre sans contexte. */}
+          <div style={{background:"#FFFFFF",borderRadius:10,padding:"10px 12px",marginBottom:10,border:"1px solid #E5E7EB"}}>
+            {parrainages.length===0
+              ? <p style={{margin:0,color:"#6B7280",fontSize:12.5,lineHeight:1.5}}>Personne n a encore rejoint THT avec ton code. Partage-le pour commencer a gagner des places !</p>
+              : <p style={{margin:0,color:"#111827",fontSize:12.5,lineHeight:1.5}}>✅ <strong>{parrainages.length} personne{parrainages.length>1?"s ont":" a"} rejoint THT</strong> grace a ton code de parrainage.</p>}
           </div>
           {!estIllimite(user)&&(()=>{
             const filleuls=user.filleulsCount||0;
@@ -3758,6 +3818,22 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
         <p style={{color:"#9CA3AF",fontSize:11,textAlign:"center",margin:"20px 0 10px"}}>THT v2.1 - Fait avec amour pour l Afrique</p>
       </div>
       {showSupport&&<SupportModal onClose={()=>setShowSupport(false)} onToast={onToast}/>}
+      {showEditProfil&&<Modal onClose={()=>setShowEditProfil(false)}>
+        <MH title="Modifier mon profil" onClose={()=>setShowEditProfil(false)}/>
+        <ErrBox msg={editProfilErr}/>
+        <Fld label="Photo de profil">
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            {editPhotoPreview?<img src={editPhotoPreview} alt="Nouvelle photo" style={{width:74,height:74,borderRadius:20,objectFit:"cover"}}/>:<Avatar prenom={editNom||user.prenom} photo={user.photo} size={74} gold/>}
+            <label style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"11px 16px",color:"#FF6B00",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+              {user.photo||editPhotoPreview?"Changer la photo":"Ajouter une photo"}
+              <input type="file" accept="image/*" hidden onChange={choisirPhotoProfil}/>
+            </label>
+          </div>
+        </Fld>
+        <Fld label="Nom complet"><Inp value={editNom} onChange={e=>setEditNom(e.target.value)} placeholder="Ex: Fatoumata Traore" maxLength={40}/></Fld>
+        <p style={{color:"#6B7280",fontSize:12,lineHeight:1.6,margin:"0 0 14px"}}>ℹ️ Ton numero de telephone ne peut pas etre modifie : c est lui qui identifie ton compte et qui te relie aux tontines ou on t a ajoutee.</p>
+        <Btn onClick={enregistrerProfil} disabled={editProfilBusy}>{editProfilBusy?"Enregistrement...":"Enregistrer"}</Btn>
+      </Modal>}
       {showChangePin&&<Modal onClose={()=>setShowChangePin(false)}>
         <MH title="Changer mon PIN" onClose={()=>setShowChangePin(false)}/>
         <Fld label="PIN actuel"><Inp value={oldPin} onChange={e=>setOldPin(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="****" type="password" inputMode="numeric" maxLength={4} autoFocus/></Fld>
@@ -4397,7 +4473,7 @@ input::placeholder{color:#D1D5DB;}
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
         :nav==="haby"?<HabyScreen groupes={groupes}/>
         :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id} user={cu}/>
-        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){pushBack(()=>setNav("profil"));setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang}/>:null}
+        :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){pushBack(()=>setNav("profil"));setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang} onUpdateUser={(upd)=>setUser(u=>({...u,...upd}))}/>:null}
       </div>
       <div className="tht-nav" style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",background:"#FFFFFF",borderTop:"1px solid #E5E7EB",display:"flex",padding:"8px 0 20px",zIndex:100}}>
         {NAV.map(([id,icon,lbl])=><button key={id} onClick={()=>{setSel(null);setNav(id);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",background:"none",border:"none",color:nav===id&&!sel?"#FF6B00":"#6B7280",cursor:"pointer",padding:"4px 0",gap:3}}><span style={{fontSize:22}}>{icon}</span><span style={{fontSize:10,fontWeight:600}}>{lbl}</span></button>)}

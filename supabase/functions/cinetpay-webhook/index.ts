@@ -32,7 +32,25 @@ Deno.serve(async (req) => {
       const { data: paiement } = await supabase.from("paiements").select("*").eq("transaction_id", transactionId).single();
       if (paiement && paiement.statut !== "accepted") {
         await supabase.from("paiements").update({ statut: "accepted" }).eq("transaction_id", transactionId);
-        await supabase.from("users").update({ plan: "premium" }).eq("id", paiement.user_id);
+
+        // IMPORTANT : on passe l'utilisatrice en Premium ET on lui pose une date de fin.
+        // Sans cette date, l'abonnement ne se terminait JAMAIS : la tache quotidienne qui
+        // repasse les comptes expires en "free" compare `premium_expire_le` a aujourd'hui,
+        // et une valeur vide (NULL) ne correspond jamais en SQL. Resultat : un seul
+        // paiement de 1 000 FCFA donnait le Premium a vie.
+        const { data: profil } = await supabase.from("users").select("premium_expire_le").eq("id", paiement.user_id).single();
+        const aujourdhui = new Date();
+        const finActuelle = profil?.premium_expire_le ? new Date(profil.premium_expire_le + "T00:00:00Z") : null;
+        // Un renouvellement anticipe s'ajoute au temps restant au lieu de l'effacer.
+        const base = finActuelle && finActuelle > aujourdhui ? finActuelle : aujourdhui;
+        const jours = Number(paiement.duree_jours) > 0 ? Number(paiement.duree_jours) : 30;
+        const fin = new Date(base);
+        fin.setUTCDate(fin.getUTCDate() + jours);
+
+        await supabase.from("users").update({
+          plan: "premium",
+          premium_expire_le: fin.toISOString().split("T")[0],
+        }).eq("id", paiement.user_id);
       }
     } else if (verif.data?.status === "REFUSED") {
       await supabase.from("paiements").update({ statut: "refused" }).eq("transaction_id", transactionId);

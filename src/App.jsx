@@ -2912,7 +2912,7 @@ THT - Tontine Habi Traore`;
         <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour ajouter des membres illimites dans cette tontine, et beneficier de toutes les autres fonctionnalites avancees.</p>
         <button onClick={async()=>{
           setPayBusy(true);
-          const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
+          const {data,error}=await supabase.functions.invoke("cinetpay-init",{body:{formule:"mensuel"}});
           setPayBusy(false);
           if(error||data?.error)return onToast("Erreur : "+(data?.error||error?.message||"paiement indisponible"),"error");
           if(data?.payment_url)window.open(data.payment_url,"_blank");
@@ -3546,9 +3546,12 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
     URL.revokeObjectURL(url2);
     onToast("Fichier Excel telecharge !");
   };
-  const onPayCinetPay=async()=>{
+  // formule : "mensuel" (1 000 FCFA / 30 jours) ou "annuel" (10 000 FCFA / 365 jours).
+  // Avant, les deux boutons appelaient le paiement sans preciser la formule : celui
+  // affiche "10 000/an" facturait en realite 1 000 FCFA.
+  const onPayCinetPay=async(formule="mensuel")=>{
     setPayBusy(true);
-    const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
+    const {data,error}=await supabase.functions.invoke("cinetpay-init",{body:{formule}});
     setPayBusy(false);
     if(error||data?.error)return onToast("Erreur : "+(data?.error||error?.message||"paiement indisponible"),"error");
     if(data?.payment_url)window.open(data.payment_url,"_blank");
@@ -3691,10 +3694,10 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
             ))}
           </div>
           <div style={{display:"flex",gap:10,marginBottom:12}}>
-            <button onClick={onPayCinetPay} disabled={payBusy} style={{flex:1,background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"14px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>{payBusy?"...":"1 000 FCFA/mois"}</button>
-            <button onClick={onPayCinetPay} disabled={payBusy} style={{flex:1,background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:12,padding:"14px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",lineHeight:1.4}}>10 000/an<br/><span style={{fontSize:10}}>(-17%)</span></button>
+            <button onClick={()=>onPayCinetPay("mensuel")} disabled={payBusy} style={{flex:1,background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"14px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer"}}>{payBusy?"...":"1 000 FCFA/mois"}</button>
+            <button onClick={()=>onPayCinetPay("annuel")} disabled={payBusy} style={{flex:1,background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:12,padding:"14px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",lineHeight:1.4}}>10 000/an<br/><span style={{fontSize:10}}>(-17%)</span></button>
           </div>
-          <button onClick={onPayCinetPay} disabled={payBusy} style={{width:"100%",background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"13px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant (Orange Money / Wave / Carte)"}</button>
+          <button onClick={()=>onPayCinetPay("mensuel")} disabled={payBusy} style={{width:"100%",background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"13px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant (Orange Money / Wave / Carte)"}</button>
           <div style={{background:"#FFFFFF",borderRadius:12,padding:12}}>
             <p style={{margin:"0 0 8px",color:"#6B7280",fontSize:11,fontWeight:700}}>OU MANUELLEMENT VIA WHATSAPP :</p>
             <div style={{display:"flex",gap:8}}>
@@ -4077,7 +4080,7 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour gerer plusieurs tontines en meme temps.</p>
     <button onClick={async()=>{
       setPayBusy(true);
-      const {data,error}=await supabase.functions.invoke("cinetpay-init",{});
+      const {data,error}=await supabase.functions.invoke("cinetpay-init",{body:{formule:"mensuel"}});
       setPayBusy(false);
       if(error||data?.error)return setErr("Erreur : "+(data?.error||error?.message||"paiement indisponible"));
       if(data?.payment_url)window.open(data.payment_url,"_blank");

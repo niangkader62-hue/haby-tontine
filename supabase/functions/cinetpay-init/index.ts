@@ -8,7 +8,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PREMIUM_PRICE = 1000; // FCFA / mois
+// Deux formules possibles. Le webhook lit la colonne "duree_jours" de la ligne
+// paiements pour savoir combien de temps crediter apres un paiement accepte.
+const FORMULES = {
+  mensuel: { prix: 1000, jours: 30, libelle: "Abonnement THT Premium (1 mois)" },
+  annuel: { prix: 10000, jours: 365, libelle: "Abonnement THT Premium (1 an)" },
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -27,6 +32,10 @@ Deno.serve(async (req) => {
     }
     const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single();
 
+    // Formule choisie par l'utilisatrice ("mensuel" par defaut).
+    const corps = await req.json().catch(() => ({}));
+    const formule = FORMULES[corps?.formule === "annuel" ? "annuel" : "mensuel"];
+
     const apikey = Deno.env.get("CINETPAY_APIKEY");
     const siteId = Deno.env.get("CINETPAY_SITE_ID");
     if (!apikey || !siteId) {
@@ -41,7 +50,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     await serviceSupabase.from("paiements").insert({
-      user_id: user.id, transaction_id: transactionId, montant: PREMIUM_PRICE, statut: "pending",
+      user_id: user.id, transaction_id: transactionId, montant: formule.prix, statut: "pending",
+      duree_jours: formule.jours,
     });
 
     const projectUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -49,9 +59,9 @@ Deno.serve(async (req) => {
       apikey,
       site_id: siteId,
       transaction_id: transactionId,
-      amount: PREMIUM_PRICE,
+      amount: formule.prix,
       currency: "XOF",
-      description: "Abonnement HABY Tontine Premium (1 mois)",
+      description: formule.libelle,
       customer_name: profile?.prenom || "Utilisatrice",
       customer_surname: "HABY",
       customer_phone_number: profile?.telephone || "",

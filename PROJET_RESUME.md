@@ -19,6 +19,26 @@ Deploiement AUTOMATIQUE a chaque push sur `main` : plus rien a faire cote heberg
 8. **Responsive desktop** — l'app etait figee a 440px. Desormais 600px (tablette), 1040px (ordinateur), 1280px (tres grand ecran), listes sur 2 puis 3 colonnes, barre de navigation resserree. Verifie au navigateur sur 4 largeurs, sans debordement horizontal. Le zoom n'est plus bloque (accessibilite).
 9. **Verifications demandees** : le rappel automatique (J-2, J-1, jour J + relances de retard) et l'export PDF cote membre **existaient deja et fonctionnent**. Ajout d'un vrai encart "🎁 C'est au tour de X", visible par la creatrice ET les membres.
 
+**Fix Premium + parrainage (fin de session) :**
+- **BUG DE REVENU CORRIGE** : `cinetpay-webhook` passait l'utilisatrice en "premium" SANS jamais
+  renseigner `premium_expire_le`. Or la tache quotidienne qui repasse les comptes expires en gratuit
+  compare cette date a aujourd'hui, et un NULL ne correspond jamais en SQL. Resultat : **un seul
+  paiement de 1 000 FCFA donnait le Premium A VIE**. Le webhook pose desormais une date de fin, et un
+  renouvellement anticipe s'ajoute au temps restant au lieu de l'effacer.
+- **BUG DE FACTURATION CORRIGE** : les boutons "1 000 FCFA/mois" et "10 000/an" appelaient la meme
+  fonction sans preciser la formule -- celui affiche "10 000/an" facturait en realite 1 000 FCFA.
+  La formule est maintenant transmise explicitement (mensuel 1 000 / 30 j, annuel 10 000 / 365 j).
+- SQL associe : `supabase_premium_expiration.sql` (colonne `paiements.duree_jours`) -- **DEJA EXECUTE
+  par Kader le 29/07**.
+- **Bonus de parrainage** (demande par Kader, option retenue : 1 place tous les 5 filleuls) : le plan
+  gratuit reste a 15 membres par tontine, mais gagne +1 place par tranche de 5 filleul(e)s inscrit(e)s
+  avec le code de parrainage (5 -> 16, 10 -> 17, 15 -> 18...). Premium/admin restent illimites.
+  Calcul centralise dans `limiteMembres()` / `bonusParrainage()` au lieu des trois "15" ecrits en dur.
+  Le nombre de filleuls est charge au niveau app (`loadFilleuls`) car la limite est verifiee dans
+  l'ecran Tontine. Aucun changement de base : la table `parrainages` existait deja.
+  NB : Kader avait initialement demande 15 filleuls = +1 place ; apres discussion sur le rapport
+  effort/recompense, il a retenu 5.
+
 **Image de couverture (fin de session) :**
 - Nouvelle photo de couverture fournie par Kader : l'homme en tenue traditionnelle est remplace par celui en costume bleu marine, et le telephone qu'il montre affiche desormais le VRAI logo actuel (icone orange "HT" + "THT" + "Tontine Habi Traore") au lieu de l'ancien logo dore. Source PNG 1536x1024 (2,4 Mo) optimisee en JPEG progressif 1400x933 qualite 82 (193 Ko), meme ratio 3/2 donc aucun recadrage.
 - Bug trouve en verifiant le rendu : l'ecran d'accueil (intro) n'avait AUCUNE largeur maximale. Sur ordinateur la photo s'etirait sur tout l'ecran (1440 px et plus) et repoussait le bouton "Continuer" hors de la zone visible. Ecran desormais limite a 560 px et centre.

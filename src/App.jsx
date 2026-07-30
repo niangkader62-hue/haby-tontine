@@ -172,7 +172,20 @@ const QUOTA_HABY_GRATUIT = 10;
 const LIMITE_MEMBRES_BASE = 15;
 const FILLEULS_PAR_MEMBRE_BONUS = 5;
 const bonusParrainage = (user) => Math.floor((user?.filleulsCount || 0) / FILLEULS_PAR_MEMBRE_BONUS);
-const estIllimite = (user) => user?.plan === "premium" || user?.role === "admin";
+// Un abonnement Premium n'est valable que jusqu'a sa date de fin. La tache quotidienne
+// `expirer_premium` repasse les comptes echus en "free" cote base, mais on verifie AUSSI
+// la date ici : sinon un compte expire garderait l'acces illimite jusqu'au passage de la
+// tache (jusqu'a 24 h de Premium offert, chaque mois, a chaque abonnee non renouvelee).
+// Cas particulier : une date absente (NULL) signifie un Premium accorde avant la mise en
+// place des dates de fin -- on le laisse actif plutot que de couper l'acces d'une
+// abonnee qui a paye. Ils sont signales en rouge dans l'ecran Admin.
+const premiumActif = (user) => {
+  if (user?.plan !== "premium") return false;
+  if (!user?.premiumExpireLe) return true;
+  const fin = new Date(user.premiumExpireLe + "T23:59:59Z");
+  return !isNaN(fin.getTime()) && fin.getTime() >= Date.now();
+};
+const estIllimite = (user) => premiumActif(user) || user?.role === "admin";
 const limiteMembres = (user) => estIllimite(user) ? Infinity : LIMITE_MEMBRES_BASE + bonusParrainage(user);
 
 // Date d'echeance du cycle suivant. MEME logique que l'Edge Function rollover-cycles
@@ -186,7 +199,6 @@ const prochaineEcheance = (dateStr, frequence) => {
   else d.setUTCMonth(d.getUTCMonth() + 1);
   return d.toISOString().split("T")[0];
 };
-const genId = () => Date.now() + Math.random().toString(36).slice(2, 7);
 
 const uploadPhoto = async (file, prefix) => {
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
@@ -1054,8 +1066,10 @@ const HomeScreen = ({user,groupes,onSelectGroupe,onCreer,onProfil,participations
         <div>
           <p style={{color:"#FF6B00",fontSize:13,margin:0,fontWeight:600}}>{t("bienvenue")}</p>
           <h2 style={{color:"#111827",margin:"2px 0 0",fontSize:24,fontWeight:900}}>{user.prenom}</h2>
-          <span style={{background:user.plan==="premium"?"#FF6B00":"#E5E7EB",color:user.plan==="premium"?"#0D0D0D":"#FF6B00",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:99,marginTop:4,display:"inline-block"}}>
-            {user.plan==="premium"?"PREMIUM":`GRATUIT - ${groupes.length}/1 tontine`}
+          {/* premiumActif() et non user.plan : un abonnement echu ne doit plus afficher
+              "PREMIUM" alors que les fonctions illimitees sont deja reverrouillees. */}
+          <span style={{background:premiumActif(user)?"#FF6B00":"#E5E7EB",color:premiumActif(user)?"#0D0D0D":"#FF6B00",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:99,marginTop:4,display:"inline-block"}}>
+            {premiumActif(user)?"PREMIUM":`GRATUIT - ${groupes.length}/1 tontine`}
           </span>
         </div>
         <div onClick={onProfil} style={{cursor:"pointer"}}><Avatar prenom={user.prenom} photo={user.photo} size={50} gold/></div>
@@ -1850,7 +1864,10 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     }));
     setClotureBusy(false);
     if(e1||majDettes.some(r=>r.error))return onToast("Erreur lors de la cloture du cycle","error");
-    setGroupe(g=>({...g,cycle:nouveauCycle,dateEcheance:nouvelleEcheance,membres:g.membres.map(m=>({...m,dette:(Number(m.dette)||0)+Math.max(0,montantDu(m)-(Number(m.versements)||0)),versements:0,paye:false}))}));
+    // La cagnotte repart du montant initial : les versements du cycle clos sont remis a
+    // zero. Sans cette ligne, "Deja collecte" gardait le total de l'ancien cycle a l'ecran
+    // jusqu'au prochain rechargement de l'application.
+    setGroupe(g=>({...g,cycle:nouveauCycle,dateEcheance:nouvelleEcheance,cagnotte:(Number(g.montantInitial)||0),membres:g.membres.map(m=>({...m,dette:(Number(m.dette)||0)+Math.max(0,montantDu(m)-(Number(m.versements)||0)),versements:0,paye:false}))}));
     onToast(`Cycle ${nouveauCycle}/${groupe.totalCycles} demarre !`);
     groupe.membres.filter(m=>m.userId).forEach(m=>{
       supabase.functions.invoke("send-push",{body:{user_id:m.userId,title:"THT - Nouveau cycle",body:`"${groupe.nom}" passe au cycle ${nouveauCycle}/${groupe.totalCycles}. Nouvelle cotisation a verser !`,url:`/?g=${groupe.id}`}}).catch(()=>{});
@@ -1931,10 +1948,16 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     const newVersements=(membre.versements||0)+amt;
     const paye=newVersements>=montantDu(membre);
     const newScore=Math.min((membre.score||80)+(paye?5:2),100);
-    const newCyclesPaies=paye?membre.cyclesPaies+1:membre.cyclesPaies;
+    // On ne compte le cycle comme paye qu'au moment ou il BASCULE de "pas paye" a "paye".
+    // Sans le "&& !membre.paye", un membre deja a jour qui verse un complement voyait son
+    // compteur de cycles augmenter une 2e fois pour le meme cycle -- ce qui gonflait
+    // faussement le "verse au total" (calcule sur cyclesPaies) et le rapport PDF.
+    const newCyclesPaies=(paye&&!membre.paye)?(membre.cyclesPaies||0)+1:(membre.cyclesPaies||0);
     const {error:mErr}=await supabase.from("membres").update({versements:newVersements,paye,score:newScore,cycles_paies:newCyclesPaies}).eq("id",membre.id);
     if(mErr){setDeclBusy(null);return onToast("Erreur : "+(mErr.message||"inconnue"),"error");}
-    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:membre.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:d.photo_url||null});
+    // On reporte aussi l'empreinte de la preuve : sans elle, une capture validee par ce
+    // chemin (declaration confirmee) resterait reutilisable cote versements.
+    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:membre.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:d.photo_url||null,photo_hash:d.photo_hash||null});
     const moiMembre=groupe.membres.find(m=>m.userId===user.id);
     await supabase.from("declarations_paiement").update({statut:"confirme",confirme_par:moiMembre?.id||null,confirme_at:new Date().toISOString()}).eq("id",d.id);
     setGroupe(g=>({...g,cagnotte:g.cagnotte+amt,membres:g.membres.map(m=>m.id===membre.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)}));
@@ -2485,7 +2508,8 @@ THT - Tontine Habi Traore`;
     const newVersements=(versM.versements||0)+amt;
     const paye=newVersements>=montantDu(versM);
     const newScore=Math.min((versM.score||80)+(paye?5:2),100);
-    const newCyclesPaies=paye?versM.cyclesPaies+1:versM.cyclesPaies;
+    // Meme regle que dans confirmerDeclaration : on n'incremente qu'au basculement.
+    const newCyclesPaies=(paye&&!versM.paye)?(versM.cyclesPaies||0)+1:(versM.cyclesPaies||0);
     const {error:mErr}=await supabase.from("membres").update({versements:newVersements,paye,score:newScore,cycles_paies:newCyclesPaies}).eq("id",versM.id);
     if(mErr)return onToast("Versement impossible : "+(mErr.message||"erreur inconnue"),"error");
     let photoUrl=null;
@@ -2497,7 +2521,9 @@ THT - Tontine Habi Traore`;
         if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
       }catch{onToast("Photo non envoyee, le versement est quand meme enregistre","error");}
     }
-    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,photo_hash:empreinteVers,recu_envoye:mode==="partager"});
+    // L'empreinte n'est enregistree QUE si la photo a bien ete conservee : sinon la photo
+    // serait "grillee" (refusee au prochain essai) alors qu'elle n'a jamais ete gardee.
+    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,photo_hash:photoUrl?empreinteVers:null,recu_envoye:mode==="partager"});
     setGroupe(g=>({...g,
       cagnotte:g.cagnotte+amt,
       membres:g.membres.map(m=>m.id===versM.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)
@@ -3896,7 +3922,9 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           <div style={{minWidth:0}}>
             <p style={{margin:0,color:"#111827",fontSize:20,fontWeight:900}}>{user.prenom}</p>
             <p style={{margin:"3px 0 0",color:"#6B7280",fontSize:13}}>{user.tel}</p>
-            <span style={{background:user.plan==="premium"?"#FF6B00":"#E5E7EB",color:user.plan==="premium"?"#0D0D0D":"#FF6B00",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,marginTop:6,display:"inline-block"}}>{user.plan==="premium"?t("premium"):t("gratuit")}</span>
+            <span style={{background:premiumActif(user)?"#FF6B00":"#E5E7EB",color:premiumActif(user)?"#0D0D0D":"#FF6B00",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,marginTop:6,display:"inline-block"}}>{premiumActif(user)?t("premium"):t("gratuit")}</span>
+            {/* Rappel de la date de fin : sans elle, personne ne sait quand renouveler. */}
+            {premiumActif(user)&&user.premiumExpireLe&&<p style={{margin:"5px 0 0",color:"#6B7280",fontSize:11}}>Abonnement valable jusqu au {new Date(user.premiumExpireLe+"T00:00:00Z").toLocaleDateString("fr-FR")}</p>}
           </div>
         </div>
         <button onClick={ouvrirEditProfil} style={{width:"100%",marginTop:16,background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:12,padding:"11px",color:"#FF6B00",fontWeight:800,fontSize:13,cursor:"pointer"}}>✏️ Modifier mon profil</button>
@@ -4513,7 +4541,11 @@ function AppInner() {
       const {data:rapports}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",g.id).order("date_reunion",{ascending:false});
       const {data:createur}=await supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single();
       const moi=mine.find(m=>m.groupe_id===g.id);
-      const cagnotteVraie=(membres||[]).filter(m=>m.paye).reduce((s,m)=>s+(m.montant_perso!=null?Number(m.montant_perso):(Number(g.montant)||0)),0)+(Number(g.montant_initial)||0);
+      // "Deja collecte" = la somme reellement RECUE ce cycle, donc la somme des versements.
+      // Avant, on comptait la cotisation entiere des seuls membres a jour : les paiements
+      // partiels s'affichaient pendant la session puis disparaissaient au rechargement,
+      // et le chiffre changeait tout seul sous les yeux de la creatrice.
+      const cagnotteVraie=(membres||[]).reduce((s,m)=>s+(Number(m.versements)||0),0)+(Number(g.montant_initial)||0);
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",dateEcheance:g.date_echeance,
@@ -4541,7 +4573,8 @@ function AppInner() {
       const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
       const {data:tirageActuel}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).eq("cycle",g.cycle||1).maybeSingle();
       const mm=(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,quartier:m.quartier,photo:m.photo_url,paye:m.paye,evenement:m.evenement,score:m.score??80,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,cyclesTotal:(g.total_cycles||12)-(g.cycle||1)+1,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur,dette:Number(m.dette)||0}));
-      const cagnotteVraie=mm.filter(m=>m.paye).reduce((s,m)=>s+((m.montantPerso??Number(g.montant)??0)),0)+(Number(g.montant_initial)||0);
+      // Meme definition que dans loadParticipations : la somme reellement versee.
+      const cagnotteVraie=mm.reduce((s,m)=>s+(Number(m.versements)||0),0)+(Number(g.montant_initial)||0);
       const gagnant=tirageActuel?mm.find(m=>m.id===tirageActuel.membre_id):null;
       return {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",

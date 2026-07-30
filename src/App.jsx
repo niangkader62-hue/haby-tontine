@@ -3939,7 +3939,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
           ...(user.role==="admin"?[{label:"ADMINISTRATION",items:[{ic:"🛡️",lb:t("panneauAdmin"),fn:onOpenAdmin}]}]:[]),
           {label:"NOTIFICATIONS",items:[{key:"notif",ic:"🔔",lb:t("notifications"),fn:toggleNotifications,toggle:notifOn,busy:notifBusy}]},
           {label:"COMPTE",items:[{ic:"🔒",lb:t("changerPin"),fn:()=>setShowChangePin(true)},{ic:"📲",lb:t("lierWA"),fn:()=>window.open("https://wa.me/22376908031","_blank")}]},
-          {label:"DONNEES ET AIDE",items:[{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"📊",lb:"Exporter en Excel (CSV)",fn:exporterCSV},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)}]},
+          {label:"DONNEES ET AIDE",items:[{ic:"📤",lb:t("exporterDonnees"),fn:exporterDonnees},{ic:"📊",lb:"Exporter en Excel (CSV)",fn:exporterCSV},{ic:"💬",lb:t("contacterSupport"),fn:()=>setShowSupport(true)},{ic:"🔏",lb:"Politique de confidentialite",fn:()=>window.open("/confidentialite.html","_blank","noopener")}]},
         ].map(group=>(
           <div key={group.label} style={{marginBottom:18}}>
             <p style={{color:"#6B7280",fontSize:11,fontWeight:700,marginBottom:10,letterSpacing:.5}}>{group.label}</p>

@@ -1,14 +1,20 @@
 {
+  "id": "/",
   "name": "THT - Tontine Habi Traore",
   "short_name": "THT",
-  "description": "Gestion de tontines, cagnottes et epargne pour l Afrique de l Ouest francophone",
+  "description": "Gestion de tontines, cagnottes solidaires et epargne pour l Afrique de l Ouest francophone",
+  "lang": "fr",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0D0D0D",
+  "background_color": "#FFFFFF",
   "theme_color": "#FF6B00",
   "orientation": "portrait",
+  "categories": ["finance", "productivity", "business"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

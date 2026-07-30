@@ -3478,14 +3478,30 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
       supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"THT",body:"Tu es maintenant co-administrateur de la plateforme !"}}).catch(()=>{});
     }
   };
-  const togglePremium=async(u)=>{
-    const newPlan=u.plan==="premium"?"free":"premium";
+  // Activation manuelle d'un abonnement (cas d'un paiement encaisse hors application :
+  // lien de paiement, especes, mobile money direct...). On pose TOUJOURS une date de fin :
+  // sans elle, la tache quotidienne qui repasse les comptes expires en gratuit ne voit
+  // jamais ce compte (une valeur vide ne correspond a aucune comparaison en SQL) et
+  // l'abonnement devient gratuit a vie.
+  const togglePremium=async(u,jours=30)=>{
+    const activer=u.plan!=="premium";
     setBusyId(u.id);
-    const {error}=await supabase.from("users").update({plan:newPlan}).eq("id",u.id);
+    let maj;
+    if(activer){
+      // Un renouvellement anticipe s'ajoute au temps restant au lieu de l'effacer.
+      const finActuelle=u.premium_expire_le?new Date(u.premium_expire_le+"T00:00:00Z"):null;
+      const base=finActuelle&&finActuelle>new Date()?finActuelle:new Date();
+      const fin=new Date(base);fin.setUTCDate(fin.getUTCDate()+jours);
+      maj={plan:"premium",premium_expire_le:fin.toISOString().split("T")[0]};
+    }else{
+      maj={plan:"free",premium_expire_le:null};
+    }
+    const {error}=await supabase.from("users").update(maj).eq("id",u.id);
     setBusyId(null);
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
-    setUsers(list=>list.map(x=>x.id===u.id?{...x,plan:newPlan}:x));
-    onToast(newPlan==="premium"?`${u.prenom} est maintenant Premium !`:`${u.prenom} repasse en Gratuit`);
+    const newPlan=maj.plan;
+    setUsers(list=>list.map(x=>x.id===u.id?{...x,...maj}:x));
+    onToast(activer?`${u.prenom} est Premium jusqu'au ${new Date(maj.premium_expire_le+"T00:00:00Z").toLocaleDateString("fr-FR")}`:`${u.prenom} repasse en Gratuit`);
     if(newPlan==="premium"){
       supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"THT",body:"Ton compte est maintenant Premium ! Merci pour ta confiance."}}).catch(()=>{});
     }
@@ -3553,8 +3569,10 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
             <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{u.telephone}</p>
           </div>
           <span style={{background:u.plan==="premium"?"#FF6B00":"#E5E7EB",color:u.plan==="premium"?"#0D0D0D":"#6B7280",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:99}}>{u.plan==="premium"?"PREMIUM":"GRATUIT"}</span>
+          {u.plan==="premium"&&<span style={{color:u.premium_expire_le?"#6B7280":"#EF4444",fontSize:10,fontWeight:700}}>{u.premium_expire_le?`jusqu'au ${new Date(u.premium_expire_le+"T00:00:00Z").toLocaleDateString("fr-FR")}`:"SANS DATE DE FIN"}</span>}
           <div style={{display:"flex",gap:6,width:"100%",marginTop:2}}>
-            <button onClick={()=>togglePremium(u)} disabled={busyId===u.id} style={{flex:1,background:u.plan==="premium"?"transparent":"#FF6B00",border:`1px solid ${u.plan==="premium"?"#C1440E":"#FF6B00"}`,borderRadius:10,padding:"6px 10px",color:u.plan==="premium"?"#EF4444":"#0D0D0D",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.plan==="premium"?"Repasser Gratuit":"Activer Premium"}</button>
+            <button onClick={()=>togglePremium(u,30)} disabled={busyId===u.id} style={{flex:1,background:u.plan==="premium"?"transparent":"#FF6B00",border:`1px solid ${u.plan==="premium"?"#C1440E":"#FF6B00"}`,borderRadius:10,padding:"6px 10px",color:u.plan==="premium"?"#EF4444":"#0D0D0D",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.plan==="premium"?"Repasser Gratuit":"+ 1 mois Premium"}</button>
+            <button onClick={()=>togglePremium({...u,plan:"free"},365)} disabled={busyId===u.id} title="Activer ou prolonger d un an" style={{background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:10,padding:"6px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ 1 an</button>
             {u.id!==currentUserId&&<button onClick={()=>toggleAdmin(u)} disabled={busyId===u.id} style={{flex:1,background:u.role==="admin"?"transparent":"#E5E7EB",border:`1px solid ${u.role==="admin"?"#C1440E":"#D1D5DB"}`,borderRadius:10,padding:"6px 10px",color:u.role==="admin"?"#EF4444":"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.role==="admin"?"Retirer admin":"Nommer co-admin"}</button>}
           </div>
         </div>)}

@@ -1,27 +1,87 @@
-// Edge Function Supabase : proxy securise vers l'API Gemini (Google) - GRATUIT
-// La cle API reste cote serveur, jamais exposee au navigateur
+// Edge Function Supabase : proxy securise vers l'API Gemini (Google)
+// La cle API reste cote serveur, jamais exposee au navigateur.
+//
+// MAITRISE DES COUTS (l'IA est le seul poste facture a l'usage de toute l'app) :
+//   1) Quota quotidien par personne sur le plan gratuit, verifie ICI cote serveur --
+//      une limite posee seulement dans l'application serait contournable.
+//   2) On n'envoie que la fin de la conversation : sans cela, tout l'historique etait
+//      renvoye a chaque question et le cout d'un echange grandissait sans arret.
+//   3) Reponses plafonnees : HABY doit repondre court, inutile de payer pour plus.
+
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const QUOTA_GRATUIT_PAR_JOUR = 10;   // questions/jour sur le plan gratuit
+const MAX_MESSAGES_HISTORIQUE = 10;  // derniers messages envoyes a l'IA
+const MAX_TOKENS_REPONSE = 800;      // reponses courtes = facture reduite
+
+const json = (corps: unknown, status = 200) =>
+  new Response(JSON.stringify(corps), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+// Message renvoye dans le format attendu par le chat, pour s'afficher comme une reponse
+// normale de HABY au lieu d'une erreur technique.
+const reponseHaby = (texte: string) => json({ content: [{ text: texte }] });
+
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
   try {
     const { system, messages } = await req.json();
     const apiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "Cle API Gemini non configuree sur le serveur" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!apiKey) return json({ error: "Cle API Gemini non configuree sur le serveur" }, 500);
+
+    // --- Quota quotidien -------------------------------------------------------
+    // Volontairement tolerant : si la table n'existe pas encore ou si la lecture
+    // echoue, on laisse passer la question. Mieux vaut une facture legerement plus
+    // elevee qu'une fonctionnalite cassee pour tout le monde.
+    const service = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    let userId: string | null = null;
+    try {
+      const jeton = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
+      if (jeton) {
+        const { data } = await service.auth.getUser(jeton);
+        userId = data?.user?.id ?? null;
+      }
+    } catch { /* on continue sans quota */ }
+
+    if (userId) {
+      try {
+        const { data: profil } = await service.from("users").select("plan, role").eq("id", userId).single();
+        const illimite = profil?.plan === "premium" || profil?.role === "admin";
+        if (!illimite) {
+          const jour = new Date().toISOString().split("T")[0];
+          const { data: usage, error: errUsage } = await service
+            .from("haby_usage").select("nb").eq("user_id", userId).eq("jour", jour).maybeSingle();
+          if (!errUsage) {
+            const dejaPose = Number(usage?.nb) || 0;
+            if (dejaPose >= QUOTA_GRATUIT_PAR_JOUR) {
+              return reponseHaby(
+                `Tu as pose tes ${QUOTA_GRATUIT_PAR_JOUR} questions du jour a HABY. ` +
+                `Reviens demain, ou passe en Premium pour lui parler sans limite !`
+              );
+            }
+            await service.from("haby_usage")
+              .upsert({ user_id: userId, jour, nb: dejaPose + 1 }, { onConflict: "user_id,jour" });
+          }
+        }
+      } catch { /* on laisse passer plutot que de bloquer HABY */ }
     }
 
-    // Conversion du format Anthropic (role: user/assistant) vers le format Gemini (role: user/model)
-    const contents = (messages || []).map((m) => ({
+    // --- Appel a Gemini --------------------------------------------------------
+    // Seuls les derniers echanges sont envoyes : le cout d'une question reste stable
+    // meme apres une longue conversation.
+    const recents = (messages || []).slice(-MAX_MESSAGES_HISTORIQUE);
+    const contents = recents.map((m: { role: string; content: string }) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }],
     }));
@@ -34,26 +94,16 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents,
-          generationConfig: { temperature: 0.6, maxOutputTokens: 2048, topP: 0.9 },
+          generationConfig: { temperature: 0.6, maxOutputTokens: MAX_TOKENS_REPONSE, topP: 0.9 },
         }),
       }
     );
     const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
-    if (!reply && data.error) {
-      return new Response(JSON.stringify({ content: [{ text: "HABY a un souci technique, reessaie dans un instant." }] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const reply = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+    if (!reply && data.error) return reponseHaby("HABY a un souci technique, reessaie dans un instant.");
 
-    // On reformate la reponse pour rester compatible avec le code du chat HABY, sans rien changer cote App.jsx
-    return new Response(JSON.stringify({ content: [{ text: reply || "Desole, reessaie !" }] }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return reponseHaby(reply || "Desole, reessaie !");
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: String(e) }, 500);
   }
 });

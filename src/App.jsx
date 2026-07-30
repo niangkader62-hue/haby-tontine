@@ -42,12 +42,15 @@ const genererRecuImage=async({nomTontine,prenom,montantRecu,montantDu,totalVerse
   const {default:html2canvas}=await import("html2canvas");
   const canvas=await html2canvas(div,{backgroundColor:"#0D0D0D",scale:2});
   document.body.removeChild(div);
-  return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),"image/png"));
+  // JPEG plutot que PNG : un recu pese ainsi 4 a 5 fois moins (economie de stockage
+  // Supabase et de donnees mobiles pour les membres qui le consultent). La qualite
+  // reste haute (0.9) pour que les chiffres et le texte restent parfaitement nets.
+  return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),"image/jpeg",0.9));
 };
 
 const partagerImage=async(blob,filename,titre,texte)=>{
   try{
-    const file=new File([blob],filename,{type:"image/png"});
+    const file=new File([blob],filename,{type:blob?.type||"image/jpeg"});
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
       await navigator.share({files:[file],title:titre,text:texte});
       return true;
@@ -59,6 +62,12 @@ const partagerImage=async(blob,filename,titre,texte)=>{
   return false;
 };
 
+// maxDim/quality par defaut pour les PREUVES (photo d'argent, capture mobile money) :
+// il faut pouvoir relire des chiffres, donc on reste genereux.
+// Pour les AVATARS, on passe explicitement TAILLE_AVATAR : ils s'affichent entre 22 et
+// 76 px, donc 320 px suffit largement (retina inclus) et pese ~7x moins.
+const TAILLE_AVATAR = 320;
+const QUALITE_AVATAR = 0.78;
 const compressImage = (file, maxDim = 1024, quality = 0.82) => new Promise((resolve, reject) => {
   const img = new Image();
   const url = URL.createObjectURL(file);
@@ -134,6 +143,11 @@ const Pastille = ({ n, point=false }) => {
   );
 };
 
+// Questions/jour offertes a HABY sur le plan gratuit. DOIT rester identique a
+// QUOTA_GRATUIT_PAR_JOUR dans supabase/functions/haby-chat/index.ts (c'est la fonction
+// serveur qui applique reellement la limite ; ici c'est uniquement pour l'affichage).
+const QUOTA_HABY_GRATUIT = 10;
+
 const LIMITE_MEMBRES_BASE = 15;
 const FILLEULS_PAR_MEMBRE_BONUS = 5;
 const bonusParrainage = (user) => Math.floor((user?.filleulsCount || 0) / FILLEULS_PAR_MEMBRE_BONUS);
@@ -178,25 +192,46 @@ const notifyMessage = (recipientIds, senderName, isAudio, url) => {
   });
 };
 
+// Duree maximale d'un message vocal. Sans limite, un enregistrement oublie pouvait durer
+// des minutes et peser lourd : le stockage Supabase se remplit vite et les membres qui
+// l'ecoutent consomment leur forfait pour rien. 90 s suffisent pour un message parle.
+const DUREE_MAX_VOCAL_MS = 90000;
+// Debit audio volontairement bas : la voix reste tres claire a 24 kbit/s, mais le fichier
+// pese environ 3 fois moins qu'au reglage par defaut du telephone.
+const DEBIT_AUDIO = 24000;
+
 function useAudioRecorder(){
   const [recording,setRecording]=useState(false);
   const mediaRef=useRef(null);
   const chunksRef=useRef([]);
+  const minuterieRef=useRef(null);
   const start=async()=>{
     try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      const mr=new MediaRecorder(stream);
+      let mr;
+      try{ mr=new MediaRecorder(stream,{audioBitsPerSecond:DEBIT_AUDIO}); }
+      catch{ mr=new MediaRecorder(stream); } // vieux navigateur : reglage par defaut
       chunksRef.current=[];
       mr.ondataavailable=(e)=>{if(e.data.size>0)chunksRef.current.push(e.data);};
       mr.start();
       mediaRef.current=mr;
       setRecording(true);
+      // Arret automatique a la duree maximale
+      clearTimeout(minuterieRef.current);
+      minuterieRef.current=setTimeout(()=>{
+        try{ if(mediaRef.current&&mediaRef.current.state==="recording")mediaRef.current.stop(); }catch{/* deja arrete */}
+      },DUREE_MAX_VOCAL_MS);
       return true;
     }catch{ return false; }
   };
   const stop=()=>new Promise((resolve)=>{
+    clearTimeout(minuterieRef.current);
     const mr=mediaRef.current;
     if(!mr){resolve(null);return;}
+    if(mr.state==="inactive"){ // deja arrete par la minuterie
+      const blob=new Blob(chunksRef.current,{type:"audio/webm"});
+      setRecording(false);resolve(blob);return;
+    }
     mr.onstop=()=>{
       const blob=new Blob(chunksRef.current,{type:"audio/webm"});
       mr.stream.getTracks().forEach((t)=>t.stop());
@@ -705,7 +740,7 @@ const AuthScreen = ({onLogin}) => {
   const handlePhoto=async(e)=>{
     const f=e.target.files?.[0];if(!f)return;
     try{
-      const blob=await compressImage(f);
+      const blob=await compressImage(f,TAILLE_AVATAR,QUALITE_AVATAR);
       setPhotoFile(new File([blob],"profil.jpg",{type:"image/jpeg"}));
       const r=new FileReader();r.onload=(ev)=>setPhoto(ev.target.result);r.readAsDataURL(blob);
     }catch{setErr("Cette photo n'a pas pu etre traitee, essaie une autre image");}
@@ -1885,8 +1920,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
           totalVerse:fmtFCFA(newVersements),statut:paye?"PAYE CE CYCLE":"VERSEMENT PARTIEL",cycle:groupe.cycle,totalCycles:groupe.totalCycles,
           ref,date:now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
         });
-        const path=`recus/${groupe.id}/${membre.id}-${Date.now()}.png`;
-        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/png",upsert:true});
+        const path=`recus/${groupe.id}/${membre.id}-${Date.now()}.jpg`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/jpeg",upsert:true});
         if(!upErr){
           const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
           const {error:msgErr}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",image_url:pub.publicUrl,destinataire_user_id:membre.userId});
@@ -2285,7 +2320,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         cycle:h.cycle||groupe.cycle,totalCycles:groupe.totalCycles,
         ref,date:d.toLocaleDateString("fr-FR")+(h.heure?" à "+h.heure:"")
       });
-      const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${histoM.prenom} - ${groupe.nom}`);
+      const shared=await partagerImage(blob,`recu-${ref}.jpg`,"Recu THT",`Recu de paiement - ${histoM.prenom} - ${groupe.nom}`);
       onToast(shared?"Reçu prêt à partager !":"Recu telecharge ! Envoie-le depuis tes fichiers.");
     }catch{onToast("Impossible de régénérer ce reçu","error");}
     setRecuBusy(false);
@@ -2303,7 +2338,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const updatePhoto=async(mid,e)=>{
     const f=e.target.files?.[0];if(!f)return;
     try{
-      const blob=await compressImage(f);
+      const blob=await compressImage(f,TAILLE_AVATAR,QUALITE_AVATAR);
       const photoUrl=await uploadPhoto(new File([blob],"membre.jpg",{type:"image/jpeg"}),"membres");
       const {error}=await supabase.from("membres").update({photo_url:photoUrl}).eq("id",mid);
       if(error)return onToast("Photo impossible a sauvegarder","error");
@@ -2348,8 +2383,8 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       });
       let envoye=false;
       if(m.userId){
-        const path=`recus/${groupe.id}/${m.id}-${Date.now()}.png`;
-        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/png",upsert:true});
+        const path=`recus/${groupe.id}/${m.id}-${Date.now()}.jpg`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/jpeg",upsert:true});
         if(!upErr){
           const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
           const {error:msgErr}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",image_url:pub.publicUrl,destinataire_user_id:m.userId});
@@ -2361,7 +2396,7 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         }
       }
       if(!envoye){
-        const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${m.prenom} - ${groupe.nom}`);
+        const shared=await partagerImage(blob,`recu-${ref}.jpg`,"Recu THT",`Recu de paiement - ${m.prenom} - ${groupe.nom}`);
         onToast(shared?"Reçu prêt à partager !":"Reçu téléchargé !");
       }
       const {error}=await supabase.from("transactions").update({recu_envoye:true}).eq("id",tx.id);
@@ -2433,11 +2468,11 @@ THT - Tontine Habi Traore`;
         ref,date:now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
       });
       if(mode==="partager"){
-        const shared=await partagerImage(blob,`recu-${ref}.png`,"Recu THT",`Recu de paiement - ${versM.prenom} - ${groupe.nom}`);
+        const shared=await partagerImage(blob,`recu-${ref}.jpg`,"Recu THT",`Recu de paiement - ${versM.prenom} - ${groupe.nom}`);
         onToast(shared?"Versement enregistre, recu pret a partager !":"Versement enregistre, recu telecharge !");
       }else if(versM.userId){
-        const path=`recus/${groupe.id}/${versM.id}-${Date.now()}.png`;
-        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/png",upsert:true});
+        const path=`recus/${groupe.id}/${versM.id}-${Date.now()}.jpg`;
+        const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/jpeg",upsert:true});
         if(!upErr){
           const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
           const {error:msgErr}=await supabase.from("messages").insert({groupe_id:groupe.id,auteur_user_id:user.id,auteur_nom:user.prenom,auteur:user.prenom,texte:"",image_url:pub.publicUrl,destinataire_user_id:versM.userId});
@@ -2990,7 +3025,7 @@ THT - Tontine Habi Traore`;
             else await addMembresEnMasse(c);
           }catch{pickerBusyRef.current=false;setPickerBusy(false);}
         }} style={{width:"100%",background:pickerBusy?"#FFFFFF":"#E5E7EB",border:"1px solid #FF6B00",borderRadius:12,padding:"12px",color:pickerBusy?"#6B7280":"#FF6B00",fontWeight:700,fontSize:13,cursor:pickerBusy?"not-allowed":"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{pickerBusy?"Ajout en cours...":"📇 Choisir depuis mes contacts (plusieurs a la fois possible)"}</button>}
-        <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 14px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={async e=>{const f=e.target.files?.[0];if(!f)return;try{const blob=await compressImage(f);const url=await uploadPhoto(new File([blob],"membre.jpg",{type:"image/jpeg"}),"membres");setNewM(n=>({...n,photo:url}));}catch{onToast("Cette photo n'a pas pu etre traitee, essaie une autre image","error");}}}/></label></div></Fld>
+        <Fld label="Photo (optionnel)"><div style={{display:"flex",alignItems:"center",gap:12}}>{newM.photo?<img src={newM.photo} style={{width:50,height:50,borderRadius:14,objectFit:"cover"}} alt=""/>:<div style={{width:50,height:50,borderRadius:14,background:"#E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:20}}>📷</div>}<label style={{background:"#E5E7EB",border:"1px solid #D1D5DB",borderRadius:10,padding:"8px 14px",color:"#FF6B00",fontWeight:700,fontSize:12,cursor:"pointer"}}>{newM.photo?"Changer":"Ajouter"}<input type="file" accept="image/*" hidden onChange={async e=>{const f=e.target.files?.[0];if(!f)return;try{const blob=await compressImage(f,TAILLE_AVATAR,QUALITE_AVATAR);const url=await uploadPhoto(new File([blob],"membre.jpg",{type:"image/jpeg"}),"membres");setNewM(n=>({...n,photo:url}));}catch{onToast("Cette photo n'a pas pu etre traitee, essaie une autre image","error");}}}/></label></div></Fld>
         <Fld label="Prenom"><Inp value={newM.prenom} onChange={e=>setNewM(n=>({...n,prenom:e.target.value}))} placeholder="Ex: Fatoumata" maxLength={30} autoFocus/></Fld>
         <Fld label="Numero WhatsApp"><PhoneInput value={newM.tel} onChange={v=>setNewM(n=>({...n,tel:sPhone(v)}))}/></Fld>
         <Fld label="Quartier (optionnel)"><Inp value={newM.quartier||""} onChange={e=>setNewM(n=>({...n,quartier:e.target.value}))} placeholder="Ex: Hamdallaye ACI" maxLength={40}/></Fld>
@@ -3044,12 +3079,27 @@ THT - Tontine Habi Traore`;
   );
 };
 
-const HabyScreen = ({groupes}) => {
+const HabyScreen = ({groupes,user}) => {
   const [msgs,setMsgs]=useState([{role:"assistant",content:"Salut ! Je suis HABY, ton assistante THT. Pose-moi tes questions sur ta tontine, ton épargne ou tes finances !"}]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
   const bottomRef=useRef();
   const {listening,toggle:toggleMic}=useVoiceInput(t=>setInput(p=>p?`${p} ${t}`:t));
+
+  // HABY est le seul service facture a l'usage : le plan gratuit est plafonne par jour.
+  // Ce compteur est purement informatif (la vraie limite est appliquee cote serveur) ;
+  // il sert a prevenir gentiment au lieu de laisser l'utilisatrice croire a un bug.
+  const [posees,setPosees]=useState(0);
+  const illimiteIA=estIllimite(user);
+  useEffect(()=>{
+    if(illimiteIA||!user?.id)return;
+    (async()=>{
+      const jour=new Date().toISOString().split("T")[0];
+      const {data}=await supabase.from("haby_usage").select("nb").eq("user_id",user.id).eq("jour",jour).maybeSingle();
+      setPosees(Number(data?.nb)||0);
+    })();
+  },[user?.id,illimiteIA]);
+  const restantes=Math.max(0,QUOTA_HABY_GRATUIT-posees);
 
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
 
@@ -3057,6 +3107,7 @@ const HabyScreen = ({groupes}) => {
     const text=(txt!==undefined?txt:input).trim();
     if(!text||loading)return;
     setInput("");setLoading(true);
+    if(!illimiteIA)setPosees(n=>n+1);
     const newMsgs=[...msgs,{role:"user",content:text}];
     setMsgs(newMsgs);
     const ctx=groupes.map(g=>`Tontine "${g.nom}": ${g.membres.length} membres, ${fmtFCFA(g.montant)}/cycle, cycle ${g.cycle}/${g.totalCycles}, ${g.membres.filter(m=>m.paye).length} payes.`).join("\n");
@@ -3106,7 +3157,10 @@ Donnees reelles des tontines de l utilisatrice en ce moment : ${ctx||"aucune ton
     <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 78px)",background:"#FFFFFF"}}>
       <div style={{background:"#FFFFFF",padding:"44px 16px 14px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #E5E7EB",flexShrink:0}}>
         <div style={{width:46,height:46,background:"linear-gradient(135deg,#FF6B00,#CC5200)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:20,color:"#0D0D0D",flexShrink:0}}>H</div>
-        <div><p style={{margin:0,color:"#111827",fontWeight:800,fontSize:16}}>HABY</p><p style={{margin:0,color:"#22C55E",fontSize:11}}>En ligne - Assistante THT</p></div>
+        <div style={{flex:1,minWidth:0}}><p style={{margin:0,color:"#111827",fontWeight:800,fontSize:16}}>HABY</p><p style={{margin:0,color:"#22C55E",fontSize:11}}>En ligne - Assistante THT</p></div>
+        {illimiteIA
+          ? <span style={{background:"#FFF7ED",color:"#9A3412",fontSize:10.5,fontWeight:700,padding:"4px 9px",borderRadius:99,border:"1px solid #FF6B00",flexShrink:0}}>Illimite</span>
+          : <span title="Nombre de questions offertes aujourd hui" style={{background:restantes>0?"#F3F4F6":"#FEF2F2",color:restantes>0?"#6B7280":"#B91C1C",fontSize:10.5,fontWeight:700,padding:"4px 9px",borderRadius:99,border:"1px solid "+(restantes>0?"#E5E7EB":"#EF4444"),flexShrink:0}}>{restantes}/{QUOTA_HABY_GRATUIT} aujourd hui</span>}
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"16px 16px 0"}}>
         {msgs.map((m,i)=>(
@@ -3608,7 +3662,7 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
     const maj={prenom:nom};
     if(editPhotoFile){
       try{
-        const blob=await compressImage(editPhotoFile);
+        const blob=await compressImage(editPhotoFile,TAILLE_AVATAR,QUALITE_AVATAR);
         maj.photo_url=await uploadPhoto(new File([blob],"profil.jpg",{type:"image/jpeg"}),"users");
       }catch{
         setEditProfilBusy(false);
@@ -3995,7 +4049,7 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
         totalVerse:fmtFCFA(succes.nouveauTotal),statut:"CONTRIBUTION ENREGISTREE",cycle:"-",totalCycles:"-",
         ref:`CAG-${now.getTime().toString().slice(-8)}`,date:now.toLocaleDateString("fr-FR")
       });
-      await partagerImage(blob,"recu-contribution.png","Recu THT","Merci pour ta contribution !");
+      await partagerImage(blob,"recu-contribution.jpg","Recu THT","Merci pour ta contribution !");
     }catch{}
     setRecuBusy(false);
   };
@@ -4585,7 +4639,7 @@ input::placeholder{color:#D1D5DB;}
         :nav==="home"?<HomeScreen user={cu} groupes={groupes} nonLus={nonLusParGroupe} onSelectGroupe={(g)=>{setDeepLink(null);pushBack(()=>{setSel(null);setDeepLink(null);loadGroupes(cu.id);loadParticipations(cu.id);compterNonLus(cu.id,[...new Set([...groupes.map(x=>x.id),...participations.map(x=>x.id)])]);});setSel(g);}} onCreer={()=>setShowC(true)} onProfil={()=>setNav("profil")} participations={participations} onSelectParticipation={(g)=>{setDeepLink(null);pushBack(()=>{setSelPart(null);setDeepLink(null);compterNonLus(cu.id,[...new Set([...groupes.map(x=>x.id),...participations.map(x=>x.id)])]);});setSelPart(g);}} onOpenHaby={()=>setNav("haby")} onOpenCagnottes={()=>setNav("cagnottes")}/>
         :nav==="cagnottes"?<CagnottesScreen cagnottes={cagnottes} onCreerCagnotte={()=>setShowCagnotteModal(true)} onSelectCagnotte={(c)=>{pushBack(()=>setSelCagnotte(null));setSelCagnotte(c);}}/>
         :nav==="epargne"?<EpargneScreen onToast={showToast} user={cu}/>
-        :nav==="haby"?<HabyScreen groupes={groupes}/>
+        :nav==="haby"?<HabyScreen groupes={groupes} user={cu}/>
         :nav==="admin"?<AdminScreen onBack={backTap} onToast={showToast} currentUserId={cu.id} user={cu}/>
         :nav==="profil"?<ProfilScreen user={cu} onLogout={handleLogout} onToast={showToast} onUpgrade={()=>showToast("Envoie ton paiement et contacte le support WhatsApp","warn")} onOpenAdmin={()=>{if(adminUnlocked){pushBack(()=>setNav("profil"));setNav("admin");}else{setPinConfirm("");setPinConfirmErr("");setShowPinConfirm(true);}}} lang={lang} onChangeLang={changeLang} onUpdateUser={(upd)=>setUser(u=>({...u,...upd}))}/>:null}
       </div>

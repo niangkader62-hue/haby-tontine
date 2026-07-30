@@ -66,6 +66,27 @@ const partagerImage=async(blob,filename,titre,texte)=>{
 // il faut pouvoir relire des chiffres, donc on reste genereux.
 // Pour les AVATARS, on passe explicitement TAILLE_AVATAR : ils s'affichent entre 22 et
 // 76 px, donc 320 px suffit largement (retina inclus) et pese ~7x moins.
+// --- Empreinte d'image (anti-reutilisation des preuves) -------------------------
+// Une preuve de paiement (capture Orange Money/Wave, photo de billets) est unique a
+// une transaction. La fraude la plus simple et la plus courante consiste a renvoyer LA
+// MEME image a chaque cycle. On calcule donc une empreinte du fichier : si la meme
+// image a deja servi dans cette tontine, on refuse.
+//
+// A savoir, en toute franchise : cela n'empeche PAS quelqu'un de photographier de
+// l'argent qui n'est pas le sien, ni de fabriquer une fausse capture. Aucun controle
+// technique ne peut prouver qu'un paiement a reellement eu lieu -- seule la
+// confirmation humaine de la creatrice fait foi. Ceci bloque la triche facile, rien de plus.
+const empreinteImage = async (source) => {
+  try {
+    // On prend les octets du fichier d'ORIGINE (avant compression) : l'empreinte est
+    // ainsi identique quel que soit le telephone ou le navigateur.
+    const buf = source instanceof Blob ? await source.arrayBuffer()
+              : await (await fetch(source)).arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+  } catch { return null; } // navigateur trop ancien : on laisse passer plutot que bloquer
+};
+
 const TAILLE_AVATAR = 320;
 const QUALITE_AVATAR = 0.78;
 const compressImage = (file, maxDim = 1024, quality = 0.82) => new Promise((resolve, reject) => {
@@ -1204,6 +1225,16 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     if(!preuve)return onToast("Une capture d'écran du paiement est requise","error");
     setDeclareBusy(true);
     const montant=groupe.moi.montantPerso??groupe.montant;
+    // Anti-reutilisation : la meme capture ne peut pas servir deux fois dans la tontine.
+    const empreinte=await empreinteImage(preuve);
+    if(empreinte){
+      const {data:deja}=await supabase.from("declarations_paiement")
+        .select("id,created_at").eq("groupe_id",groupe.id).eq("photo_hash",empreinte).limit(1);
+      if(deja&&deja.length>0){
+        setDeclareBusy(false);
+        return onToast("Cette capture a déjà été utilisée pour un paiement. Envoie la capture du nouveau paiement.","error");
+      }
+    }
     let photoUrl=null;
     try{
       const blobPhoto=await (await fetch(preuve)).blob();
@@ -1212,7 +1243,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
     }catch{}
     if(!photoUrl){setDeclareBusy(false);return onToast("Impossible d'enregistrer la photo, réessaie","error");}
-    const {data,error}=await supabase.from("declarations_paiement").insert({groupe_id:groupe.id,membre_id:groupe.moi.id,montant,moyen,cycle:groupe.cycle,photo_url:photoUrl}).select().single();
+    const {data,error}=await supabase.from("declarations_paiement").insert({groupe_id:groupe.id,membre_id:groupe.moi.id,montant,moyen,cycle:groupe.cycle,photo_url:photoUrl,photo_hash:empreinte}).select().single();
     setDeclareBusy(false);
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
     setDeclarationEnAttente(data);
@@ -2357,13 +2388,22 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const ajouterPhotoPreuve=async(m,tx,e)=>{
     const f=e.target.files?.[0];if(!f)return;
     setPreuveBusy(m.id);
+    const empreinte=await empreinteImage(f);
+    if(empreinte){
+      const {data:deja}=await supabase.from("transactions")
+        .select("id").eq("groupe_id",groupe.id).eq("photo_hash",empreinte).limit(1);
+      if(deja&&deja.length>0){
+        setPreuveBusy(null);
+        return onToast("Cette photo a déjà servi de preuve dans cette tontine.","error");
+      }
+    }
     try{
       const blob=await compressImage(f);
       const path=`versements/${groupe.id}/${m.id}-${Date.now()}.jpg`;
       const {error:upErr}=await supabase.storage.from("photos").upload(path,blob,{contentType:"image/jpeg",upsert:true});
       if(upErr)throw upErr;
       const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
-      const {error}=await supabase.from("transactions").update({photo_url:pub.publicUrl}).eq("id",tx.id);
+      const {error}=await supabase.from("transactions").update({photo_url:pub.publicUrl,photo_hash:empreinte}).eq("id",tx.id);
       if(error)throw error;
       setSuivi(s=>({...s,[m.id]:{...s[m.id],photo_url:pub.publicUrl}}));
       onToast("Photo de l'argent ajoutée !");
@@ -2435,6 +2475,13 @@ THT - Tontine Habi Traore`;
   const saveVers=async(mode)=>{ // mode: "simple" (recu envoye dans la messagerie interne) ou "partager" (partage externe, WhatsApp...)
     const amt=Number(versAmt);
     if(!amt||amt<1)return;
+    // Anti-reutilisation de la preuve dans cette tontine (voir empreinteImage).
+    const empreinteVers=versPhoto?await empreinteImage(versPhoto):null;
+    if(empreinteVers){
+      const {data:deja}=await supabase.from("transactions")
+        .select("id").eq("groupe_id",groupe.id).eq("photo_hash",empreinteVers).limit(1);
+      if(deja&&deja.length>0)return onToast("Cette photo a déjà servi de preuve dans cette tontine. Prends la photo du nouveau versement.","error");
+    }
     const newVersements=(versM.versements||0)+amt;
     const paye=newVersements>=montantDu(versM);
     const newScore=Math.min((versM.score||80)+(paye?5:2),100);
@@ -2450,7 +2497,7 @@ THT - Tontine Habi Traore`;
         if(!upErr){const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);photoUrl=pub.publicUrl;}
       }catch{onToast("Photo non envoyee, le versement est quand meme enregistre","error");}
     }
-    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,recu_envoye:mode==="partager"});
+    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,photo_hash:empreinteVers,recu_envoye:mode==="partager"});
     setGroupe(g=>({...g,
       cagnotte:g.cagnotte+amt,
       membres:g.membres.map(m=>m.id===versM.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)

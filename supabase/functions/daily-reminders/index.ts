@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
   if (!publicKey || !privateKey) {
     return new Response(JSON.stringify({ error: "Cles VAPID manquantes" }), { status: 500 });
   }
-  webpush.setVapidDetails("mailto:contact@habytontine.app", publicKey, privateKey);
+  webpush.setVapidDetails("mailto:contact@kbsdigitalagency.com", publicKey, privateKey);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",

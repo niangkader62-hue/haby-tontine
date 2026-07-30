@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
             const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
             const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
             if (publicKey && privateKey) {
-              webpush.default.setVapidDetails("mailto:contact@habytontine.app", publicKey, privateKey);
+              webpush.default.setVapidDetails("mailto:contact@kbsdigitalagency.com", publicKey, privateKey);
               await webpush.default.sendNotification(sub.subscription, JSON.stringify({
                 title: "THT - Nouvelle contribution !",
                 body: `${contributeur} a contribue ${montantNum} FCFA a "${cagnotte.titre}"`,

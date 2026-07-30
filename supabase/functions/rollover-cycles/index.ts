@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
   const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
   const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
-  if (publicKey && privateKey) webpush.setVapidDetails("mailto:contact@habytontine.app", publicKey, privateKey);
+  if (publicKey && privateKey) webpush.setVapidDetails("mailto:contact@kbsdigitalagency.com", publicKey, privateKey);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",

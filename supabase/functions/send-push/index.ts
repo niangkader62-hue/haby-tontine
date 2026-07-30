@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    webpush.setVapidDetails("mailto:contact@habytontine.app", publicKey, privateKey);
+    webpush.setVapidDetails("mailto:contact@kbsdigitalagency.com", publicKey, privateKey);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",

@@ -42,6 +42,15 @@ const json = (corps: unknown, status = 200) =>
 const onLaissePasser = (raison: string) =>
   json({ ok: true, verifie: false, verdict: "indetermine", raison });
 
+// Deux signaux sont demandes a l'IA, pas un seul. "decision" dit si l'image est une
+// preuve ; "sujet_principal" dit ce que l'image MONTRE, en un mot d'une liste fermee.
+// Reconnaitre le sujet ("une personne", "un objet") est une tache bien plus fiable
+// pour un modele de vision que de juger "est-ce une preuve". On s'en sert comme
+// filet : un sujet manifestement non financier fait refuser, meme si la decision hesite.
+const SUJETS_NON_PREUVE = new Set([
+  "personne", "animal", "lieu", "objet", "capture_sans_argent",
+]);
+
 const CONSIGNE = `Tu examines une image envoyee comme preuve d'un paiement mobile en Afrique de l'Ouest
 (Mali, Senegal, Burkina, Cote d'Ivoire).
 
@@ -62,6 +71,7 @@ N'EST PAS une preuve, meme si l'image est nette et de bonne qualite :
 
 Reponds UNIQUEMENT par un objet JSON, sans texte autour, sans balises de code :
 {
+  "sujet_principal": "preuve_paiement" | "personne" | "animal" | "lieu" | "objet" | "capture_sans_argent",
   "decision": "preuve" | "pas_preuve" | "incertain",
   "type": "capture_operateur" | "sms" | "recu_papier" | "billets" | "autre",
   "operateur": "Orange Money" | "Wave" | "Moov Money" | "autre nom lu" | null,
@@ -71,19 +81,26 @@ Reponds UNIQUEMENT par un objet JSON, sans texte autour, sans balises de code :
   "description": "ce que tu vois vraiment, en 8 mots maximum, en francais"
 }
 
-COMMENT CHOISIR "decision" -- c'est le point le plus important :
-- "preuve"    : tu reconnais l'un des cas de la premiere liste.
-- "pas_preuve": tu identifies clairement le contenu de l'image et ce contenu n'a rien a
-                voir avec un paiement. Une photo nette d'un visage, d'un animal ou d'un
-                objet est "pas_preuve" -- pas "incertain". Le fait de ne voir aucun
-                montant et aucun nom d'operateur sur une image pourtant nette suffit a
-                repondre "pas_preuve".
-- "incertain" : reserve aux images qu'on ne PEUT PAS identifier -- trop floues, trop
-                sombres, surexposees, coupees. Si tu arrives a dire ce que montre
-                l'image, tu n'es pas dans ce cas.
+REGLE 1 -- "sujet_principal", ce que montre l'image AVANT tout jugement :
+- "preuve_paiement" : capture d'operateur, SMS de transfert, recu papier, billets/pieces ;
+- "personne"        : un visage, un selfie, un portrait, une photo d'identite ;
+- "animal"          : un animal ;
+- "lieu"            : un paysage, une rue, un batiment, une voiture ;
+- "objet"           : un plat, un vetement, un meuble, un objet du quotidien ;
+- "capture_sans_argent" : une capture d'ecran qui ne parle pas d'argent (discussion,
+                    reseau social, jeu, meteo, page web).
+  Devant un visage net, reponds "personne" -- jamais "preuve_paiement".
 
-Une photo de billets reste une preuve valable meme sans aucun texte : "decision":
-"preuve", "type": "billets", et "montant": null si tu ne peux pas compter avec certitude.`;
+REGLE 2 -- "decision" :
+- "preuve"     : tu reconnais une preuve valable (sujet_principal = "preuve_paiement") ;
+- "pas_preuve" : le sujet n'a rien a voir avec un paiement ;
+- "incertain"  : reserve aux images qu'on ne PEUT PAS identifier (trop floues, trop
+                 sombres, surexposees, coupees). Si tu arrives a dire ce que montre
+                 l'image, tu n'es PAS dans ce cas.
+
+Une photo de billets reste une preuve valable meme sans aucun texte : sujet_principal
+"preuve_paiement", "decision": "preuve", "type": "billets", et "montant": null si tu ne
+peux pas compter avec certitude.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -161,19 +178,24 @@ Deno.serve(async (req) => {
     }
 
     const montantLu = Number(lu.montant);
-
-    // Traduction de la decision de l'IA en verdict pour l'application.
-    //
-    // PREMIERE VERSION, CORRIGEE ICI : on demandait un booleen "est_preuve" accompagne
-    // d'un niveau de "confiance", et on ne refusait que si la confiance etait "haute".
-    // Le mot confiance etait ambigu -- confiance en quoi ? Devant un portrait, l'IA
-    // repondait "ce n'est pas une preuve" avec une confiance moyenne ou faible (elle ne
-    // lisait ni montant ni operateur), et la photo passait. Un portrait etait donc accepte.
-    //
-    // Desormais l'IA rend une decision explicite, et "incertain" est reserve aux images
-    // qu'on ne peut pas identifier du tout. On refuse donc franchement "pas_preuve".
     const decision = String(lu.decision || "incertain");
-    const verdict = decision === "pas_preuve" ? "refuse"
+    const sujet = String(lu.sujet_principal || "");
+
+    // Trace serveur (visible dans les logs edge-function) : permet de voir exactement
+    // ce que l'IA a repondu si une image passe ou est refusee a tort.
+    console.log(`[verifier-preuve] sujet=${sujet} decision=${decision} operateur=${lu.operateur ?? ""} montant=${lu.montant ?? ""} desc=${lu.description ?? ""}`);
+
+    // Traduction en verdict pour l'application.
+    //
+    // HISTORIQUE DU BUG : on ne refusait que si "decision" valait exactement "pas_preuve".
+    // Or, devant un portrait, le modele repondait souvent "incertain" (par prudence) et la
+    // photo passait. On s'appuie donc AUSSI sur "sujet_principal" : si l'image montre
+    // manifestement autre chose qu'un paiement (une personne, un objet...), on refuse,
+    // meme si "decision" hesite -- et meme si elle dit "preuve" par erreur, car reconnaitre
+    // le sujet est plus fiable que juger la valeur de preuve.
+    const sujetEstNonPreuve = SUJETS_NON_PREUVE.has(sujet);
+    const verdict = sujetEstNonPreuve ? "refuse"
+                  : decision === "pas_preuve" ? "refuse"
                   : decision === "preuve"     ? "valide"
                   : "doute";
 
@@ -197,6 +219,7 @@ Deno.serve(async (req) => {
       devise: lu.devise ?? null,
       date: lu.date ?? null,
       decision,
+      sujet_principal: sujet || null,
       description: lu.description ?? null,
       ecart_montant: ecartMontant,
     });

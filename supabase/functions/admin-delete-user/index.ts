@@ -12,13 +12,23 @@
 // Une suppression de compte est irreversible : l'administratrice doit voir ce qu'elle
 // detruit avant de le detruire.
 //
+// DEUX FACONS DE SUPPRIMER (parametre "mode")
+//   mode = "garder_tontines" (defaut) -> le compte part, les tontines RESTENT.
+//     Le numero de telephone de la proprietaire est inscrit sur chaque tontine
+//     (colonne proprietaire_tel). A la reinscription avec le MEME numero, la personne
+//     les retrouve automatiquement : le declencheur link_membres_on_signup lui rend
+//     ses tontines en meme temps qu'il la rattache a ses lignes de membre.
+//     Entre-temps, les autres membres continuent de voir la tontine et son historique.
+//   mode = "tout" -> le compte ET ses tontines disparaissent. A n'utiliser que sur une
+//     tontine vide ou de test : cela efface aussi les versements des autres membres.
+//     Refuse si d'autres membres cotisent, sauf demande explicite.
+//
 // GARDE-FOUS
 //   - reserve aux comptes ayant le role admin
 //   - impossible de supprimer son propre compte (on se couperait l'acces)
 //   - impossible de supprimer un autre admin
-//   - si la personne possede une tontine ou d'autres membres cotisent, on REFUSE :
-//     supprimer son compte detruirait la tontine et les comptes de tout le groupe.
-//     L'administratrice doit alors transferer la tontine ou la supprimer sciemment.
+//   - en mode "tout", refus si la personne dirige une tontine ou d'autres membres
+//     cotisent : cela effacerait les versements de tout le groupe.
 //
 // CE QUI EST CONSERVE : les lignes "membres" de la personne dans les tontines des AUTRES
 // ne sont pas effacees, seulement detachees du compte (user_id remis a vide). Les
@@ -59,7 +69,10 @@ Deno.serve(async (req) => {
     if (profilAppelant?.role !== "admin") return json({ error: "Reserve aux administratrices" }, 403);
 
     // --- 2. Qui supprimer ? ---------------------------------------------------
-    const { user_id, action } = await req.json().catch(() => ({}));
+    const { user_id, action, mode } = await req.json().catch(() => ({}));
+    // Par defaut on CONSERVE les tontines : c'est le choix qui ne detruit rien
+    // d'irremplacable. Effacer les tontines doit etre un geste demande, jamais un defaut.
+    const garderTontines = mode !== "tout";
     if (!user_id) return json({ error: "user_id manquant" }, 400);
     if (user_id === appelant.id) {
       return json({ error: "Tu ne peux pas supprimer ton propre compte : tu perdrais l'acces a l'Administration." }, 400);
@@ -113,14 +126,14 @@ Deno.serve(async (req) => {
       return json({ ok: true, apercu: true, inventaire });
     }
 
-    // --- 4. Refus si la suppression detruirait le groupe de quelqu'un d'autre --
-    if (tontinesVivantes.length > 0) {
+    // --- 4. Refus uniquement si on a DEMANDE d'effacer une tontine encore vivante ----
+    if (!garderTontines && tontinesVivantes.length > 0) {
       return json({
         error:
           `Suppression refusee : cette personne dirige ${tontinesVivantes.length} tontine(s) ou d'autres membres cotisent ` +
           `(${tontinesVivantes.map((t) => `"${t.nom}" : ${t.membres} membres`).join(", ")}). ` +
-          `Supprimer son compte effacerait ces tontines et les versements de tout le groupe. ` +
-          `Supprime ou transfere d'abord ces tontines, puis reessaie.`,
+          `Tout effacer supprimerait aussi les versements de tout le groupe. ` +
+          `Choisis plutot "Garder les tontines" : le compte part, les tontines restent.`,
         inventaire,
       }, 409);
     }
@@ -130,16 +143,28 @@ Deno.serve(async (req) => {
     // Si une etape echoue, les precedentes restent faites -- la fonction est concue pour
     // etre relancee sans risque (chaque operation est idempotente).
 
-    // Detachement : la personne disparait des tontines des autres, mais l'historique
-    // des versements du groupe reste intact.
+    // Detachement : la personne disparait des tontines, mais l'historique des versements
+    // du groupe reste intact. C'est aussi ce qui permet la reprise : le declencheur
+    // link_membres_on_signup rattache par numero de telephone les lignes sans compte.
     const { error: eDetach, count: cDetach } = await supabase
       .from("membres").update({ user_id: null }, { count: "exact" }).eq("user_id", user_id);
     journal.push(`membres detaches (historique conserve) : ${eDetach ? "ERREUR " + eDetach.message : cDetach}`);
 
-    // Ses tontines vides (0 ou 1 membre : elle seule) peuvent partir avec elle.
-    for (const t of tontines) {
-      const { error } = await supabase.from("groupes").delete().eq("id", t.id);
-      journal.push(`tontine "${t.nom}" supprimee : ${error ? "ERREUR " + error.message : "oui"}`);
+    if (garderTontines) {
+      // On inscrit le numero sur la tontine et on la laisse SANS proprietaire.
+      // Mettre owner_id a vide est indispensable : cette colonne porte une cascade vers
+      // le profil, et effacer le profil emporterait la tontine sans aucun ordre explicite.
+      for (const t of tontines) {
+        const { error } = await supabase.from("groupes")
+          .update({ proprietaire_tel: cible.telephone, user_id: null, owner_id: null })
+          .eq("id", t.id);
+        journal.push(`tontine "${t.nom}" conservee et mise en attente de reprise : ${error ? "ERREUR " + error.message : "oui"}`);
+      }
+    } else {
+      for (const t of tontines) {
+        const { error } = await supabase.from("groupes").delete().eq("id", t.id);
+        journal.push(`tontine "${t.nom}" supprimee : ${error ? "ERREUR " + error.message : "oui"}`);
+      }
     }
 
     // Tables rattachees au compte. Chaque suppression est independante : une table
@@ -180,10 +205,13 @@ Deno.serve(async (req) => {
     }
     journal.push("auth.users : supprime -- le numero est libre");
 
+    const nbTontines = tontines.length;
     return json({
       ok: true,
       supprime: true,
-      message: `Compte de ${cible.prenom} (${cible.telephone}) entierement supprime. Le numero est libre : cette personne peut se reinscrire comme nouvelle utilisatrice.`,
+      message: garderTontines && nbTontines > 0
+        ? `Compte de ${cible.prenom} supprime. Ses ${nbTontines} tontine(s) sont conservees : en se reinscrivant avec le numero ${cible.telephone}, elle les retrouvera automatiquement.`
+        : `Compte de ${cible.prenom} (${cible.telephone}) entierement supprime. Le numero est libre : cette personne peut se reinscrire comme nouvelle utilisatrice.`,
       journal,
     });
   } catch (e) {

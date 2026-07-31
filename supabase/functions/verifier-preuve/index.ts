@@ -45,34 +45,45 @@ const onLaissePasser = (raison: string) =>
 const CONSIGNE = `Tu examines une image envoyee comme preuve d'un paiement mobile en Afrique de l'Ouest
 (Mali, Senegal, Burkina, Cote d'Ivoire).
 
-Une preuve valable est l'une de ces choses :
+EST une preuve valable :
 - une capture d'ecran de confirmation d'un operateur (Orange Money, Wave, Moov Money,
   Free Money, MTN MoMo, Djamo, Sama Money, Wizall...) ;
 - un SMS de confirmation de transfert ;
-- un recu papier photographie ;
-- une photo de billets de banque remis en main propre.
+- un recu ou bordereau papier photographie ;
+- une photo de billets de banque ou de pieces (remise en main propre).
 
-N'est PAS une preuve : un selfie, un paysage, un animal, un plat, une photo d'objet,
-une image trouvee sur internet, une capture sans rapport avec de l'argent.
+N'EST PAS une preuve, meme si l'image est nette et de bonne qualite :
+- une personne : portrait, selfie, photo de famille, photo d'identite ;
+- un animal, un paysage, un batiment, une voiture ;
+- un plat, un vetement, un meuble, un objet quelconque ;
+- une capture d'ecran sans rapport avec de l'argent (discussion, reseau social, jeu,
+  meteo, page web) ;
+- une image decorative ou trouvee sur internet.
 
 Reponds UNIQUEMENT par un objet JSON, sans texte autour, sans balises de code :
 {
-  "est_preuve": true | false,
+  "decision": "preuve" | "pas_preuve" | "incertain",
   "type": "capture_operateur" | "sms" | "recu_papier" | "billets" | "autre",
   "operateur": "Orange Money" | "Wave" | "Moov Money" | "autre nom lu" | null,
   "montant": nombre entier sans espace ni devise, ou null si illisible,
   "devise": "FCFA" ou autre, ou null,
   "date": "JJ/MM/AAAA" telle que lue, ou null,
-  "confiance": "haute" | "moyenne" | "faible",
-  "description": "ce que tu vois, en 8 mots maximum, en francais"
+  "description": "ce que tu vois vraiment, en 8 mots maximum, en francais"
 }
 
-Regles importantes :
-- Une photo de billets est une preuve valable meme sans texte : "est_preuve": true,
-  "type": "billets", montant null si tu ne peux pas compter avec certitude.
-- Si l'image est floue ou sombre mais ressemble a une preuve, mets "est_preuve": true
-  avec "confiance": "faible". Le doute profite a la personne.
-- Ne mets "est_preuve": false que si tu es sur que l'image n'a aucun rapport avec un paiement.`;
+COMMENT CHOISIR "decision" -- c'est le point le plus important :
+- "preuve"    : tu reconnais l'un des cas de la premiere liste.
+- "pas_preuve": tu identifies clairement le contenu de l'image et ce contenu n'a rien a
+                voir avec un paiement. Une photo nette d'un visage, d'un animal ou d'un
+                objet est "pas_preuve" -- pas "incertain". Le fait de ne voir aucun
+                montant et aucun nom d'operateur sur une image pourtant nette suffit a
+                repondre "pas_preuve".
+- "incertain" : reserve aux images qu'on ne PEUT PAS identifier -- trop floues, trop
+                sombres, surexposees, coupees. Si tu arrives a dire ce que montre
+                l'image, tu n'es pas dans ce cas.
+
+Une photo de billets reste une preuve valable meme sans aucun texte : "decision":
+"preuve", "type": "billets", et "montant": null si tu ne peux pas compter avec certitude.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -149,13 +160,22 @@ Deno.serve(async (req) => {
       return onLaissePasser("reponse d analyse illisible");
     }
 
-    const estPreuve = lu.est_preuve === true;
-    const confiance = String(lu.confiance || "faible");
     const montantLu = Number(lu.montant);
 
-    // On ne refuse QUE le cas franc : ce n'est pas une preuve, et l'IA en est sure.
-    // Tout le reste passe, quitte a etre signale a la creatrice.
-    const verdict = !estPreuve && confiance === "haute" ? "refuse" : estPreuve ? "valide" : "doute";
+    // Traduction de la decision de l'IA en verdict pour l'application.
+    //
+    // PREMIERE VERSION, CORRIGEE ICI : on demandait un booleen "est_preuve" accompagne
+    // d'un niveau de "confiance", et on ne refusait que si la confiance etait "haute".
+    // Le mot confiance etait ambigu -- confiance en quoi ? Devant un portrait, l'IA
+    // repondait "ce n'est pas une preuve" avec une confiance moyenne ou faible (elle ne
+    // lisait ni montant ni operateur), et la photo passait. Un portrait etait donc accepte.
+    //
+    // Desormais l'IA rend une decision explicite, et "incertain" est reserve aux images
+    // qu'on ne peut pas identifier du tout. On refuse donc franchement "pas_preuve".
+    const decision = String(lu.decision || "incertain");
+    const verdict = decision === "pas_preuve" ? "refuse"
+                  : decision === "preuve"     ? "valide"
+                  : "doute";
 
     // Ecart de montant : information, jamais motif de refus. Un versement partiel ou
     // un paiement groupe sont des situations parfaitement normales dans une tontine.
@@ -176,7 +196,7 @@ Deno.serve(async (req) => {
       montant: Number.isFinite(montantLu) && montantLu > 0 ? montantLu : null,
       devise: lu.devise ?? null,
       date: lu.date ?? null,
-      confiance,
+      decision,
       description: lu.description ?? null,
       ecart_montant: ecartMontant,
     });

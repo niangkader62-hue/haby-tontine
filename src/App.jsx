@@ -3710,10 +3710,12 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
     setSuppr({u,inventaire:data.inventaire});
   };
 
-  const confirmerSuppression=async()=>{
+  // mode "garder_tontines" : le compte part, les tontines restent et attendent que la
+  // personne se reinscrive avec le meme numero. mode "tout" : rien ne subsiste.
+  const confirmerSuppression=async(mode)=>{
     if(!suppr)return;
     setSupprBusy(true);
-    const {data,erreur}=await appelerFonctionAdmin({user_id:suppr.u.id,action:"supprimer"});
+    const {data,erreur}=await appelerFonctionAdmin({user_id:suppr.u.id,action:"supprimer",mode});
     setSupprBusy(false);
     if(erreur)return onToast(erreur,"error");
     setUsers(list=>list.filter(x=>x.id!==suppr.u.id));
@@ -3857,7 +3859,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
           {suppr.inventaire.inscrit_le&&<p style={{margin:"2px 0 0",color:"#9CA3AF",fontSize:11}}>Inscrit le {new Date(suppr.inventaire.inscrit_le).toLocaleDateString("fr-FR")}</p>}
         </div>
 
-        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 6px",letterSpacing:.5}}>CE QUI SERA EFFACÉ</p>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 6px",letterSpacing:.5}}>CE QUI EST RATTACHÉ À CE COMPTE</p>
         <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"10px 14px",marginBottom:14}}>
           {[["Tontines qu'elle dirige",suppr.inventaire.tontines_possedees?.length||0],
             ["Cagnottes",suppr.inventaire.cagnottes],
@@ -3877,25 +3879,39 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
             Seul le lien avec son compte est retiré.
           </p>}
 
-        {suppr.inventaire.tontines_vivantes?.length>0
-          ? <div style={{background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:12,padding:"11px 14px",marginBottom:14}}>
-              <p style={{margin:0,color:"#92400E",fontSize:12,fontWeight:700,lineHeight:1.5}}>
-                ⛔ Suppression impossible : elle dirige {suppr.inventaire.tontines_vivantes.length} tontine(s) où d'autres membres cotisent
-                ({suppr.inventaire.tontines_vivantes.map(t=>`"${t.nom}" — ${t.membres} membres`).join(", ")}).
-                Supprimer son compte effacerait ces tontines et l'argent enregistré de tout le groupe.
-                Supprime ou transfère d'abord ces tontines.
-              </p>
-            </div>
-          : <p style={{color:"#EF4444",fontSize:12,fontWeight:600,lineHeight:1.5,marginBottom:14}}>
-              ⚠️ Action irréversible. En échange, le numéro <strong>{suppr.inventaire.telephone}</strong> sera libéré :
-              cette personne pourra se réinscrire comme une nouvelle utilisatrice.
-            </p>}
+        <p style={{color:"#EF4444",fontSize:12,fontWeight:600,lineHeight:1.5,marginBottom:14}}>
+          ⚠️ Action irréversible. Dans les deux cas le numéro <strong>{suppr.inventaire.telephone}</strong> est libéré :
+          cette personne pourra se réinscrire.
+        </p>
 
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setSuppr(null)} disabled={supprBusy} style={{flex:1,background:"transparent",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px",color:"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>Annuler</button>
-          {!(suppr.inventaire.tontines_vivantes?.length>0)&&
-            <button onClick={confirmerSuppression} disabled={supprBusy} style={{flex:1,background:"#C1440E",border:"none",borderRadius:12,padding:"12px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>{supprBusy?"Suppression...":"Supprimer définitivement"}</button>}
-        </div>
+        {/* Deux facons de supprimer. La premiere ne detruit rien d'irremplacable et est
+            donc mise en avant ; la seconde efface aussi les tontines et reste discrete. */}
+        {(suppr.inventaire.tontines_possedees?.length>0)
+          ? <>
+              <button onClick={()=>confirmerSuppression("garder_tontines")} disabled={supprBusy} style={{width:"100%",background:"#FF6B00",border:"none",borderRadius:12,padding:"13px",color:"#0D0D0D",fontWeight:800,fontSize:13,cursor:"pointer"}}>
+                {supprBusy?"Suppression...":"Supprimer le compte, GARDER les tontines"}
+              </button>
+              <p style={{color:"#6B7280",fontSize:11.5,lineHeight:1.5,margin:"7px 0 14px"}}>
+                Ses {suppr.inventaire.tontines_possedees.length} tontine(s) continuent d'exister et les autres membres
+                gardent tout leur historique. En se réinscrivant avec le <strong>même numéro</strong>, elle les retrouvera
+                automatiquement, comme avant.
+              </p>
+
+              <button onClick={()=>confirmerSuppression("tout")} disabled={supprBusy} style={{width:"100%",background:"transparent",border:"1px solid #C1440E",borderRadius:12,padding:"11px",color:"#EF4444",fontWeight:700,fontSize:12.5,cursor:"pointer"}}>
+                {supprBusy?"...":"Tout supprimer, y compris les tontines"}
+              </button>
+              <p style={{color:"#6B7280",fontSize:11.5,lineHeight:1.5,margin:"7px 0 14px"}}>
+                À réserver aux tontines de test.
+                {suppr.inventaire.tontines_vivantes?.length>0
+                  ? <> Refusé ici : {suppr.inventaire.tontines_vivantes.map(t=>`"${t.nom}" compte ${t.membres} membres`).join(", ")}, et cela effacerait l'argent enregistré de tout le groupe.</>
+                  : " Les versements enregistrés seraient perdus."}
+              </p>
+            </>
+          : <button onClick={()=>confirmerSuppression("garder_tontines")} disabled={supprBusy} style={{width:"100%",background:"#C1440E",border:"none",borderRadius:12,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:14}}>
+              {supprBusy?"Suppression...":"Supprimer définitivement"}
+            </button>}
+
+        <button onClick={()=>setSuppr(null)} disabled={supprBusy} style={{width:"100%",background:"transparent",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px",color:"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>Annuler</button>
       </Modal>}
     </div>
   );

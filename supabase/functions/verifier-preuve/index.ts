@@ -5,18 +5,24 @@
 // N'importe quelle image passait : un selfie, une photo de chaussures, une capture au
 // hasard. La creatrice devait tout verifier a l'oeil, une photo apres l'autre.
 //
-// CE QUE FAIT CETTE FONCTION
-// Elle envoie l'image a Gemini et lui demande UNIQUEMENT de lire ce qu'il voit, au
-// format JSON : est-ce une confirmation de paiement mobile, de quel operateur, pour
-// quel montant, a quelle date. L'application peut alors refuser d'emblee ce qui n'a
-// rien a voir, et afficher "Orange Money - 25 000 F - 30/07" a cote de la photo.
+// L'APPROCHE, ET POURQUOI ELLE A CHANGE
+// On demandait a l'IA de JUGER : "est-ce une preuve ?". C'est une question d'opinion, et
+// le modele hesitait -- un portrait passait. Desormais on ne lui demande plus un avis,
+// on lui demande des FAITS : lit-elle un montant ? un nom d'operateur ? des mots lies a
+// de l'argent ? Et c'est L'APPLICATION qui tranche, sur ces faits :
+//   - au moins un indice concret d'argent (montant, operateur, type financier, mots
+//     d'argent) -> c'est une preuve, on accepte ;
+//   - une image NETTE sans aucun indice d'argent (un visage, un objet, un paysage) ->
+//     ce n'est pas une preuve, on refuse ;
+//   - une image qu'on ne peut pas identifier (floue, sombre) -> le doute profite a la
+//     membre, on laisse passer et on signale.
+// Lire un montant ou "Orange Money" est une tache que le modele rate quasiment jamais ;
+// c'est bien plus sur que de lui faire porter un jugement.
 //
 // CE QU'ELLE NE FAIT PAS, ET IL FAUT LE SAVOIR
 // Elle ne prouve PAS qu'un paiement a eu lieu. Une capture peut etre fabriquee, ou
 // etre celle du paiement de quelqu'un d'autre. Elle reconnait la FORME d'une preuve,
 // pas sa VERITE. La confirmation humaine de la creatrice reste ce qui fait foi.
-// C'est pourquoi le doute profite toujours a la membre : en cas d'incertitude ou de
-// panne, la photo est acceptee et simplement signalee.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -42,37 +48,26 @@ const json = (corps: unknown, status = 200) =>
 const onLaissePasser = (raison: string) =>
   json({ ok: true, verifie: false, verdict: "indetermine", raison });
 
-// Deux signaux sont demandes a l'IA, pas un seul. "decision" dit si l'image est une
-// preuve ; "sujet_principal" dit ce que l'image MONTRE, en un mot d'une liste fermee.
-// Reconnaitre le sujet ("une personne", "un objet") est une tache bien plus fiable
-// pour un modele de vision que de juger "est-ce une preuve". On s'en sert comme
-// filet : un sujet manifestement non financier fait refuser, meme si la decision hesite.
-const SUJETS_NON_PREUVE = new Set([
-  "personne", "animal", "lieu", "objet", "capture_sans_argent",
-]);
+// Types d'image qui SONT, par nature, une preuve financiere.
+const TYPES_FINANCIERS = new Set(["capture_operateur", "sms", "recu_papier", "billets"]);
 
 const CONSIGNE = `Tu examines une image envoyee comme preuve d'un paiement mobile en Afrique de l'Ouest
 (Mali, Senegal, Burkina, Cote d'Ivoire).
 
-EST une preuve valable :
+Ton travail n'est PAS de juger si "c'est une vraie preuve" : c'est seulement de LIRE et de
+RAPPORTER, honnetement, ce que l'image contient. L'application decidera ensuite.
+
+Une preuve de paiement contient au moins l'une de ces choses :
 - une capture d'ecran de confirmation d'un operateur (Orange Money, Wave, Moov Money,
   Free Money, MTN MoMo, Djamo, Sama Money, Wizall...) ;
 - un SMS de confirmation de transfert ;
-- un recu ou bordereau papier photographie ;
-- une photo de billets de banque ou de pieces (remise en main propre).
-
-N'EST PAS une preuve, meme si l'image est nette et de bonne qualite :
-- une personne : portrait, selfie, photo de famille, photo d'identite ;
-- un animal, un paysage, un batiment, une voiture ;
-- un plat, un vetement, un meuble, un objet quelconque ;
-- une capture d'ecran sans rapport avec de l'argent (discussion, reseau social, jeu,
-  meteo, page web) ;
-- une image decorative ou trouvee sur internet.
+- un recu ou bordereau papier ;
+- des billets de banque ou des pieces.
 
 Reponds UNIQUEMENT par un objet JSON, sans texte autour, sans balises de code :
 {
-  "sujet_principal": "preuve_paiement" | "personne" | "animal" | "lieu" | "objet" | "capture_sans_argent",
-  "decision": "preuve" | "pas_preuve" | "incertain",
+  "sujet_principal": "preuve_paiement" | "personne" | "animal" | "lieu" | "objet" | "capture_sans_argent" | "illisible",
+  "indices_argent": true | false,
   "type": "capture_operateur" | "sms" | "recu_papier" | "billets" | "autre",
   "operateur": "Orange Money" | "Wave" | "Moov Money" | "autre nom lu" | null,
   "montant": nombre entier sans espace ni devise, ou null si illisible,
@@ -81,25 +76,28 @@ Reponds UNIQUEMENT par un objet JSON, sans texte autour, sans balises de code :
   "description": "ce que tu vois vraiment, en 8 mots maximum, en francais"
 }
 
-REGLE 1 -- "sujet_principal", ce que montre l'image AVANT tout jugement :
-- "preuve_paiement" : capture d'operateur, SMS de transfert, recu papier, billets/pieces ;
-- "personne"        : un visage, un selfie, un portrait, une photo d'identite ;
-- "animal"          : un animal ;
-- "lieu"            : un paysage, une rue, un batiment, une voiture ;
-- "objet"           : un plat, un vetement, un meuble, un objet du quotidien ;
-- "capture_sans_argent" : une capture d'ecran qui ne parle pas d'argent (discussion,
-                    reseau social, jeu, meteo, page web).
-  Devant un visage net, reponds "personne" -- jamais "preuve_paiement".
+REGLE 1 -- "indices_argent", le champ le plus important. Reponds true si tu vois SUR
+l'image AU MOINS UN de ces elements :
+- un montant chiffre (ex : 25 000, 10.000) ;
+- une devise ou son symbole (FCFA, CFA, F, XOF) ;
+- un nom d'operateur d'argent mobile ou de banque ;
+- des mots de transaction (transfert, envoi, recu, paiement, solde, reference, ID de
+  transaction, "vous avez recu", "transaction reussie") ;
+- des billets de banque ou des pieces reconnaissables.
+Sinon (un visage, un animal, un paysage, un objet, une capture sans rien de tout cela),
+reponds false. Dans le doute sur une image NETTE ou tu ne vois aucun chiffre ni mot
+d'argent, reponds false.
 
-REGLE 2 -- "decision" :
-- "preuve"     : tu reconnais une preuve valable (sujet_principal = "preuve_paiement") ;
-- "pas_preuve" : le sujet n'a rien a voir avec un paiement ;
-- "incertain"  : reserve aux images qu'on ne PEUT PAS identifier (trop floues, trop
-                 sombres, surexposees, coupees). Si tu arrives a dire ce que montre
-                 l'image, tu n'es PAS dans ce cas.
+REGLE 2 -- "sujet_principal", ce que montre l'image :
+- "preuve_paiement" : operateur, SMS, recu, billets/pieces ;
+- "personne" : un visage, un selfie, un portrait, une photo d'identite ;
+- "animal", "lieu" (paysage, rue, batiment, voiture), "objet" (plat, vetement, meuble...) ;
+- "capture_sans_argent" : une capture d'ecran qui ne parle pas d'argent ;
+- "illisible" : image trop floue, trop sombre ou coupee pour etre identifiee.
+Devant un visage net, reponds "personne" avec "indices_argent": false -- jamais "preuve_paiement".
 
-Une photo de billets reste une preuve valable meme sans aucun texte : sujet_principal
-"preuve_paiement", "decision": "preuve", "type": "billets", et "montant": null si tu ne
+Une photo de billets est une preuve valable meme sans texte : sujet_principal
+"preuve_paiement", "type": "billets", "indices_argent": true, "montant": null si tu ne
 peux pas compter avec certitude.`;
 
 Deno.serve(async (req) => {
@@ -177,32 +175,35 @@ Deno.serve(async (req) => {
       return onLaissePasser("reponse d analyse illisible");
     }
 
+    // --- Faits lus sur l'image (c'est l'app qui tranche, pas l'IA) -------------
     const montantLu = Number(lu.montant);
-    const decision = String(lu.decision || "incertain");
+    const aMontant = Number.isFinite(montantLu) && montantLu > 0;
+    const operateurTxt = String(lu.operateur ?? "").trim().toLowerCase();
+    const aOperateur = operateurTxt !== "" && operateurTxt !== "null" && operateurTxt !== "aucun";
+    const type = String(lu.type ?? "");
+    const typeFinancier = TYPES_FINANCIERS.has(type);
+    const indicesArgent = lu.indices_argent === true;
     const sujet = String(lu.sujet_principal || "");
 
-    // Trace serveur (visible dans les logs edge-function) : permet de voir exactement
-    // ce que l'IA a repondu si une image passe ou est refusee a tort.
-    console.log(`[verifier-preuve] sujet=${sujet} decision=${decision} operateur=${lu.operateur ?? ""} montant=${lu.montant ?? ""} desc=${lu.description ?? ""}`);
+    // Une image est "identifiee" des lors que l'IA a su dire ce qu'elle montre. Si elle
+    // est illisible (floue, sombre), on ne refuse pas : le doute profite a la membre.
+    const imageIdentifiee = sujet !== "" && sujet !== "illisible";
 
-    // Traduction en verdict pour l'application.
-    //
-    // HISTORIQUE DU BUG : on ne refusait que si "decision" valait exactement "pas_preuve".
-    // Or, devant un portrait, le modele repondait souvent "incertain" (par prudence) et la
-    // photo passait. On s'appuie donc AUSSI sur "sujet_principal" : si l'image montre
-    // manifestement autre chose qu'un paiement (une personne, un objet...), on refuse,
-    // meme si "decision" hesite -- et meme si elle dit "preuve" par erreur, car reconnaitre
-    // le sujet est plus fiable que juger la valeur de preuve.
-    const sujetEstNonPreuve = SUJETS_NON_PREUVE.has(sujet);
-    const verdict = sujetEstNonPreuve ? "refuse"
-                  : decision === "pas_preuve" ? "refuse"
-                  : decision === "preuve"     ? "valide"
+    // Preuve concrete = au moins un fait d'argent lu sur l'image. C'est la seule chose
+    // qui fait accepter -- et l'absence totale de fait, sur une image nette, qui fait refuser.
+    const preuveConcrete = aMontant || aOperateur || typeFinancier || indicesArgent;
+
+    const verdict = preuveConcrete ? "valide"
+                  : imageIdentifiee ? "refuse"
                   : "doute";
+
+    // Trace serveur (logs edge-function) : montre exactement les faits lus et le verdict.
+    console.log(`[verifier-preuve] verdict=${verdict} sujet=${sujet} indices_argent=${indicesArgent} operateur=${lu.operateur ?? ""} montant=${lu.montant ?? ""} type=${type} desc=${lu.description ?? ""}`);
 
     // Ecart de montant : information, jamais motif de refus. Un versement partiel ou
     // un paiement groupe sont des situations parfaitement normales dans une tontine.
     let ecartMontant: string | null = null;
-    if (verdict !== "refuse" && Number.isFinite(montantLu) && montantLu > 0 && Number(montant_attendu) > 0) {
+    if (verdict !== "refuse" && aMontant && Number(montant_attendu) > 0) {
       const attendu = Number(montant_attendu);
       if (Math.abs(montantLu - attendu) > Math.max(1, attendu * 0.02)) {
         ecartMontant = `La photo indique ${montantLu.toLocaleString("fr-FR")} F, la cotisation attendue est ${attendu.toLocaleString("fr-FR")} F.`;
@@ -215,11 +216,11 @@ Deno.serve(async (req) => {
       verdict,                                     // "valide" | "doute" | "refuse"
       type: lu.type ?? null,
       operateur: lu.operateur ?? null,
-      montant: Number.isFinite(montantLu) && montantLu > 0 ? montantLu : null,
+      montant: aMontant ? montantLu : null,
       devise: lu.devise ?? null,
       date: lu.date ?? null,
-      decision,
       sujet_principal: sujet || null,
+      indices_argent: indicesArgent,
       description: lu.description ?? null,
       ecart_montant: ecartMontant,
     });

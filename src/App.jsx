@@ -3723,6 +3723,38 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
     onToast(data?.message||"Compte supprime");
   };
 
+  // --- Suppression d'UNE tontine (ciblee, sans toucher aux comptes) -----------
+  // Repond au besoin des tontines de test : "Tout supprimer" via la suppression de compte
+  // est refuse des qu'un groupe a plusieurs membres. Ici on efface une tontine precise et
+  // tout son contenu (cascade + rappels + photos), en laissant les comptes des membres.
+  const [supprTon,setSupprTon]=useState(null);       // {g, inventaire} -> fenetre de confirmation
+  const [supprTonBusy,setSupprTonBusy]=useState(false);
+  const appelerFonctionTontine=async(corps)=>{
+    const {data,error}=await supabase.functions.invoke("admin-delete-tontine",{body:corps});
+    if(!error)return{data,erreur:data?.error||null};
+    let erreur=error.message||"Erreur inconnue";
+    try{const detail=await error.context?.json();if(detail?.error)erreur=detail.error;}catch{}
+    return{data:null,erreur};
+  };
+  const demanderApercuTontine=async(g)=>{
+    setBusyId(g.id);
+    const {data,erreur}=await appelerFonctionTontine({groupe_id:g.id,action:"apercu"});
+    setBusyId(null);
+    if(erreur)return onToast(erreur,"error");
+    setSupprTon({g,inventaire:data.inventaire});
+  };
+  const confirmerSupprTontine=async()=>{
+    if(!supprTon)return;
+    setSupprTonBusy(true);
+    const {data,erreur}=await appelerFonctionTontine({groupe_id:supprTon.g.id,action:"supprimer"});
+    setSupprTonBusy(false);
+    if(erreur)return onToast(erreur,"error");
+    setTontinesList(list=>list.filter(x=>x.id!==supprTon.g.id));
+    setGroupesCount(c=>Math.max(0,c-1));
+    setSupprTon(null);
+    onToast(data?.message||"Tontine supprimee");
+  };
+
   return(
     <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
@@ -3772,6 +3804,9 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
               <p style={{margin:0,color:"#6B7280",fontSize:11}}>{fmtFCFA(g.montant)}/{g.frequence} - Cycle {g.cycle}/{g.total_cycles}</p>
               <p style={{margin:0,color:"#6B7280",fontSize:11}}>{new Date(g.created_at).toLocaleDateString("fr-FR")}</p>
             </div>
+            <button onClick={()=>demanderApercuTontine(g)} disabled={busyId===g.id} style={{width:"100%",marginTop:10,background:"transparent",border:"1px solid #FCA5A5",borderRadius:10,padding:"7px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+              {busyId===g.id?"...":"🗑 Supprimer cette tontine"}
+            </button>
           </div>
         ))}
       </div>
@@ -3912,6 +3947,34 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
             </button>}
 
         <button onClick={()=>setSuppr(null)} disabled={supprBusy} style={{width:"100%",background:"transparent",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px",color:"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>Annuler</button>
+      </Modal>}
+
+      {/* Confirmation de suppression d'UNE tontine. On montre TOUJOURS ce qui va etre
+          efface avant d'effacer. L'inventaire vient du serveur, pas de l'application. */}
+      {supprTon&&<Modal onClose={()=>!supprTonBusy&&setSupprTon(null)}>
+        <MH title="Supprimer cette tontine" onClose={()=>!supprTonBusy&&setSupprTon(null)}/>
+        <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:14}}>
+          <p style={{margin:0,color:"#111827",fontWeight:800,fontSize:15}}>{supprTon.inventaire.nom}</p>
+        </div>
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 6px",letterSpacing:.5}}>CE QUI SERA EFFACÉ</p>
+        <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"10px 14px",marginBottom:14}}>
+          {[["Membres",supprTon.inventaire.membres],
+            ["Cotisations enregistrées",supprTon.inventaire.transactions],
+            ["Prêts",supprTon.inventaire.prets],
+            ["Messages",supprTon.inventaire.messages]].map(([l,v])=>(
+            <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"3px 0"}}>
+              <span style={{color:"#6B7280",fontSize:12}}>{l}</span>
+              <span style={{color:v>0?"#EF4444":"#9CA3AF",fontSize:12,fontWeight:700}}>{v}</span>
+            </div>))}
+        </div>
+        <p style={{color:"#EF4444",fontSize:12,fontWeight:600,lineHeight:1.5,marginBottom:14}}>
+          ⚠️ Action irréversible. La tontine et tout son historique (cotisations, prêts, messages, photos) seront supprimés.
+          Les <strong>comptes</strong> des membres, eux, ne sont pas touchés.
+        </p>
+        <button onClick={confirmerSupprTontine} disabled={supprTonBusy} style={{width:"100%",background:"#C1440E",border:"none",borderRadius:12,padding:"13px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:10}}>
+          {supprTonBusy?"Suppression...":"Supprimer définitivement cette tontine"}
+        </button>
+        <button onClick={()=>setSupprTon(null)} disabled={supprTonBusy} style={{width:"100%",background:"transparent",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px",color:"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>Annuler</button>
       </Modal>}
     </div>
   );

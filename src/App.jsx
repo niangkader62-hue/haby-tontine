@@ -2563,6 +2563,12 @@ THT - Tontine Habi Traore`;
   const saveVers=async(mode)=>{ // mode: "simple" (recu envoye dans la messagerie interne) ou "partager" (partage externe, WhatsApp...)
     const amt=Number(versAmt);
     if(!amt||amt<1)return;
+    // Indicateur de chargement des le tout debut : l'analyse de la preuve par l'IA prend
+    // quelques secondes. Sans ce sablier immediat, le bouton semblait inerte puis l'ecran
+    // "sautait" d'un coup, et on pouvait cliquer deux fois. On couvre desormais TOUTE
+    // l'operation et on relache dans le finally, quoi qu'il arrive.
+    setRecuBusy(true);
+    try{
     // Anti-reutilisation de la preuve dans cette tontine (voir empreinteImage).
     const empreinteVers=versPhoto?await empreinteImage(versPhoto):null;
     if(empreinteVers){
@@ -2609,7 +2615,6 @@ THT - Tontine Habi Traore`;
     if(versM.userId){
       supabase.functions.invoke("send-push",{body:{user_id:versM.userId,title:"THT - Versement enregistre",body:`Ton versement de ${fmtFCFA(amt)} pour "${groupe.nom}" a ete enregistre. ${paye?"Tu es a jour !":"Il te reste un solde a payer."}`,url:`/?g=${groupe.id}&tab=membres`}}).catch(()=>{});
     }
-    setRecuBusy(true);
     try{
       const now=new Date();
       const ref=`THT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${versM.id.slice(-4).toUpperCase()}`;
@@ -2640,9 +2645,11 @@ THT - Tontine Habi Traore`;
         onToast("Versement enregistre (pas de recu envoye : ce membre n'a pas de compte lie a THT)","warn");
       }
     }catch{onToast("Versement enregistre, mais le recu n'a pas pu etre cree","error");}
-    setRecuBusy(false);
-    setShowVers(false);setVersM(null);setVersAmt("");setVersPhoto(null);setVersPhotoPreview(null);
-    loadSuivi();
+      setShowVers(false);setVersM(null);setVersAmt("");setVersPhoto(null);setVersPhotoPreview(null);
+      loadSuivi();
+    }finally{
+      setRecuBusy(false);
+    }
   };
 
   const sendRappelEcheance=()=>{

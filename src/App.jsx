@@ -87,6 +87,49 @@ const empreinteImage = async (source) => {
   } catch { return null; } // navigateur trop ancien : on laisse passer plutot que bloquer
 };
 
+// --- Lecture automatique de la preuve de paiement -------------------------------
+// Envoie la photo a la fonction serveur verifier-preuve, qui la fait lire par l'IA et
+// renvoie ce qu'elle contient : operateur, montant, date. Sert a deux choses --
+// refuser d'emblee une photo qui n'a rien a voir avec un paiement, et afficher a la
+// creatrice "Orange Money - 25 000 F - 30/07" a cote de l'image.
+//
+// LE DOUTE PROFITE TOUJOURS A LA MEMBRE : panne, quota atteint, reponse illisible,
+// image trop lourde -> la photo est acceptee, simplement non verifiee. Bloquer un vrai
+// paiement parce qu'un service exterieur est en panne serait bien pire que laisser
+// passer une image douteuse, que la creatrice verra de toute facon avant de confirmer.
+const analyserPreuve = async (source, montantAttendu) => {
+  try {
+    const blob = source instanceof Blob ? source : await (await fetch(source)).blob();
+    if (blob.size > 4 * 1024 * 1024) return { verdict: "indetermine" };
+    const base64 = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result).split(",")[1] || "");
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+    if (!base64) return { verdict: "indetermine" };
+    const { data, error } = await supabase.functions.invoke("verifier-preuve", {
+      body: { image_base64: base64, mime_type: blob.type || "image/jpeg", montant_attendu: montantAttendu || null },
+    });
+    if (error || !data) return { verdict: "indetermine" };
+    return data;
+  } catch { return { verdict: "indetermine" }; }
+};
+
+// Resume lisible de ce que l'IA a lu : "Orange Money - 25 000 F - 30/07/2026".
+// Renvoie une chaine vide s'il n'y a rien de sur a montrer.
+const resumePreuve = (a) => {
+  if (!a) return "";
+  const bouts = [];
+  if (a.operateur) bouts.push(a.operateur);
+  else if (a.type === "billets") bouts.push("Billets");
+  else if (a.type === "recu_papier") bouts.push("Recu papier");
+  else if (a.type === "sms") bouts.push("SMS de confirmation");
+  if (a.montant) bouts.push(fmtFCFA(a.montant));
+  if (a.date) bouts.push(a.date);
+  return bouts.join(" · ");
+};
+
 const TAILLE_AVATAR = 320;
 const QUALITE_AVATAR = 0.78;
 const compressImage = (file, maxDim = 1024, quality = 0.82) => new Promise((resolve, reject) => {
@@ -1249,6 +1292,14 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
         return onToast("Cette capture a déjà été utilisée pour un paiement. Envoie la capture du nouveau paiement.","error");
       }
     }
+    // Lecture automatique : on refuse tout de suite une photo qui n'a manifestement rien
+    // a voir avec un paiement, plutot que d'encombrer la creatrice. Voir analyserPreuve()
+    // pour la regle : seul le refus franc bloque, le doute laisse passer.
+    const analyse=await analyserPreuve(preuve,montant);
+    if(analyse?.verdict==="refuse"){
+      setDeclareBusy(false);
+      return onToast(`Cette image ne ressemble pas à une preuve de paiement${analyse.description?` (${analyse.description})`:""}. Envoie la capture Orange Money / Wave / Moov, le SMS de confirmation, ou la photo des billets.`,"error");
+    }
     let photoUrl=null;
     try{
       const blobPhoto=await (await fetch(preuve)).blob();
@@ -1260,8 +1311,15 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
     const {data,error}=await supabase.from("declarations_paiement").insert({groupe_id:groupe.id,membre_id:groupe.moi.id,montant,moyen,cycle:groupe.cycle,photo_url:photoUrl,photo_hash:empreinte}).select().single();
     setDeclareBusy(false);
     if(error)return onToast("Erreur : "+(error.message||"inconnue"),"error");
+    // Ce que l'IA a lu est range a part, APRES l'insertion et sans bloquer : si la colonne
+    // n'existe pas encore en base (script SQL pas encore lance), le paiement passe quand
+    // meme. Une amelioration d'affichage ne doit jamais empecher d'enregistrer un paiement.
+    if(analyse?.verifie){
+      supabase.from("declarations_paiement").update({preuve_analyse:analyse}).eq("id",data.id).then(()=>{},()=>{});
+    }
     setDeclarationEnAttente(data);
     onToast("Paiement déclaré ! En attente de confirmation.");
+    if(analyse?.ecart_montant)onToast(analyse.ecart_montant+" La créatrice vérifiera.","warn");
     if(groupe.createurUserId){
       supabase.functions.invoke("send-push",{body:{user_id:groupe.createurUserId,title:"THT - Paiement déclaré",body:`${user.prenom} a déclaré avoir payé ${fmtFCFA(montant)} pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=suivi`}}).catch(()=>{});
     }
@@ -2420,6 +2478,12 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
         return onToast("Cette photo a déjà servi de preuve dans cette tontine.","error");
       }
     }
+    // Meme lecture automatique que sur les autres envois de photo.
+    const analyse=await analyserPreuve(f,montantDu(m));
+    if(analyse?.verdict==="refuse"){
+      setPreuveBusy(null);
+      return onToast(`Cette image ne ressemble pas à une preuve de paiement${analyse.description?` (${analyse.description})`:""}. Envoie la capture de l'opérateur ou la photo des billets.`,"error");
+    }
     try{
       const blob=await compressImage(f);
       const path=`versements/${groupe.id}/${m.id}-${Date.now()}.jpg`;
@@ -2428,8 +2492,9 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
       const {data:pub}=supabase.storage.from("photos").getPublicUrl(path);
       const {error}=await supabase.from("transactions").update({photo_url:pub.publicUrl,photo_hash:empreinte}).eq("id",tx.id);
       if(error)throw error;
-      setSuivi(s=>({...s,[m.id]:{...s[m.id],photo_url:pub.publicUrl}}));
-      onToast("Photo de l'argent ajoutée !");
+      if(analyse?.verifie)supabase.from("transactions").update({preuve_analyse:analyse}).eq("id",tx.id).then(()=>{},()=>{});
+      setSuivi(s=>({...s,[m.id]:{...s[m.id],photo_url:pub.publicUrl,preuve_analyse:analyse?.verifie?analyse:null}}));
+      onToast(resumePreuve(analyse)?`Photo ajoutée — ${resumePreuve(analyse)}`:"Photo de l'argent ajoutée !");
     }catch{onToast("Envoi de la photo impossible, réessaie","error");}
     setPreuveBusy(null);
   };
@@ -2505,6 +2570,14 @@ THT - Tontine Habi Traore`;
         .select("id").eq("groupe_id",groupe.id).eq("photo_hash",empreinteVers).limit(1);
       if(deja&&deja.length>0)return onToast("Cette photo a déjà servi de preuve dans cette tontine. Prends la photo du nouveau versement.","error");
     }
+    // Lecture automatique de la preuve, quand il y en a une. Ici c'est la creatrice
+    // elle-meme qui enregistre : le refus reste possible (une photo hors sujet est une
+    // erreur de manipulation), mais l'ecart de montant n'est qu'une information --
+    // elle sait ce qu'elle encaisse mieux que l'IA.
+    const analyseVers=versPhoto?await analyserPreuve(versPhoto,amt):null;
+    if(analyseVers?.verdict==="refuse"){
+      return onToast(`Cette image ne ressemble pas à une preuve de paiement${analyseVers.description?` (${analyseVers.description})`:""}. Vérifie que tu as choisi la bonne photo.`,"error");
+    }
     const newVersements=(versM.versements||0)+amt;
     const paye=newVersements>=montantDu(versM);
     const newScore=Math.min((versM.score||80)+(paye?5:2),100);
@@ -2523,7 +2596,12 @@ THT - Tontine Habi Traore`;
     }
     // L'empreinte n'est enregistree QUE si la photo a bien ete conservee : sinon la photo
     // serait "grillee" (refusee au prochain essai) alors qu'elle n'a jamais ete gardee.
-    await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,photo_hash:photoUrl?empreinteVers:null,recu_envoye:mode==="partager"});
+    const {data:txCreee}=await supabase.from("transactions").insert({groupe_id:groupe.id,membre_id:versM.id,montant:amt,cycle:groupe.cycle,statut:paye?"paye":"partiel",photo_url:photoUrl,photo_hash:photoUrl?empreinteVers:null,recu_envoye:mode==="partager"}).select().single();
+    // Range a part et sans bloquer : voir declarerPaiement pour la raison.
+    if(txCreee?.id&&photoUrl&&analyseVers?.verifie){
+      supabase.from("transactions").update({preuve_analyse:analyseVers}).eq("id",txCreee.id).then(()=>{},()=>{});
+    }
+    if(analyseVers?.ecart_montant)onToast(analyseVers.ecart_montant,"warn");
     setGroupe(g=>({...g,
       cagnotte:g.cagnotte+amt,
       membres:g.membres.map(m=>m.id===versM.id?{...m,versements:newVersements,paye,cyclesPaies:newCyclesPaies,score:newScore}:m)
@@ -2686,6 +2764,16 @@ THT - Tontine Habi Traore`;
                   </div>
                 </div>
                 {d.photo_url&&<a href={d.photo_url} target="_blank" rel="noreferrer" style={{display:"block",marginBottom:10}}><img src={d.photo_url} alt="Preuve du paiement" style={{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,border:"1px solid #D1D5DB"}}/></a>}
+                {/* Ce que la lecture automatique a releve sur la photo. C'est une aide a
+                    la lecture, PAS une validation : le message d'avertissement en dessous
+                    reste affiche dans tous les cas. */}
+                {(()=>{const a=d.preuve_analyse;if(!a)return null;const resume=resumePreuve(a);
+                  return(<div style={{background:a.verdict==="doute"?"#FEF3C7":"#F0FDF4",border:`1px solid ${a.verdict==="doute"?"#F59E0B":"#22C55E"}`,borderRadius:8,padding:"7px 10px",marginBottom:8}}>
+                    <p style={{margin:0,color:a.verdict==="doute"?"#92400E":"#166534",fontSize:11,fontWeight:700}}>
+                      {a.verdict==="doute"?"🔍 Photo peu lisible":"🔍 Lu sur la photo"}{resume?` — ${resume}`:""}
+                    </p>
+                    {a.ecart_montant&&<p style={{margin:"3px 0 0",color:"#92400E",fontSize:10.5,lineHeight:1.35}}>⚠️ {a.ecart_montant}</p>}
+                  </div>);})()}
                 <p style={{margin:"0 0 8px",color:"#EF4444",fontSize:11,fontWeight:600,lineHeight:1.4}}>⚠️ Vérifie que tu as bien reçu l'argent avant de confirmer.</p>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>confirmerDeclaration(d)} disabled={declBusy===d.id} style={{flex:1,background:"#FF6B00",border:"none",borderRadius:8,padding:"9px",color:"#0D0D0D",fontWeight:700,fontSize:12,cursor:"pointer"}}>{declBusy===d.id?"...":"✅ Confirmer"}</button>
@@ -3579,6 +3667,50 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
       supabase.functions.invoke("send-push",{body:{user_id:u.id,title:"THT",body:"Ton compte est maintenant Premium ! Merci pour ta confiance."}}).catch(()=>{});
     }
   };
+
+  // --- Suppression d'un compte ------------------------------------------------
+  // Sert au cas le plus courant du terrain : quelqu'un s'inscrit par erreur (mauvais
+  // numero, faute de frappe) et ne peut plus recommencer, car son numero reste pris.
+  // Seule une fonction serveur peut liberer un numero -- l'application n'a pas le droit
+  // de toucher a la table des comptes.
+  //
+  // TOUJOURS EN DEUX TEMPS : on demande d'abord au serveur l'inventaire de ce qui sera
+  // efface, on l'affiche, et la suppression n'a lieu qu'apres confirmation explicite.
+  // Une suppression de compte ne se rattrape pas.
+  const [suppr,setSuppr]=useState(null);       // {u, inventaire} -> ouvre la fenetre de confirmation
+  const [supprBusy,setSupprBusy]=useState(false);
+
+  // Quand une Edge Function repond avec un code d'erreur, supabase-js met `data` a null
+  // et range la vraie reponse dans error.context. Sans cette lecture, l'administratrice
+  // ne verrait que "Edge Function returned a non-2xx status code" au lieu du motif exact
+  // du refus -- par exemple "cette personne dirige une tontine ou d'autres cotisent".
+  const appelerFonctionAdmin=async(corps)=>{
+    const {data,error}=await supabase.functions.invoke("admin-delete-user",{body:corps});
+    if(!error)return{data,erreur:data?.error||null};
+    let erreur=error.message||"Erreur inconnue";
+    try{const detail=await error.context?.json();if(detail?.error)erreur=detail.error;}catch{}
+    return{data:null,erreur};
+  };
+
+  const demanderApercuSuppression=async(u)=>{
+    setBusyId(u.id);
+    const {data,erreur}=await appelerFonctionAdmin({user_id:u.id,action:"apercu"});
+    setBusyId(null);
+    if(erreur)return onToast(erreur,"error");
+    setSuppr({u,inventaire:data.inventaire});
+  };
+
+  const confirmerSuppression=async()=>{
+    if(!suppr)return;
+    setSupprBusy(true);
+    const {data,erreur}=await appelerFonctionAdmin({user_id:suppr.u.id,action:"supprimer"});
+    setSupprBusy(false);
+    if(erreur)return onToast(erreur,"error");
+    setUsers(list=>list.filter(x=>x.id!==suppr.u.id));
+    setSuppr(null);
+    onToast(data?.message||"Compte supprime");
+  };
+
   return(
     <div style={{paddingBottom:90}}>
       <div style={{padding:"44px 16px 0",display:"flex",alignItems:"center",gap:10}}>
@@ -3648,6 +3780,12 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
             <button onClick={()=>togglePremium({...u,plan:"free"},365)} disabled={busyId===u.id} title="Activer ou prolonger d un an" style={{background:"#E5E7EB",border:"1px solid #FF6B00",borderRadius:10,padding:"6px 10px",color:"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ 1 an</button>
             {u.id!==currentUserId&&<button onClick={()=>toggleAdmin(u)} disabled={busyId===u.id} style={{flex:1,background:u.role==="admin"?"transparent":"#E5E7EB",border:`1px solid ${u.role==="admin"?"#C1440E":"#D1D5DB"}`,borderRadius:10,padding:"6px 10px",color:u.role==="admin"?"#EF4444":"#FF6B00",fontSize:11,fontWeight:700,cursor:"pointer"}}>{busyId===u.id?"...":u.role==="admin"?"Retirer admin":"Nommer co-admin"}</button>}
           </div>
+          {/* La suppression n'est proposee ni pour soi-meme (on se couperait l'acces),
+              ni pour un autre admin (il faut d'abord lui retirer le role). */}
+          {u.id!==currentUserId&&u.role!=="admin"&&
+            <button onClick={()=>demanderApercuSuppression(u)} disabled={busyId===u.id} style={{width:"100%",background:"transparent",border:"1px solid #FCA5A5",borderRadius:10,padding:"6px 10px",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer",marginTop:6}}>
+              {busyId===u.id?"...":"🗑 Supprimer ce compte (libère le numéro)"}
+            </button>}
         </div>)}
       </div>
 
@@ -3697,6 +3835,57 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
           <p style={{margin:"0 0 8px",color:"#FF6B00",fontSize:11,fontWeight:700,letterSpacing:.5}}>JOURNAL DETAILLE</p>
           {resetJournal.map((l,i)=><p key={i} style={{margin:"0 0 4px",color:l.includes("ERREUR")?"#EF4444":"#6B7280",fontSize:11,fontFamily:"monospace"}}>{l}</p>)}
         </div>}
+      </Modal>}
+
+      {/* Confirmation de suppression d'un compte : on montre TOUJOURS ce qui va etre
+          efface avant d'effacer. L'inventaire vient du serveur, pas de l'application. */}
+      {suppr&&<Modal onClose={()=>!supprBusy&&setSuppr(null)}>
+        <MH title="Supprimer ce compte" onClose={()=>!supprBusy&&setSuppr(null)}/>
+        <div style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:14}}>
+          <p style={{margin:0,color:"#111827",fontWeight:800,fontSize:15}}>{suppr.inventaire.prenom}</p>
+          <p style={{margin:"2px 0 0",color:"#6B7280",fontSize:12}}>{suppr.inventaire.telephone}</p>
+          {suppr.inventaire.inscrit_le&&<p style={{margin:"2px 0 0",color:"#9CA3AF",fontSize:11}}>Inscrit le {new Date(suppr.inventaire.inscrit_le).toLocaleDateString("fr-FR")}</p>}
+        </div>
+
+        <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 6px",letterSpacing:.5}}>CE QUI SERA EFFACÉ</p>
+        <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"10px 14px",marginBottom:14}}>
+          {[["Tontines qu'elle dirige",suppr.inventaire.tontines_possedees?.length||0],
+            ["Cagnottes",suppr.inventaire.cagnottes],
+            ["Objectifs d'épargne",suppr.inventaire.objectifs_epargne],
+            ["Messages envoyés",suppr.inventaire.messages_envoyes],
+            ["Paiements enregistrés",suppr.inventaire.paiements]].map(([l,v])=>(
+            <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"3px 0"}}>
+              <span style={{color:"#6B7280",fontSize:12}}>{l}</span>
+              <span style={{color:v>0?"#EF4444":"#9CA3AF",fontSize:12,fontWeight:700}}>{v}</span>
+            </div>))}
+        </div>
+
+        {suppr.inventaire.participations>0&&
+          <p style={{color:"#6B7280",fontSize:11.5,lineHeight:1.5,marginBottom:14}}>
+            Elle figure dans <strong>{suppr.inventaire.participations}</strong> tontine(s) tenue(s) par quelqu'un d'autre.
+            Son nom et ses versements y <strong>resteront visibles</strong> : ils font partie des comptes du groupe.
+            Seul le lien avec son compte est retiré.
+          </p>}
+
+        {suppr.inventaire.tontines_vivantes?.length>0
+          ? <div style={{background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:12,padding:"11px 14px",marginBottom:14}}>
+              <p style={{margin:0,color:"#92400E",fontSize:12,fontWeight:700,lineHeight:1.5}}>
+                ⛔ Suppression impossible : elle dirige {suppr.inventaire.tontines_vivantes.length} tontine(s) où d'autres membres cotisent
+                ({suppr.inventaire.tontines_vivantes.map(t=>`"${t.nom}" — ${t.membres} membres`).join(", ")}).
+                Supprimer son compte effacerait ces tontines et l'argent enregistré de tout le groupe.
+                Supprime ou transfère d'abord ces tontines.
+              </p>
+            </div>
+          : <p style={{color:"#EF4444",fontSize:12,fontWeight:600,lineHeight:1.5,marginBottom:14}}>
+              ⚠️ Action irréversible. En échange, le numéro <strong>{suppr.inventaire.telephone}</strong> sera libéré :
+              cette personne pourra se réinscrire comme une nouvelle utilisatrice.
+            </p>}
+
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setSuppr(null)} disabled={supprBusy} style={{flex:1,background:"transparent",border:"1px solid #D1D5DB",borderRadius:12,padding:"12px",color:"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>Annuler</button>
+          {!(suppr.inventaire.tontines_vivantes?.length>0)&&
+            <button onClick={confirmerSuppression} disabled={supprBusy} style={{flex:1,background:"#C1440E",border:"none",borderRadius:12,padding:"12px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>{supprBusy?"Suppression...":"Supprimer définitivement"}</button>}
+        </div>
       </Modal>}
     </div>
   );

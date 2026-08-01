@@ -1,0 +1,36 @@
+/* =============================================================================
+   MODE SOMBRE AUTOMATIQUE — suit le reglage du telephone (prefers-color-scheme).
+   =============================================================================
+   POURQUOI CETTE METHODE
+   Les couleurs de l'app sont ecrites "en dur" a ~1400 endroits, et certaines (le blanc,
+   le presque-noir) servent A LA FOIS de fond et de texte. Les remplacer une par une
+   casserait forcement des ecrans. On inverse donc la LUMINOSITE de toute l'app au niveau
+   racine, en gardant les teintes (le hue-rotate 180 apres l'invert remet l'orange en
+   orange), puis on RE-inverse les images pour qu'elles restent normales.
+   Avantage : aucune couleur du code n'est touchee -> zero risque de casser un ecran, et
+   c'est entierement reversible. Le mode clair, lui, ne change absolument pas. */
+
+:root { color-scheme: light; }
+
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; }
+
+  /* Inversion de toute l'app. Le fond blanc devient sombre, le texte sombre devient
+     clair, l'orange reste orange. */
+  html {
+    filter: invert(1) hue-rotate(180deg);
+    background: #ffffff; /* rendu apres inversion -> noir : evite un bord clair */
+  }
+  body {
+    background: #ffffff !important; /* idem : rendu -> sombre */
+  }
+
+  /* On remet a l'endroit tout ce qui est une VRAIE image (photos de preuve, avatars,
+     recus, logo, hero) : une double inversion = l'image d'origine, intacte. */
+  img,
+  video,
+  canvas,
+  [data-noinvert] {
+    filter: invert(1) hue-rotate(180deg);
+  }
+}

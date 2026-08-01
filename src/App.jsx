@@ -4817,14 +4817,19 @@ function AppInner() {
     const groupeIds=[...new Set(mine.map(m=>m.groupe_id))];
     const {data:gs}=await supabase.from("groupes").select("*").in("id",groupeIds);
     const full=await Promise.all((gs||[]).map(async g=>{
-      const {data:membres}=await supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true});
-      const {data:checklist}=await supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true});
-      const {data:tirages}=await supabase.from("tirages").select("*").eq("groupe_id",g.id).order("cycle",{ascending:true});
-      const {data:elections}=await supabase.from("elections").select("*").eq("groupe_id",g.id).eq("statut","ouverte");
-      const {data:mesVotes}=await supabase.from("votes").select("*").eq("voter_user_id",uid);
-      const {data:prets}=await supabase.from("prets").select("*").eq("groupe_id",g.id).order("created_at",{ascending:false});
-      const {data:rapports}=await supabase.from("rapports_reunion").select("*").eq("groupe_id",g.id).order("date_reunion",{ascending:false});
-      const {data:createur}=await supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single();
+      // Ces 8 lectures sont independantes : on les lance EN PARALLELE au lieu d'attendre
+      // l'une apres l'autre. Pour une personne dans plusieurs tontines, l'accueil s'ouvre
+      // nettement plus vite (un seul aller-retour groupe au lieu de huit en file).
+      const [{data:membres},{data:checklist},{data:tirages},{data:elections},{data:mesVotes},{data:prets},{data:rapports},{data:createur}]=await Promise.all([
+        supabase.from("membres").select("*").eq("groupe_id",g.id).order("ordre",{ascending:true}),
+        supabase.from("checklist").select("*").eq("groupe_id",g.id).order("created_at",{ascending:true}),
+        supabase.from("tirages").select("*").eq("groupe_id",g.id).order("cycle",{ascending:true}),
+        supabase.from("elections").select("*").eq("groupe_id",g.id).eq("statut","ouverte"),
+        supabase.from("votes").select("*").eq("voter_user_id",uid),
+        supabase.from("prets").select("*").eq("groupe_id",g.id).order("created_at",{ascending:false}),
+        supabase.from("rapports_reunion").select("*").eq("groupe_id",g.id).order("date_reunion",{ascending:false}),
+        supabase.from("users").select("id,prenom,photo_url").eq("id",g.user_id).single(),
+      ]);
       const moi=mine.find(m=>m.groupe_id===g.id);
       // "Deja collecte" = la somme reellement RECUE ce cycle, donc la somme des versements.
       // Avant, on comptait la cotisation entiere des seuls membres a jour : les paiements

@@ -4949,6 +4949,25 @@ function AppInner() {
     })();
   },[]);
 
+  // Rafraichissement automatique quand l'app revient au premier plan (onglet reactive,
+  // retour depuis une autre app, PWA rouverte). Sans ca, une tontine qu'on vient de
+  // rejoindre, un nouveau parrainage ou un versement n'apparaissaient qu'apres avoir
+  // ferme/rouvert l'app : la personne devait "actualiser" a la main. On ne recharge
+  // que si l'app est visible et qu'une utilisatrice est connectee.
+  useEffect(()=>{
+    const rafraichir=()=>{
+      const u=userRef.current;
+      if(!u||document.visibilityState!=="visible")return;
+      loadGroupes(u.id);loadParticipations(u.id);loadFilleuls(u.id);loadCagnottes(u.id);
+    };
+    document.addEventListener("visibilitychange",rafraichir);
+    window.addEventListener("focus",rafraichir);
+    return()=>{
+      document.removeEventListener("visibilitychange",rafraichir);
+      window.removeEventListener("focus",rafraichir);
+    };
+  },[loadGroupes,loadParticipations,loadFilleuls,loadCagnottes]);
+
   const handleLogout=async()=>{
     await logoutUser();
     setUser(null);setNav("home");setSel(null);

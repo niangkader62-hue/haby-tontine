@@ -31,12 +31,6 @@ export async function registerUser(tel, pin, prenom, photoFile, parrainCode) {
     } catch (_e) {}
   }
 
-  let parraineParId = null;
-  if (parrainCode && parrainCode.trim()) {
-    const { data: parrain } = await supabase.from("users").select("id").eq("parrain_code", parrainCode.trim().toUpperCase()).single();
-    if (parrain) parraineParId = parrain.id;
-  }
-
   const { error: profileErr } = await supabase.from("users").insert({
     id: userId,
     prenom,
@@ -44,13 +38,18 @@ export async function registerUser(tel, pin, prenom, photoFile, parrainCode) {
     pin_hash: "supabase_auth",
     photo_url: photoUrl || null,
     plan: "free",
-    parraine_par: parraineParId,
+    parraine_par: null,
     parrain_code: userId.replace(/-/g, "").slice(0, 8).toUpperCase(),
   });
   if (profileErr) return { ok: false, err: "Erreur de création de profil." };
 
-  if (parraineParId) {
-    await supabase.from("parrainages").insert({ parrain_id: parraineParId, filleul_id: userId });
+  // Lien de parrainage : delegue a une fonction serveur securisee (SECURITY DEFINER).
+  // La recherche du parrain par son code ne PEUT PAS se faire cote client : la RLS
+  // n'autorise chacun a lire que sa propre ligne dans users, donc la recherche revenait
+  // toujours vide et le lien n'etait jamais cree (compteur de parrainage bloque a zero).
+  // lier_parrain retrouve le parrain, renseigne parraine_par et enregistre la relation.
+  if (parrainCode && parrainCode.trim()) {
+    await supabase.rpc("lier_parrain", { p_code: parrainCode.trim() });
   }
 
   const { count: linkedCount } = await supabase.from("membres").select("*", { count: "exact", head: true }).eq("user_id", userId);

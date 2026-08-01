@@ -1876,12 +1876,24 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!editG.nom.trim())return onToast("Le nom est requis","error");
     if(!editG.montant||Number(editG.montant)<500)return onToast("Montant minimum 500 FCFA","error");
     setEditBusy(true);
-    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null,numero_orange_money:editG.numeroOrangeMoney.trim()||null,numero_wave:editG.numeroWave.trim()||null,numero_moov_money:editG.numeroMoovMoney.trim()||null,lien_wave:editG.lienWave.trim()||null,lien_orange:editG.lienOrange.trim()||null,qr_paiement_url:editG.qrPaiementUrl||null}).eq("id",groupe.id);
-    setEditBusy(false);
-    if(error)return onToast("Modification impossible","error");
-    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null,qrPaiementUrl:editG.qrPaiementUrl||null}));
-    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null,qrPaiementUrl:editG.qrPaiementUrl||null});
-    setShowEdit(false);onToast("Tontine modifiée !");
+    const majDb={nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null,numero_orange_money:editG.numeroOrangeMoney.trim()||null,numero_wave:editG.numeroWave.trim()||null,numero_moov_money:editG.numeroMoovMoney.trim()||null,lien_wave:editG.lienWave.trim()||null,lien_orange:editG.lienOrange.trim()||null,qr_paiement_url:editG.qrPaiementUrl||null};
+    const majLocal={nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null,qrPaiementUrl:editG.qrPaiementUrl||null};
+    // Garde-fou anti-blocage : si le reseau ne repond pas en 25s, on abandonne PROPREMENT
+    // au lieu de rester fige sur "Enregistrement..." a l'infini. Le try/finally garantit
+    // que le bouton se debloque toujours, quoi qu'il arrive.
+    try{
+      const requete=supabase.from("groupes").update(majDb).eq("id",groupe.id);
+      const delai=new Promise((_,rej)=>setTimeout(()=>rej(new Error("delai depasse")),25000));
+      const {error}=await Promise.race([requete,delai]);
+      if(error)throw error;
+      setGroupe(g=>({...g,...majLocal}));
+      onUpdateGroupe(groupe.id,majLocal);
+      setShowEdit(false);onToast("Tontine modifiée !");
+    }catch{
+      onToast("Enregistrement trop long — vérifie ta connexion et réessaie.","error");
+    }finally{
+      setEditBusy(false);
+    }
   };
 
   const loadTirages=async()=>{
@@ -3273,9 +3285,6 @@ THT - Tontine Habi Traore`;
         <Fld label="Numéro Orange Money (optionnel)"><Inp value={editG.numeroOrangeMoney} onChange={e=>setEditG(g=>({...g,numeroOrangeMoney:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
         <Fld label="Numéro Wave (optionnel)"><Inp value={editG.numeroWave} onChange={e=>setEditG(g=>({...g,numeroWave:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 70123456" inputMode="tel"/></Fld>
         <Fld label="Numéro Moov Money (optionnel)"><Inp value={editG.numeroMoovMoney} onChange={e=>setEditG(g=>({...g,numeroMoovMoney:e.target.value.replace(/[^\d+]/g,"")}))} placeholder="Ex: 60123456" inputMode="tel"/></Fld>
-        <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,padding:"10px 12px",marginBottom:10}}><p style={{margin:0,color:"#9A5B00",fontSize:11,lineHeight:1.5}}>💡 Liens de paiement (optionnel) : génère un <b>lien de paiement Wave</b> depuis ton appli Wave, ou un lien <b>OM Business</b> depuis Orange Money, et colle-le ici. Les membres pourront payer en ouvrant directement l'application. Teste le lien sur ton téléphone avant de t'y fier.</p></div>
-        <Fld label="Lien de paiement Orange Money (optionnel)"><Inp value={editG.lienOrange} onChange={e=>setEditG(g=>({...g,lienOrange:e.target.value}))} placeholder="https://..." inputMode="url"/></Fld>
-        <Fld label="Lien de paiement Wave (optionnel)"><Inp value={editG.lienWave} onChange={e=>setEditG(g=>({...g,lienWave:e.target.value}))} placeholder="https://pay.wave.com/..." inputMode="url"/></Fld>
         <Fld label="QR de paiement (Wave ou Orange Money)">
           <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:10,padding:editG.qrPaiementUrl?8:14,textAlign:"center",cursor:"pointer"}}>
             <input type="file" accept="image/*" onChange={choisirQRPaiement} style={{display:"none"}}/>
@@ -4725,19 +4734,32 @@ const ModalCreer = ({onClose,onCreate,user}) => {
   const [busy,setBusy]=useState(false);
   const [limitReached,setLimitReached]=useState(false);
   const [payBusy,setPayBusy]=useState(false);
+  const [qrPaiementUrl,setQrPaiementUrl]=useState("");
+  const [qrUp,setQrUp]=useState(false);
+  const choisirQRCreation=async(e)=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+    setQrUp(true);
+    try{
+      const compresse=await compressImage(f,900,0.85);
+      const url=await uploadPhoto(new File([compresse],"qr.jpg",{type:"image/jpeg"}),`qr/${user.id}`);
+      setQrPaiementUrl(url);
+    }catch{setErr("Import du QR impossible, reessaie");}
+    setQrUp(false);
+  };
   const handle=async()=>{
     if(!nom.trim())return setErr("Donne un nom a ta tontine");
     if(!montant||Number(montant)<500)return setErr("Montant minimum : 500 FCFA");
     if(!numeroOrangeMoney.trim()&&!numeroWave.trim()&&!numeroMoovMoney.trim())return setErr("Ajoute au moins un numero de reception (Orange Money, Wave ou Moov Money)");
     if(user.plan==="free"&&user.role!=="admin"&&user.groupesCount>=1){setErr("");setLimitReached(true);return;}
     setBusy(true);
-    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#FF6B00",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null,numero_moov_money:numeroMoovMoney.trim()||null};
+    const payload={user_id:user.id,owner_id:user.id,nom:s(nom.trim()),montant:Number(montant),frequence:freq,couleur:"#FF6B00",cycle:1,total_cycles:12,date_echeance:echeance||new Date(Date.now()+30*86400000).toISOString().split("T")[0],caisse_sociale:0,montant_initial:montantInitial?Number(montantInitial):0,numero_orange_money:numeroOrangeMoney.trim()||null,numero_wave:numeroWave.trim()||null,numero_moov_money:numeroMoovMoney.trim()||null,qr_paiement_url:qrPaiementUrl||null};
     const {data,error}=await supabase.from("groupes").insert(payload).select().single();
     if(error){setBusy(false);return setErr("Erreur technique : "+(error.message||"inconnue"));}
     const {data:moi}=await supabase.from("membres").insert({groupe_id:data.id,prenom:s(user.prenom)+" (moi)",tel:user.tel,quartier:"",photo_url:user.photo||null,paye:false,score:80,versements:0,cycles_paies:0,ordre:0,user_id:user.id}).select().single();
     setBusy(false);
     const moiMembre=moi?{id:moi.id,userId:user.id,prenom:moi.prenom,tel:moi.tel,quartier:"",photo:moi.photo_url,paye:false,score:80,versements:0,cyclesPaies:0,cyclesTotal:12,evenement:null}:null;
-    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,montantInitial:Number(data.montant_initial)||0,numeroOrangeMoney:data.numero_orange_money||null,numeroWave:data.numero_wave||null,numeroMoovMoney:data.numero_moov_money||null,lienWave:data.lien_wave||null,lienOrange:data.lien_orange||null,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
+    onCreate({id:data.id,nom:data.nom,montant:Number(data.montant),frequence:data.frequence,couleur:data.couleur,cycle:data.cycle,totalCycles:data.total_cycles,dateEcheance:data.date_echeance,caisseSociale:0,cagnotte:0,montantInitial:Number(data.montant_initial)||0,numeroOrangeMoney:data.numero_orange_money||null,numeroWave:data.numero_wave||null,numeroMoovMoney:data.numero_moov_money||null,lienWave:data.lien_wave||null,lienOrange:data.lien_orange||null,qrPaiementUrl:data.qr_paiement_url||null,prochainTour:"-",membres:moiMembre?[moiMembre]:[],checklist:[],messages:[]});
     onClose();
   };
   if(limitReached)return <Modal onClose={onClose}>
@@ -4767,6 +4789,15 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <Fld label="Frequence"><div style={{display:"flex",gap:8}}>{["Hebdo","Bimensuel","Mensuel"].map(f=><button key={f} onClick={()=>setFreq(f)} style={{flex:1,padding:"10px 4px",borderRadius:10,border:"1px solid",cursor:"pointer",fontSize:12,fontWeight:700,background:freq===f?"#FF6B00":"#E5E7EB",color:freq===f?"#0D0D0D":"#111827",borderColor:freq===f?"#FF6B00":"#D1D5DB"}}>{f}</button>)}</div></Fld>
     <Fld label="Argent déjà collecté avant l'app (optionnel)"><Inp value={montantInitial} onChange={e=>setMontantInitial(e.target.value.replace(/\D/g,""))} placeholder="Ex: 50000 - laisser vide si aucun" inputMode="numeric"/></Fld>
     <SelecteurPaiement numeroOrangeMoney={numeroOrangeMoney} setNumeroOrangeMoney={setNumeroOrangeMoney} numeroWave={numeroWave} setNumeroWave={setNumeroWave} numeroMoovMoney={numeroMoovMoney} setNumeroMoovMoney={setNumeroMoovMoney}/>
+    <Fld label="QR de paiement (Wave ou Orange Money) — optionnel">
+      <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:10,padding:qrPaiementUrl?8:14,textAlign:"center",cursor:"pointer"}}>
+        <input type="file" accept="image/*" onChange={choisirQRCreation} style={{display:"none"}}/>
+        {qrPaiementUrl
+          ? <img src={qrPaiementUrl} alt="QR" style={{maxWidth:160,maxHeight:160,borderRadius:8,display:"block",margin:"0 auto"}}/>
+          : <span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>{qrUp?"Import en cours...":"📷 Importer la photo de mon QR"}</span>}
+      </label>
+      {qrPaiementUrl&&<button onClick={()=>setQrPaiementUrl("")} style={{background:"transparent",border:"none",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer",marginTop:6}}>Retirer le QR</button>}
+    </Fld>
     <ErrBox msg={err}/>
     <Btn onClick={handle} disabled={busy}>{busy?"Creation...":"Creer ma tontine"}</Btn>
   </Modal>;

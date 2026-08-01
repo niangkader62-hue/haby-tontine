@@ -37,10 +37,6 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) return json({ error: "Cle API Gemini non configuree sur le serveur" }, 500);
 
-    // --- Quota quotidien -------------------------------------------------------
-    // Volontairement tolerant : si la table n'existe pas encore ou si la lecture
-    // echoue, on laisse passer la question. Mieux vaut une facture legerement plus
-    // elevee qu'une fonctionnalite cassee pour tout le monde.
     const service = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -77,32 +73,47 @@ Deno.serve(async (req) => {
       } catch { /* on laisse passer plutot que de bloquer HABY */ }
     }
 
-    // --- Appel a Gemini --------------------------------------------------------
-    // Seuls les derniers echanges sont envoyes : le cout d'une question reste stable
-    // meme apres une longue conversation.
+    // Seuls les derniers echanges sont envoyes.
     const recents = (messages || []).slice(-MAX_MESSAGES_HISTORIQUE);
     const contents = recents.map((m: { role: string; content: string }) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }],
     }));
+    // Gemini EXIGE que la conversation commence par un tour "user". Or le premier message
+    // affiche dans le chat est l'accueil de HABY (role "model") : envoye tel quel, il
+    // faisait echouer TOUTE la conversation ("HABY a un souci technique"). On retire donc
+    // les tours "model" en tete jusqu'a tomber sur une vraie question de la personne.
+    while (contents.length && contents[0].role === "model") contents.shift();
+    if (contents.length === 0) return reponseHaby("Pose-moi ta question et je te reponds !");
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: system }] },
-          contents,
-          generationConfig: { temperature: 0.6, maxOutputTokens: MAX_TOKENS_REPONSE, topP: 0.9 },
-        }),
-      }
-    );
-    const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
-    if (!reply && data.error) return reponseHaby("HABY a un souci technique, reessaie dans un instant.");
+    const corpsGemini = JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents,
+      generationConfig: { temperature: 0.6, maxOutputTokens: MAX_TOKENS_REPONSE, topP: 0.9 },
+    });
+    const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-    return reponseHaby(reply || "Desole, reessaie !");
+    const res = await fetch(urlGemini, { method: "POST", headers: { "Content-Type": "application/json" }, body: corpsGemini });
+    let data = await res.json();
+    let reply = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+
+    // Un reessai unique en cas d'echec passager (surcharge momentanee de l'IA).
+    if (!reply) {
+      const res2 = await fetch(urlGemini, { method: "POST", headers: { "Content-Type": "application/json" }, body: corpsGemini });
+      data = await res2.json();
+      reply = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+    }
+
+    // Toujours rien : on fait REMONTER la vraie raison (quota, blocage, etc.).
+    if (!reply) {
+      const raison = data?.error?.message
+        || data?.promptFeedback?.blockReason
+        || data?.candidates?.[0]?.finishReason
+        || "reponse vide";
+      return reponseHaby("HABY est momentanement indisponible. (detail : " + raison + ")");
+    }
+
+    return reponseHaby(reply);
   } catch (e) {
     return json({ error: String(e) }, 500);
   }

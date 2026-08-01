@@ -3,6 +3,7 @@ import { registerUser, loginUser, getSession, logoutUser, verifyPin, changePin }
 import { supabase, SUPABASE_URL } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
 import heroTontine from "./assets/hero-tontine.jpg";
+import { QRCodeSVG } from "qrcode.react";
 // jsPDF et html2canvas sont volumineux et rarement utilises immediatement au demarrage :
 // on les charge a la demande (dynamic import) plutot qu'au chargement initial de l'app,
 // pour que l'app s'ouvre plus vite, surtout sur reseau mobile lent.
@@ -788,6 +789,19 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,numeroMoovM
         {lienOrange&&<button onClick={()=>ouvrirLien(lienOrange)} style={{width:"100%",background:"#FF6B00",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:8}}>🟠 Ouvrir Orange Money pour payer</button>}
         {lienWave&&<button onClick={()=>ouvrirLien(lienWave)} style={{width:"100%",background:"#1DAEFF",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>🌊 Ouvrir Wave pour payer</button>}
       </div>}
+      {/* QR code de paiement : le membre scanne avec l'appareil photo et paie directement.
+          Aucune IA, aucun cout. On l'affiche des qu'un lien de paiement (Wave/Orange) existe.
+          data-noinvert : garde le QR en noir sur blanc meme en mode sombre (sinon l'inversion
+          globale le retournerait), pour rester lisible par tous les scanners. */}
+      {(()=>{const lienQR=(lienWave||lienOrange||"").trim();
+        if(!/^https?:\/\//i.test(lienQR))return null;
+        return(
+          <div data-noinvert style={{display:"flex",flexDirection:"column",alignItems:"center",background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"14px 12px",marginBottom:8}}>
+            <p style={{margin:"0 0 10px",color:"#111827",fontSize:12,fontWeight:800}}>📷 Scanne pour payer {lienWave?"avec Wave":"avec Orange Money"}</p>
+            <QRCodeSVG value={lienQR} size={156} level="M" bgColor="#FFFFFF" fgColor="#111827"/>
+            <p style={{margin:"10px 0 0",color:"#6B7280",fontSize:10.5,textAlign:"center",lineHeight:1.4}}>Ouvre l'appareil photo (ou l'app de paiement) et vise le code.</p>
+          </div>
+        );})()}
       <p style={{margin:"4px 0 10px",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Envoie {montantNum?fmtFCFA(montantNum):"le montant"} toi-même depuis ton application (Orange Money, Wave ou Moov), puis confirme ci-dessous.</p>
       {onDeclarer&&<label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:10,padding:preuvePreview?0:16,textAlign:"center",cursor:"pointer",overflow:"hidden",marginBottom:10}}>
         <input type="file" accept="image/*" onChange={choisirPreuve} style={{display:"none"}}/>

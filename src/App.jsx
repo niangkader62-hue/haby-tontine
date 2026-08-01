@@ -784,6 +784,7 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,numeroMoovM
         <p style={{margin:0,color:"#111827",fontSize:12}}>Moov Money : <b>{numeroMoovMoney}</b></p>
         <button onClick={()=>copier(numeroMoovMoney)} style={{background:"transparent",border:"none",color:"#F7941E",fontWeight:700,fontSize:11,cursor:"pointer"}}>📋 Copier</button>
       </div>}
+      {(numeroOrangeMoney||numeroWave||numeroMoovMoney)&&<p style={{margin:"2px 0 10px",color:"#6B7280",fontSize:10.5,lineHeight:1.5}}>👆 <b>Depuis ton téléphone :</b> appuie sur « Copier », ouvre ton appli (Wave / Orange Money), et fais un <b>transfert</b> vers ce numéro.</p>}
       {(lienOrange||lienWave)&&<div style={{marginBottom:8}}>
         <p style={{margin:"0 0 6px",color:"#6B7280",fontSize:10,lineHeight:1.4}}>Ou paie en un tap (ouvre l'application) :</p>
         {lienOrange&&<button onClick={()=>ouvrirLien(lienOrange)} style={{width:"100%",background:"#FF6B00",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:8}}>🟠 Ouvrir Orange Money pour payer</button>}
@@ -793,9 +794,9 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,numeroMoovM
           la methode la plus fiable au Mali (les operateurs ne donnent pas de lien web, juste
           un QR dans leur app). data-noinvert : reste net meme en mode sombre. */}
       {qrPaiementUrl&&<div data-noinvert style={{display:"flex",flexDirection:"column",alignItems:"center",background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"14px 12px",marginBottom:8}}>
-        <p style={{margin:"0 0 10px",color:"#111827",fontSize:12,fontWeight:800}}>📷 Scanne ce QR pour payer</p>
+        <p style={{margin:"0 0 10px",color:"#111827",fontSize:12,fontWeight:800}}>📷 QR à scanner</p>
         <img src={qrPaiementUrl} alt="QR de paiement" style={{width:"100%",maxWidth:220,borderRadius:8,display:"block"}}/>
-        <p style={{margin:"10px 0 0",color:"#6B7280",fontSize:10.5,textAlign:"center",lineHeight:1.4}}>Ouvre Orange Money / Wave, choisis « Scanner », et vise ce code.</p>
+        <p style={{margin:"10px 0 0",color:"#6B7280",fontSize:10.5,textAlign:"center",lineHeight:1.4}}>À faire scanner par la personne qui paie, <b>en présentiel</b> ou depuis un <b>autre téléphone</b>. (On ne peut pas scanner un QR affiché sur le même téléphone.)</p>
       </div>}
       {/* QR genere automatiquement a partir d'un lien de paiement (Wave/Orange), si renseigne.
           data-noinvert : garde le QR en noir sur blanc meme en mode sombre. */}

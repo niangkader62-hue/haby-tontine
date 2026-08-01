@@ -753,10 +753,10 @@ const SelecteurPaiement = ({numeroOrangeMoney,setNumeroOrangeMoney,numeroWave,se
 // preuve (capture d'ecran de la transaction) est OBLIGATOIRE avant de pouvoir declarer le paiement --
 // ca ne peut pas etre valide sans preuve, exactement comme pour les cagnottes et les versements geres
 // par la creatrice.
-const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,numeroMoovMoney,lienWave,lienOrange,onDeclarer,declareLabel,dejaDeclare,busy}) => {
+const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,numeroMoovMoney,lienWave,lienOrange,qrPaiementUrl,onDeclarer,declareLabel,dejaDeclare,busy}) => {
   const [preuve,setPreuve]=useState(null);
   const [preuvePreview,setPreuvePreview]=useState(null);
-  if(!numeroOrangeMoney&&!numeroWave&&!numeroMoovMoney&&!lienWave&&!lienOrange)return null;
+  if(!numeroOrangeMoney&&!numeroWave&&!numeroMoovMoney&&!lienWave&&!lienOrange&&!qrPaiementUrl)return null;
   const montantNum=Number(montant)||0;
   const copier=async(txt)=>{try{await navigator.clipboard.writeText(txt);}catch{}};
   const ouvrirLien=(u)=>{const url=(u||"").trim();if(/^https?:\/\//i.test(url)){window.open(url,"_blank","noopener");}};
@@ -789,10 +789,16 @@ const BoutonsPaiementMobile = ({montant,numeroOrangeMoney,numeroWave,numeroMoovM
         {lienOrange&&<button onClick={()=>ouvrirLien(lienOrange)} style={{width:"100%",background:"#FF6B00",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:8}}>🟠 Ouvrir Orange Money pour payer</button>}
         {lienWave&&<button onClick={()=>ouvrirLien(lienWave)} style={{width:"100%",background:"#1DAEFF",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}}>🌊 Ouvrir Wave pour payer</button>}
       </div>}
-      {/* QR code de paiement : le membre scanne avec l'appareil photo et paie directement.
-          Aucune IA, aucun cout. On l'affiche des qu'un lien de paiement (Wave/Orange) existe.
-          data-noinvert : garde le QR en noir sur blanc meme en mode sombre (sinon l'inversion
-          globale le retournerait), pour rester lisible par tous les scanners. */}
+      {/* QR importe par la creatrice : la photo de son propre QR Wave / Orange Money. C'est
+          la methode la plus fiable au Mali (les operateurs ne donnent pas de lien web, juste
+          un QR dans leur app). data-noinvert : reste net meme en mode sombre. */}
+      {qrPaiementUrl&&<div data-noinvert style={{display:"flex",flexDirection:"column",alignItems:"center",background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:12,padding:"14px 12px",marginBottom:8}}>
+        <p style={{margin:"0 0 10px",color:"#111827",fontSize:12,fontWeight:800}}>📷 Scanne ce QR pour payer</p>
+        <img src={qrPaiementUrl} alt="QR de paiement" style={{width:"100%",maxWidth:220,borderRadius:8,display:"block"}}/>
+        <p style={{margin:"10px 0 0",color:"#6B7280",fontSize:10.5,textAlign:"center",lineHeight:1.4}}>Ouvre Orange Money / Wave, choisis « Scanner », et vise ce code.</p>
+      </div>}
+      {/* QR genere automatiquement a partir d'un lien de paiement (Wave/Orange), si renseigne.
+          data-noinvert : garde le QR en noir sur blanc meme en mode sombre. */}
       {(()=>{const lienQR=(lienWave||lienOrange||"").trim();
         if(!/^https?:\/\//i.test(lienQR))return null;
         return(
@@ -1540,6 +1546,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
             numeroMoovMoney={groupe.numeroMoovMoney}
             lienWave={groupe.lienWave}
             lienOrange={groupe.lienOrange}
+            qrPaiementUrl={groupe.qrPaiementUrl}
             onDeclarer={(moyen,preuve)=>declarerPaiement(moyen,preuve)}
             dejaDeclare={!!declarationEnAttente}
             busy={declareBusy}
@@ -1806,7 +1813,22 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
   const [evtM,setEvtM]=useState(null);
   const [evtTxt,setEvtTxt]=useState("");
   const [showEdit,setShowEdit]=useState(false);
-  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence,dateEcheance:gInit.dateEcheance||"",numeroOrangeMoney:gInit.numeroOrangeMoney||"",numeroWave:gInit.numeroWave||"",numeroMoovMoney:gInit.numeroMoovMoney||"",lienWave:gInit.lienWave||"",lienOrange:gInit.lienOrange||""});
+  const [editG,setEditG]=useState({nom:gInit.nom,montant:String(gInit.montant),frequence:gInit.frequence,dateEcheance:gInit.dateEcheance||"",numeroOrangeMoney:gInit.numeroOrangeMoney||"",numeroWave:gInit.numeroWave||"",numeroMoovMoney:gInit.numeroMoovMoney||"",lienWave:gInit.lienWave||"",lienOrange:gInit.lienOrange||"",qrPaiementUrl:gInit.qrPaiementUrl||""});
+  const [qrUp,setQrUp]=useState(false);
+  // Import du QR de paiement : la creatrice prend en photo son propre QR Wave/Orange, on
+  // l'envoie dans le stockage et on garde son URL. Affiche ensuite aux membres pour scanner.
+  const choisirQRPaiement=async(e)=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+    setQrUp(true);
+    try{
+      const compresse=await compressImage(f,900,0.85);
+      const url=await uploadPhoto(new File([compresse],"qr.jpg",{type:"image/jpeg"}),`qr/${groupe.id}`);
+      setEditG(g=>({...g,qrPaiementUrl:url}));
+      onToast("QR de paiement importe !");
+    }catch{onToast("Import du QR impossible, reessaie","error");}
+    setQrUp(false);
+  };
   const [editBusy,setEditBusy]=useState(false);
   const [tirages,setTirages]=useState([]);
   const [tirageAnim,setTirageAnim]=useState(false);
@@ -1854,11 +1876,11 @@ const GroupeScreen = ({groupe:gInit,onBack,onToast,user,onDeleteGroupe,onUpdateG
     if(!editG.nom.trim())return onToast("Le nom est requis","error");
     if(!editG.montant||Number(editG.montant)<500)return onToast("Montant minimum 500 FCFA","error");
     setEditBusy(true);
-    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null,numero_orange_money:editG.numeroOrangeMoney.trim()||null,numero_wave:editG.numeroWave.trim()||null,numero_moov_money:editG.numeroMoovMoney.trim()||null,lien_wave:editG.lienWave.trim()||null,lien_orange:editG.lienOrange.trim()||null}).eq("id",groupe.id);
+    const {error}=await supabase.from("groupes").update({nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,date_echeance:editG.dateEcheance||null,numero_orange_money:editG.numeroOrangeMoney.trim()||null,numero_wave:editG.numeroWave.trim()||null,numero_moov_money:editG.numeroMoovMoney.trim()||null,lien_wave:editG.lienWave.trim()||null,lien_orange:editG.lienOrange.trim()||null,qr_paiement_url:editG.qrPaiementUrl||null}).eq("id",groupe.id);
     setEditBusy(false);
     if(error)return onToast("Modification impossible","error");
-    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null}));
-    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null});
+    setGroupe(g=>({...g,nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null,qrPaiementUrl:editG.qrPaiementUrl||null}));
+    onUpdateGroupe(groupe.id,{nom:s(editG.nom.trim()),montant:Number(editG.montant),frequence:editG.frequence,dateEcheance:editG.dateEcheance||null,numeroOrangeMoney:editG.numeroOrangeMoney.trim()||null,numeroWave:editG.numeroWave.trim()||null,numeroMoovMoney:editG.numeroMoovMoney.trim()||null,lienWave:editG.lienWave.trim()||null,lienOrange:editG.lienOrange.trim()||null,qrPaiementUrl:editG.qrPaiementUrl||null});
     setShowEdit(false);onToast("Tontine modifiée !");
   };
 
@@ -3254,7 +3276,16 @@ THT - Tontine Habi Traore`;
         <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,padding:"10px 12px",marginBottom:10}}><p style={{margin:0,color:"#9A5B00",fontSize:11,lineHeight:1.5}}>💡 Liens de paiement (optionnel) : génère un <b>lien de paiement Wave</b> depuis ton appli Wave, ou un lien <b>OM Business</b> depuis Orange Money, et colle-le ici. Les membres pourront payer en ouvrant directement l'application. Teste le lien sur ton téléphone avant de t'y fier.</p></div>
         <Fld label="Lien de paiement Orange Money (optionnel)"><Inp value={editG.lienOrange} onChange={e=>setEditG(g=>({...g,lienOrange:e.target.value}))} placeholder="https://..." inputMode="url"/></Fld>
         <Fld label="Lien de paiement Wave (optionnel)"><Inp value={editG.lienWave} onChange={e=>setEditG(g=>({...g,lienWave:e.target.value}))} placeholder="https://pay.wave.com/..." inputMode="url"/></Fld>
-        <p style={{color:"#6B7280",fontSize:11,margin:"-8px 0 14px",lineHeight:1.5}}>Renseigne ces numéros pour afficher les boutons de paiement direct aux membres. L'argent part directement sur ces numéros, jamais sur l'app.</p>
+        <Fld label="QR de paiement (Wave ou Orange Money)">
+          <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:10,padding:editG.qrPaiementUrl?8:14,textAlign:"center",cursor:"pointer"}}>
+            <input type="file" accept="image/*" onChange={choisirQRPaiement} style={{display:"none"}}/>
+            {editG.qrPaiementUrl
+              ? <img src={editG.qrPaiementUrl} alt="QR" style={{maxWidth:160,maxHeight:160,borderRadius:8,display:"block",margin:"0 auto"}}/>
+              : <span style={{color:"#FF6B00",fontSize:12,fontWeight:700}}>{qrUp?"Import en cours...":"📷 Importer la photo de mon QR"}</span>}
+          </label>
+          {editG.qrPaiementUrl&&<button onClick={()=>setEditG(g=>({...g,qrPaiementUrl:""}))} style={{background:"transparent",border:"none",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer",marginTop:6}}>Retirer le QR</button>}
+        </Fld>
+        <p style={{color:"#6B7280",fontSize:11,margin:"-8px 0 14px",lineHeight:1.5}}>Renseigne ces numéros (et/ou importe ton QR) pour afficher le paiement direct aux membres. L'argent part directement sur ton compte, jamais sur l'app.</p>
         <Btn onClick={saveEdit} disabled={editBusy}>{editBusy?"Enregistrement...":"Enregistrer"}</Btn>
       </Modal>}
     </div>
@@ -4855,7 +4886,7 @@ function AppInner() {
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,reglement:g.reglement||"",dateEcheance:g.date_echeance,
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
         createurUserId:g.user_id,createurNom:createur?.prenom||"Creatrice",createurPhoto:createur?.photo_url||null,
-        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,
+        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,qrPaiementUrl:g.qr_paiement_url||null,
         membres:(membres||[]).map(m=>({id:m.id,userId:m.user_id,prenom:m.prenom,tel:m.tel,paye:m.paye,quartier:m.quartier,photo:m.photo_url,evenement:m.evenement,versements:Number(m.versements)||0,cyclesPaies:m.cycles_paies||0,score:m.score||80,role_bureau:m.role_bureau,montantPerso:m.montant_perso!=null?Number(m.montant_perso):null,roleCollecteur:!!m.role_collecteur,dette:Number(m.dette)||0})),
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),
         tirages:tirages||[],
@@ -4884,7 +4915,7 @@ function AppInner() {
         id:g.id,nom:g.nom,montant:Number(g.montant)||0,frequence:g.frequence||"Mensuel",couleur:g.couleur||"#FF6B00",
         cycle:g.cycle||1,totalCycles:g.total_cycles||12,dateEcheance:g.date_echeance,reglement:g.reglement||"",
         caisseSociale:Number(g.caisse_sociale)||0,cagnotte:cagnotteVraie,montantInitial:Number(g.montant_initial)||0,
-        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,
+        numeroOrangeMoney:g.numero_orange_money||null,numeroWave:g.numero_wave||null,numeroMoovMoney:g.numero_moov_money||null,lienWave:g.lien_wave||null,lienOrange:g.lien_orange||null,qrPaiementUrl:g.qr_paiement_url||null,
         prochainTour:gagnant?gagnant.prenom:"A tirer au sort",
         membres:mm,
         checklist:(checklist||[]).map(c=>({id:c.id,label:c.label,done:c.done})),

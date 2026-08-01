@@ -211,7 +211,7 @@ const Pastille = ({ n, point=false }) => {
 // Questions/jour offertes a HABY sur le plan gratuit. DOIT rester identique a
 // QUOTA_GRATUIT_PAR_JOUR dans supabase/functions/haby-chat/index.ts (c'est la fonction
 // serveur qui applique reellement la limite ; ici c'est uniquement pour l'affichage).
-const QUOTA_HABY_GRATUIT = 10;
+const QUOTA_HABY_GRATUIT = 15;
 
 const LIMITE_MEMBRES_BASE = 15;
 const FILLEULS_PAR_MEMBRE_BONUS = 5;

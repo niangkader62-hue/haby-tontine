@@ -15,7 +15,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const QUOTA_GRATUIT_PAR_JOUR = 10;   // questions/jour sur le plan gratuit
+const QUOTA_GRATUIT_PAR_JOUR = 15;   // questions/jour sur le plan gratuit
 const MAX_MESSAGES_HISTORIQUE = 10;  // derniers messages envoyes a l'IA
 const MAX_TOKENS_REPONSE = 800;      // reponses courtes = facture reduite
 

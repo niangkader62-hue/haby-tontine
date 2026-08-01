@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
       }
       if (!membre && tel) {
         const { data } = await service.from("membres").select("*")
-          .eq("groupe_id", idTontine).maybeSingle(); // affiner par tel si besoin
+          .eq("groupe_id", idTontine).eq("tel", tel).maybeSingle();
         membre = data;
       }
       if (membre) {

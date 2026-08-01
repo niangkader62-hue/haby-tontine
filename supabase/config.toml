@@ -6,3 +6,9 @@ verify_jwt = false
 
 [functions.cagnotte-contribute]
 verify_jwt = false
+
+[functions.fedapay-init]
+verify_jwt = false
+
+[functions.fedapay-webhook]
+verify_jwt = false

@@ -4,6 +4,7 @@ import { supabase, SUPABASE_URL } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
 import heroTontine from "./assets/hero-tontine.jpg";
 import { QRCodeSVG } from "qrcode.react";
+import PaiementScreen from "./PaiementScreen";
 // jsPDF et html2canvas sont volumineux et rarement utilises immediatement au demarrage :
 // on les charge a la demande (dynamic import) plutot qu'au chargement initial de l'app,
 // pour que l'app s'ouvre plus vite, surtout sur reseau mobile lent.
@@ -5080,6 +5081,9 @@ function AppInner() {
 
   const contribuerCagnotteId=new URLSearchParams(window.location.search).get("contribuer");
   if(contribuerCagnotteId)return <ContributionPubliqueScreen cagnotteId={contribuerCagnotteId}/>;
+
+  // Page publique de paiement universel (ouverte par le QR THT) : aucune connexion requise.
+  if(new URLSearchParams(window.location.search).get("paiement"))return <PaiementScreen/>;
 
   if(checking){
     return <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#FFFFFF,#F5F5F5)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>

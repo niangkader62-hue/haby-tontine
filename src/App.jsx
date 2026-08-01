@@ -4968,6 +4968,29 @@ function AppInner() {
     };
   },[loadGroupes,loadParticipations,loadFilleuls,loadCagnottes]);
 
+  // Securite du panneau admin : une fois le code entre, l'acces restait ouvert TOUTE la
+  // session (adminUnlocked ne retombait jamais a false). Si le telephone changeait de
+  // mains, on entrait dans l'admin sans code. On reverrouille donc des que l'app passe en
+  // arriere-plan : au retour, le code est redemande. Si on etait sur l'ecran admin, on en
+  // sort pour que la re-entree repasse par le code.
+  useEffect(()=>{
+    const reverrouiller=()=>{
+      if(document.visibilityState==="hidden"){
+        setAdminUnlocked(false);
+        if(nav==="admin")setNav("profil");
+      }
+    };
+    document.addEventListener("visibilitychange",reverrouiller);
+    return()=>document.removeEventListener("visibilitychange",reverrouiller);
+  },[nav]);
+
+  // Filet supplementaire : l'acces admin expire aussi tout seul apres 5 minutes.
+  useEffect(()=>{
+    if(!adminUnlocked)return;
+    const t=setTimeout(()=>setAdminUnlocked(false),5*60*1000);
+    return()=>clearTimeout(t);
+  },[adminUnlocked]);
+
   const handleLogout=async()=>{
     await logoutUser();
     setUser(null);setNav("home");setSel(null);

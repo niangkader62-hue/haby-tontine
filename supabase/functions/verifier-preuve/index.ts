@@ -1,28 +1,13 @@
 // Edge Function Supabase : regarde une photo envoyee comme preuve de paiement et dit
 // si c'en est vraiment une.
 //
-// LE PROBLEME
-// N'importe quelle image passait : un selfie, une photo de chaussures, une capture au
-// hasard. La creatrice devait tout verifier a l'oeil, une photo apres l'autre.
+// REGLE ACTUELLE (stricte) : on n'accepte que si l'image porte un montant, un nom
+// d'operateur, ou est franchement financiere (billets/recu/sms/capture operateur).
+// Tout le reste -- selfie, visage, objet, paysage -- est REFUSE. Une image illisible
+// (floue/sombre) n'est pas bloquee, pour ne pas rejeter un vrai paiement mal photographie.
 //
-// L'APPROCHE, ET POURQUOI ELLE A CHANGE
-// On demandait a l'IA de JUGER : "est-ce une preuve ?". C'est une question d'opinion, et
-// le modele hesitait -- un portrait passait. Desormais on ne lui demande plus un avis,
-// on lui demande des FAITS : lit-elle un montant ? un nom d'operateur ? des mots lies a
-// de l'argent ? Et c'est L'APPLICATION qui tranche, sur ces faits :
-//   - au moins un indice concret d'argent (montant, operateur, type financier, mots
-//     d'argent) -> c'est une preuve, on accepte ;
-//   - une image NETTE sans aucun indice d'argent (un visage, un objet, un paysage) ->
-//     ce n'est pas une preuve, on refuse ;
-//   - une image qu'on ne peut pas identifier (floue, sombre) -> le doute profite a la
-//     membre, on laisse passer et on signale.
-// Lire un montant ou "Orange Money" est une tache que le modele rate quasiment jamais ;
-// c'est bien plus sur que de lui faire porter un jugement.
-//
-// CE QU'ELLE NE FAIT PAS, ET IL FAUT LE SAVOIR
-// Elle ne prouve PAS qu'un paiement a eu lieu. Une capture peut etre fabriquee, ou
-// etre celle du paiement de quelqu'un d'autre. Elle reconnait la FORME d'une preuve,
-// pas sa VERITE. La confirmation humaine de la creatrice reste ce qui fait foi.
+// CE QU'ELLE NE FAIT PAS : elle ne prouve PAS qu'un paiement a eu lieu. Elle reconnait la
+// FORME d'une preuve, pas sa VERITE. La confirmation de la creatrice reste ce qui fait foi.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -31,10 +16,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Une verification par photo envoyee. Une membre depose une preuve par cycle : ce
-// plafond genereux ne gene personne, il empeche seulement une boucle d'appels.
 const QUOTA_VERIFS_PAR_JOUR = 40;
-const TAILLE_MAX_IMAGE = 4 * 1024 * 1024; // 4 Mo : au-dela, ce n'est pas une capture d'ecran
+const TAILLE_MAX_IMAGE = 4 * 1024 * 1024; // 4 Mo
 
 const json = (corps: unknown, status = 200) =>
   new Response(JSON.stringify(corps), {
@@ -42,13 +25,11 @@ const json = (corps: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-// En cas de panne, de quota atteint ou de reponse illisible, on ACCEPTE la photo.
-// Bloquer un vrai paiement parce que l'IA est indisponible serait bien pire que
-// laisser passer une image douteuse que la creatrice verra de toute facon.
+// En cas de panne technique de l'IA (indisponible, illisible), on ne bloque pas un vrai
+// paiement : la photo passe, non verifiee, et la creatrice la voit de toute facon.
 const onLaissePasser = (raison: string) =>
   json({ ok: true, verifie: false, verdict: "indetermine", raison });
 
-// Types d'image qui SONT, par nature, une preuve financiere.
 const TYPES_FINANCIERS = new Set(["capture_operateur", "sms", "recu_papier", "billets"]);
 
 const CONSIGNE = `Tu examines une image envoyee comme preuve d'un paiement mobile en Afrique de l'Ouest
@@ -76,29 +57,15 @@ Reponds UNIQUEMENT par un objet JSON, sans texte autour, sans balises de code :
   "description": "ce que tu vois vraiment, en 8 mots maximum, en francais"
 }
 
-REGLE 1 -- "indices_argent", le champ le plus important. Reponds true si tu vois SUR
-l'image AU MOINS UN de ces elements :
-- un montant chiffre (ex : 25 000, 10.000) ;
-- une devise ou son symbole (FCFA, CFA, F, XOF) ;
-- un nom d'operateur d'argent mobile ou de banque ;
-- des mots de transaction (transfert, envoi, recu, paiement, solde, reference, ID de
-  transaction, "vous avez recu", "transaction reussie") ;
-- des billets de banque ou des pieces reconnaissables.
-Sinon (un visage, un animal, un paysage, un objet, une capture sans rien de tout cela),
-reponds false. Dans le doute sur une image NETTE ou tu ne vois aucun chiffre ni mot
-d'argent, reponds false.
-
-REGLE 2 -- "sujet_principal", ce que montre l'image :
-- "preuve_paiement" : operateur, SMS, recu, billets/pieces ;
-- "personne" : un visage, un selfie, un portrait, une photo d'identite ;
-- "animal", "lieu" (paysage, rue, batiment, voiture), "objet" (plat, vetement, meuble...) ;
-- "capture_sans_argent" : une capture d'ecran qui ne parle pas d'argent ;
-- "illisible" : image trop floue, trop sombre ou coupee pour etre identifiee.
-Devant un visage net, reponds "personne" avec "indices_argent": false -- jamais "preuve_paiement".
-
-Une photo de billets est une preuve valable meme sans texte : sujet_principal
-"preuve_paiement", "type": "billets", "indices_argent": true, "montant": null si tu ne
-peux pas compter avec certitude.`;
+LIS ATTENTIVEMENT ET SOIS HONNETE :
+- "montant" : un nombre SEULEMENT si tu vois vraiment des chiffres d'un montant sur l'image.
+  Sur un visage, un objet ou un paysage, il n'y a pas de montant -> mets null. N'invente jamais.
+- "operateur" : un nom SEULEMENT si tu le LIS sur l'image. Sinon null. N'invente jamais.
+- "type" : "billets" seulement si on voit vraiment des billets/pieces ; sinon "autre".
+- "sujet_principal" : ce que montre l'image. Devant un visage net -> "personne". Une image
+  trop floue/sombre pour etre identifiee -> "illisible".
+- "indices_argent" : true seulement si tu vois un montant, une devise (FCFA/CFA/F/XOF), un
+  nom d'operateur, des mots de transaction, ou des billets. Sinon false.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -116,8 +83,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // --- Quota quotidien (table preuve_usage, distincte de celle de HABY) ------
-    // Tolerant : si la table manque ou que la lecture echoue, on laisse passer.
     let userId: string | null = null;
     try {
       const jeton = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
@@ -139,7 +104,6 @@ Deno.serve(async (req) => {
       }
     } catch { /* on laisse passer */ }
 
-    // --- Lecture de l'image par Gemini ----------------------------------------
     const reponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
@@ -155,7 +119,7 @@ Deno.serve(async (req) => {
             ],
           }],
           generationConfig: {
-            temperature: 0,               // on veut une lecture, pas de l'imagination
+            temperature: 0,
             maxOutputTokens: 300,
             responseMimeType: "application/json",
           },
@@ -175,7 +139,7 @@ Deno.serve(async (req) => {
       return onLaissePasser("reponse d analyse illisible");
     }
 
-    // --- Faits lus sur l'image (c'est l'app qui tranche, pas l'IA) -------------
+    // Faits durs lus sur l'image.
     const montantLu = Number(lu.montant);
     const aMontant = Number.isFinite(montantLu) && montantLu > 0;
     const operateurTxt = String(lu.operateur ?? "").trim().toLowerCase();
@@ -185,23 +149,28 @@ Deno.serve(async (req) => {
     const indicesArgent = lu.indices_argent === true;
     const sujet = String(lu.sujet_principal || "");
 
-    // Une image est "identifiee" des lors que l'IA a su dire ce qu'elle montre. Si elle
-    // est illisible (floue, sombre), on ne refuse pas : le doute profite a la membre.
-    const imageIdentifiee = sujet !== "" && sujet !== "illisible";
-
-    // Preuve concrete = au moins un fait d'argent lu sur l'image. C'est la seule chose
-    // qui fait accepter -- et l'absence totale de fait, sur une image nette, qui fait refuser.
-    const preuveConcrete = aMontant || aOperateur || typeFinancier || indicesArgent;
-
+    // REGLE STRICTE : on ACCEPTE seulement sur une preuve d'argent concrete (montant,
+    // operateur, type financier). Tout le reste est REFUSE. Une image illisible n'est pas
+    // bloquee (pour ne pas rejeter un vrai paiement mal photographie).
+    const preuveConcrete = aMontant || aOperateur || typeFinancier;
     const verdict = preuveConcrete ? "valide"
-                  : imageIdentifiee ? "refuse"
-                  : "doute";
+                  : sujet === "illisible" ? "doute"
+                  : "refuse";
 
-    // Trace serveur (logs edge-function) : montre exactement les faits lus et le verdict.
-    console.log(`[verifier-preuve] verdict=${verdict} sujet=${sujet} indices_argent=${indicesArgent} operateur=${lu.operateur ?? ""} montant=${lu.montant ?? ""} type=${type} desc=${lu.description ?? ""}`);
+    // Diagnostic : on enregistre ce que l'IA a repondu, pour pouvoir le lire ensuite.
+    try {
+      await service.from("preuve_debug").insert({
+        user_id: userId,
+        verdict,
+        sujet,
+        indices_argent: indicesArgent,
+        montant: aMontant ? montantLu : null,
+        operateur: lu.operateur ?? null,
+        type,
+        brut: brut.slice(0, 2000),
+      });
+    } catch { /* le diagnostic ne doit jamais bloquer la verification */ }
 
-    // Ecart de montant : information, jamais motif de refus. Un versement partiel ou
-    // un paiement groupe sont des situations parfaitement normales dans une tontine.
     let ecartMontant: string | null = null;
     if (verdict !== "refuse" && aMontant && Number(montant_attendu) > 0) {
       const attendu = Number(montant_attendu);
@@ -213,7 +182,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       verifie: true,
-      verdict,                                     // "valide" | "doute" | "refuse"
+      verdict,
       type: lu.type ?? null,
       operateur: lu.operateur ?? null,
       montant: aMontant ? montantLu : null,

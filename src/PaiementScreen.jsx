@@ -74,7 +74,9 @@ export default function PaiementScreen() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0D0D0D", display: "flex", justifyContent: "center", padding: "24px 16px" }}>
+    // data-noinvert : la page de paiement reste TOUJOURS en mode clair (identite lumineuse),
+    // meme si le telephone est en mode sombre — comme un checkout bancaire, plus rassurant.
+    <div data-noinvert style={{ minHeight: "100vh", background: "#F3F4F6", display: "flex", justifyContent: "center", padding: "24px 16px" }}>
       <div style={{ width: "100%", maxWidth: 460, background: "#FFFFFF", borderRadius: 20, padding: 22 }}>
         <h1 style={{ color: "#FF6B00", fontSize: 22, fontWeight: 900, margin: "0 0 4px" }}>Paiement THT</h1>
         <p style={{ color: "#6B7280", fontSize: 13, margin: "0 0 8px" }}>Paie ta cotisation ou fais un dépôt en toute sécurité.</p>

@@ -33,4 +33,12 @@
   [data-noinvert] {
     filter: invert(1) hue-rotate(180deg);
   }
+
+  /* Cas particulier : une image DANS une zone "ne pas inverser" (ex : le QR importe
+     affiche aux membres). Sans cette regle, elle subissait 3 inversions (page + zone +
+     image) et s'affichait en negatif. On annule le filtre de l'image : il ne reste que
+     page + zone = 2 inversions = image normale, nette et scannable. */
+  [data-noinvert] img {
+    filter: none;
+  }
 }

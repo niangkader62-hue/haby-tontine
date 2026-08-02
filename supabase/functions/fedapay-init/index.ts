@@ -38,14 +38,16 @@ Deno.serve(async (req) => {
     if (!secret) { debug("secret_manquant", 500, {}); return json({ error: "FEDAPAY_SECRET_KEY manquante dans les secrets" }, 500); }
 
     const {
-      type_transaction, id_tontine, id_utilisateur, membre_id,
-      montant, telephone, prenom, reseau, pays, devise, formule,
+      type_transaction, id_tontine, id_cagnotte, id_utilisateur, membre_id,
+      montant, telephone, prenom, contributeur, reseau, pays, devise, formule,
     } = await req.json().catch(() => ({}));
 
-    if (!["cotisation", "depot_personnel", "abonnement"].includes(type_transaction))
+    if (!["cotisation", "depot_personnel", "abonnement", "cagnotte"].includes(type_transaction))
       return json({ error: "type_transaction invalide" }, 400);
     if (type_transaction === "cotisation" && !id_tontine)
       return json({ error: "id_tontine requis pour une cotisation" }, 400);
+    if (type_transaction === "cagnotte" && !id_cagnotte)
+      return json({ error: "id_cagnotte requis pour une contribution" }, 400);
     if (type_transaction === "abonnement" && !id_utilisateur)
       return json({ error: "id_utilisateur requis pour un abonnement" }, 400);
 
@@ -67,6 +69,7 @@ Deno.serve(async (req) => {
     const origin = req.headers.get("origin") || "https://tontine.kbsdigitalagency.com";
     const description = type_transaction === "cotisation"
       ? `Cotisation tontine ${id_tontine}`
+      : type_transaction === "cagnotte" ? "Contribution cagnotte"
       : type_transaction === "abonnement" ? f.libelle : "Depot personnel";
 
     // --- 1) Creer la transaction chez FedaPay ---------------------------------
@@ -86,8 +89,10 @@ Deno.serve(async (req) => {
         metadata: {
           type_transaction,
           id_tontine: id_tontine || null,
+          id_cagnotte: id_cagnotte || null,
           id_utilisateur: id_utilisateur || null,
           membre_id: membre_id || null,
+          contributeur: contributeur || null,
           duree_jours: dureeJours,
           reseau: reseau || null,
           pays: pays || null,

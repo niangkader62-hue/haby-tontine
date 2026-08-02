@@ -12,6 +12,10 @@
 
 :root { color-scheme: light; }
 
+/* Voile (fond assombrissant) derriere les fenetres modales.
+   Mode clair : voile noir classique. */
+.tht-scrim { background: rgba(0,0,0,0.85); }
+
 @media (prefers-color-scheme: dark) {
   :root { color-scheme: dark; }
 
@@ -46,4 +50,10 @@
   [data-noinvert] img {
     filter: none;
   }
+
+  /* Toute la page est inversee. Un voile noir (rgba(0,0,0,.85)) deviendrait donc BLANC et
+     eclaircirait la page derriere -> textes illisibles. On le met CLAIR dans la source pour
+     qu'apres l'inversion il redevienne un voile SOMBRE a l'ecran. Le contenu de la fenetre,
+     lui, s'inverse normalement et reste lisible. */
+  .tht-scrim { background: rgba(255,255,255,0.85); }
 }

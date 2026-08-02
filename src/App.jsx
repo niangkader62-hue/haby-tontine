@@ -3,6 +3,7 @@ import { registerUser, loginUser, getSession, logoutUser, verifyPin, changePin }
 import { supabase, SUPABASE_URL } from "./supabaseClient";
 import logoIcon from "./assets/logo-icon.png";
 import heroTontine from "./assets/hero-tontine.jpg";
+import tirelireImg from "./assets/tirelire-tht.jpg";
 import { QRCodeSVG } from "qrcode.react";
 import PaiementScreen from "./PaiementScreen";
 
@@ -3605,22 +3606,24 @@ const EpargneScreen = ({onToast,user}) => {
         <Fld label="Montant du versement (FCFA)"><Inp value={versAmt} onChange={e=>setVersAmt(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric" autoFocus/></Fld>
         <Btn onClick={addVersement} disabled={busy}>{busy?"Enregistrement...":"Confirmer le versement"}</Btn>
       </Modal>}
-      {/* Animation ludique : la main descend et depose le billet dans la tirelire,
-          la tirelire tressaute a la reception, puis une piece tombe dedans. */}
-      {animVersement&&<div style={{position:"fixed",inset:0,background:"rgba(13,13,13,0.82)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
+      {/* Animation a chaque versement : la boite d'epargne THT (la personne depose l'argent)
+          apparait avec un rebond, des pieces tombent dans la fente, et le montant monte. */}
+      {animVersement&&<div style={{position:"fixed",inset:0,background:"rgba(13,13,13,0.9)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
         <style>{`
-          @keyframes thtMainDepose{0%{transform:translate(0,-120px) rotate(-12deg);opacity:0}25%{opacity:1}55%{transform:translate(0,-14px) rotate(0deg);opacity:1}75%{transform:translate(0,-40px) rotate(6deg);opacity:1}100%{transform:translate(0,-120px) rotate(-12deg);opacity:0}}
-          @keyframes thtTirelireRebond{0%,45%{transform:scale(1)}58%{transform:scale(1.16) rotate(-3deg)}70%{transform:scale(0.96) rotate(2deg)}100%{transform:scale(1)}}
-          @keyframes thtPieceTombe{0%,40%{transform:translateY(-46px) scale(0.7);opacity:0}55%{opacity:1}100%{transform:translateY(6px) scale(1);opacity:0}}
-          @keyframes thtMontantMonte{0%{transform:translateY(14px);opacity:0}30%{opacity:1}100%{transform:translateY(-22px);opacity:0}}
+          @keyframes thtBoxIn{0%{transform:scale(0.7) translateY(34px);opacity:0}30%{opacity:1}56%{transform:scale(1.06) translateY(0)}72%{transform:scale(0.98)}100%{transform:scale(1) translateY(0);opacity:1}}
+          @keyframes thtBoxShake{0%,45%{transform:translateX(0) rotate(0)}56%{transform:translateX(-4px) rotate(-1deg)}66%{transform:translateX(4px) rotate(1deg)}78%{transform:translateX(-2px)}100%{transform:translateX(0)}}
+          @keyframes thtPieceTombe{0%{transform:translateY(-34px) scale(0.6);opacity:0}45%{opacity:1}100%{transform:translateY(34px) scale(1);opacity:0}}
+          @keyframes thtMontantMonte{0%{transform:translateY(14px);opacity:0}30%{opacity:1}100%{transform:translateY(-26px);opacity:0}}
         `}</style>
         <div style={{textAlign:"center",position:"relative"}}>
-          <div style={{position:"relative",height:150,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-            <span style={{position:"absolute",top:0,fontSize:44,animation:"thtMainDepose 2.2s ease-in-out"}} role="img" aria-label="main qui depose l argent">🤲</span>
-            <span style={{position:"absolute",top:52,fontSize:26,animation:"thtPieceTombe 2.2s ease-in"}} role="img" aria-hidden="true">🪙</span>
-            <span style={{fontSize:74,animation:"thtTirelireRebond 2.2s ease-in-out"}} role="img" aria-label="tirelire">🐷</span>
+          <div style={{position:"relative",display:"inline-block",animation:"thtBoxIn 0.9s ease-out, thtBoxShake 0.6s ease-in-out 0.9s"}}>
+            {/* data-noinvert : l'image de la boite reste naturelle meme en mode sombre. */}
+            <img src={tirelireImg} alt="Boite d'epargne THT" data-noinvert style={{height:280,maxWidth:"88vw",objectFit:"contain",borderRadius:16,display:"block",filter:"drop-shadow(0 14px 34px rgba(0,0,0,0.55))"}}/>
+            {/* pieces qui tombent dans la fente du dessus */}
+            <span style={{position:"absolute",top:"12%",left:"44%",fontSize:26,animation:"thtPieceTombe 1.1s ease-in 0.6s both"}} role="img" aria-hidden="true">🪙</span>
+            <span style={{position:"absolute",top:"12%",left:"54%",fontSize:20,animation:"thtPieceTombe 1.1s ease-in 0.9s both"}} role="img" aria-hidden="true">🪙</span>
           </div>
-          <p style={{color:"#D0A23E",fontSize:24,fontWeight:900,margin:"4px 0 0",animation:"thtMontantMonte 2.2s ease-out"}}>+{fmtFCFA(animVersement.montant)}</p>
+          <p style={{color:"#D0A23E",fontSize:26,fontWeight:900,margin:"12px 0 0",animation:"thtMontantMonte 2.2s ease-out"}}>+{fmtFCFA(animVersement.montant)}</p>
           <p style={{color:"#FFFFFF",fontSize:14,fontWeight:700,margin:"8px 0 0"}}>{animVersement.emoji} {animVersement.label}</p>
           <p style={{color:"#9CA3AF",fontSize:12,margin:"6px 0 0"}}>{new Date().toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</p>
         </div>

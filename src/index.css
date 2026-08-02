@@ -16,9 +16,14 @@
   :root { color-scheme: dark; }
 
   /* Inversion de toute l'app. Le fond blanc devient sombre, le texte sombre devient
-     clair, l'orange reste orange. */
+     clair, l'orange reste orange.
+     brightness(.9) + saturate(.8) : APRES l'inversion, l'orange devient naturellement plus
+     clair/vif et "pique les yeux" sur fond sombre. On baisse donc legerement la luminosite et
+     la saturation de TOUTE l'app en mode sombre -> l'orange devient un or plus doux (comme la
+     carte HABY), les blancs residuels deviennent gris, l'ensemble est plus reposant, facon Max it.
+     Le mode clair, lui, n'est pas touche. */
   html {
-    filter: invert(1) hue-rotate(180deg);
+    filter: invert(1) hue-rotate(180deg) brightness(0.9) saturate(0.8);
     background: #ffffff; /* rendu apres inversion -> noir : evite un bord clair */
   }
   body {

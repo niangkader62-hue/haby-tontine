@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
     const idTontine = meta.id_tontine || existant?.id_tontine || null;
     const idUser = meta.id_utilisateur || existant?.id_utilisateur || null;
     const membreId = meta.membre_id || null;
+    const dureeJours = Number(meta.duree_jours) || 0;
     const tel = existant?.telephone || null;
     const mnt = montant || existant?.montant || 0;
 
@@ -113,6 +114,23 @@ Deno.serve(async (req) => {
       await service.from("depots_personnels").insert({
         id_utilisateur: idUser, telephone: tel, montant: mnt, fedapay_id: String(fedapayId),
       });
+    } else if (type === "abonnement" && idUser) {
+      // Credite l'abonnement Premium : on prolonge premium_expire_le (a partir de la date de
+      // fin actuelle si elle est encore dans le futur, sinon a partir d'aujourd'hui).
+      const jours = dureeJours > 0 ? dureeJours : 30;
+      const { data: profil } = await service.from("users").select("premium_expire_le").eq("id", idUser).maybeSingle();
+      const finActuelle = profil?.premium_expire_le ? new Date(profil.premium_expire_le + "T00:00:00Z") : null;
+      const base = (finActuelle && finActuelle.getTime() > Date.now()) ? finActuelle : new Date();
+      const fin = new Date(base);
+      fin.setUTCDate(fin.getUTCDate() + jours);
+      await service.from("users").update({
+        plan: "premium", premium_expire_le: fin.toISOString().split("T")[0],
+      }).eq("id", idUser);
+      // Trace dans "paiements" pour la continuite du suivi des revenus (comme avant).
+      await service.from("paiements").insert({
+        user_id: idUser, transaction_id: `FEDAPAY-${fedapayId}`, montant: mnt,
+        statut: "accepted", duree_jours: jours,
+      }).then(() => {}, () => {});
     }
 
     // Marque comme applique -> plus jamais retraite.

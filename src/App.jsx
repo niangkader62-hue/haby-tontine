@@ -5,6 +5,23 @@ import logoIcon from "./assets/logo-icon.png";
 import heroTontine from "./assets/hero-tontine.jpg";
 import { QRCodeSVG } from "qrcode.react";
 import PaiementScreen from "./PaiementScreen";
+
+// Paiement d'un abonnement Premium THT via FedaPay (remplace CinetPay). On cree la transaction
+// cote serveur (fedapay-init, type "abonnement") puis on redirige vers le checkout securise ;
+// le webhook credite le Premium (users.plan + premium_expire_le) apres confirmation du paiement.
+async function payerAbonnement(user, formule, onErr){
+  const {data,error}=await supabase.functions.invoke("fedapay-init",{body:{
+    type_transaction:"abonnement",
+    formule,
+    id_utilisateur:user?.id,
+    telephone:(user?.tel||"").replace(/\s/g,""),
+    prenom:user?.prenom,
+    devise:"XOF",
+  }});
+  if(error||data?.error||!data?.url){onErr&&onErr("Le paiement n'a pas pu démarrer. Réessaie.");return false;}
+  window.location.href=data.url;
+  return true;
+}
 // jsPDF et html2canvas sont volumineux et rarement utilises immediatement au demarrage :
 // on les charge a la demande (dynamic import) plutot qu'au chargement initial de l'app,
 // pour que l'app s'ouvre plus vite, surtout sur reseau mobile lent.
@@ -1346,6 +1363,34 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       supabase.functions.invoke("send-push",{body:{user_id:groupe.createurUserId,title:"THT - Paiement déclaré",body:`${user.prenom} a déclaré avoir payé ${fmtFCFA(montant)} pour "${groupe.nom}"`,url:`/?g=${groupe.id}&tab=suivi`}}).catch(()=>{});
     }
   };
+  // OPTION A : paiement en ligne via FedaPay. On cree la transaction cote serveur (fedapay-init)
+  // puis on redirige vers le checkout securise FedaPay ; le webhook credite automatiquement la
+  // cotisation quand le paiement est confirme (aucune photo/validation manuelle necessaire).
+  const [payLigneBusy,setPayLigneBusy]=useState(false);
+  const payerCotisationEnLigne=async()=>{
+    if(!groupe.moi?.id)return;
+    setPayLigneBusy(true);
+    const montantP=Math.floor(Number(groupe.moi.montantPerso??groupe.montant)||0);
+    const {data,error}=await supabase.functions.invoke("fedapay-init",{body:{
+      type_transaction:"cotisation",
+      id_tontine:groupe.id,
+      membre_id:groupe.moi.id,
+      id_utilisateur:groupe.createurUserId||null,
+      montant:montantP,
+      telephone:(groupe.moi.tel||"").replace(/\s/g,""),
+      prenom:groupe.moi.prenom||user.prenom,
+      devise:"XOF",
+    }});
+    setPayLigneBusy(false);
+    if(error||data?.error||!data?.url)return onToast("Le paiement en ligne n'a pas pu démarrer. Réessaie ou paie via WhatsApp.","error");
+    window.location.href=data.url;
+  };
+  // OPTION B : ouvrir WhatsApp vers le support THT (le createur de l'app) pour etre accompagne.
+  const aideWhatsApp=()=>{
+    const montantP=Math.floor(Number(groupe.moi?.montantPerso??groupe.montant)||0);
+    const msg=encodeURIComponent(`Bonjour, j'ai besoin d'aide pour payer ma cotisation de la tontine "${groupe.nom}" (${fmtFCFA(montantP)}). Mon nom : ${groupe.moi?.prenom||user.prenom||""}.`);
+    window.open(`https://wa.me/22376908031?text=${msg}`,"_blank","noopener");
+  };
   const [messages,setMessages]=useState([]);
   const [msgInput,setMsgInput]=useState("");
   const [thread,setThread]=useState(deepLink?.thread||null);
@@ -1540,20 +1585,42 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
             </div>
           </div>}
         </div>}
-        {groupe.moi&&!groupe.moi.paye&&(groupe.numeroOrangeMoney||groupe.numeroWave||groupe.numeroMoovMoney||groupe.lienWave||groupe.lienOrange)&&
-          <BoutonsPaiementMobile
-            montant={groupe.moi.montantPerso??groupe.montant}
-            numeroOrangeMoney={groupe.numeroOrangeMoney}
-            numeroWave={groupe.numeroWave}
-            numeroMoovMoney={groupe.numeroMoovMoney}
-            lienWave={groupe.lienWave}
-            lienOrange={groupe.lienOrange}
-            qrPaiementUrl={groupe.qrPaiementUrl}
-            onDeclarer={(moyen,preuve)=>declarerPaiement(moyen,preuve)}
-            dejaDeclare={!!declarationEnAttente}
-            busy={declareBusy}
-          />
-        }
+        {groupe.moi&&!groupe.moi.paye&&<div style={{marginBottom:16}}>
+          {/* OPTION A : paiement en ligne FedaPay (mis en avant) */}
+          <div style={{background:"#FFFFFF",border:"1px solid #FF6B00",borderRadius:14,padding:16,marginBottom:12}}>
+            <p style={{margin:"0 0 4px",color:"#FF6B00",fontWeight:800,fontSize:14}}>💳 Payer ma cotisation en ligne</p>
+            <p style={{margin:"0 0 12px",color:"#6B7280",fontSize:11.5,lineHeight:1.5}}>Paie <b>{fmtFCFA(groupe.moi.montantPerso??groupe.montant)}</b> en toute sécurité (Orange Money, Wave, Moov, carte…). Ton paiement est validé automatiquement.</p>
+            <button onClick={payerCotisationEnLigne} disabled={payLigneBusy} style={{width:"100%",background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:14,color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>{payLigneBusy?"Ouverture du paiement...":"✅ Payer maintenant en ligne"}</button>
+            {/* QR : pour faire payer depuis un autre telephone ou en presentiel (on ne peut pas
+                scanner un QR affiche sur le meme telephone qui paie). data-noinvert : QR net en mode sombre. */}
+            <div data-noinvert style={{display:"flex",flexDirection:"column",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #E5E7EB"}}>
+              <p style={{margin:"0 0 10px",color:"#111827",fontSize:11.5,fontWeight:700,textAlign:"center"}}>📷 Ou fais scanner ce code (autre téléphone / en présentiel)</p>
+              <QRCodeSVG value={`${window.location.origin}/?paiement=1`} size={150} level="M" bgColor="#FFFFFF" fgColor="#111827"/>
+              <p style={{margin:"10px 0 0",color:"#6B7280",fontSize:10,textAlign:"center",lineHeight:1.4}}>La personne scanne, entre son numéro, choisit ta tontine et paie.</p>
+            </div>
+          </div>
+          {/* OPTION B : aide / paiement accompagne via WhatsApp */}
+          <button onClick={aideWhatsApp} style={{width:"100%",background:"#25D366",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:800,fontSize:13.5,cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>💬 Besoin d'aide ? Payer via WhatsApp</button>
+          {/* SECOURS : paiement manuel (numeros mobile money + photo de preuve), replie, et seulement
+              si la creatrice a renseigne un moyen manuel. */}
+          {(groupe.numeroOrangeMoney||groupe.numeroWave||groupe.numeroMoovMoney||groupe.lienWave||groupe.lienOrange||groupe.qrPaiementUrl)&&<details style={{marginBottom:4}}>
+            <summary style={{cursor:"pointer",color:"#6B7280",fontSize:12,fontWeight:700,padding:"6px 0"}}>Autre moyen : payer à la main + envoyer une preuve</summary>
+            <div style={{marginTop:8}}>
+              <BoutonsPaiementMobile
+                montant={groupe.moi.montantPerso??groupe.montant}
+                numeroOrangeMoney={groupe.numeroOrangeMoney}
+                numeroWave={groupe.numeroWave}
+                numeroMoovMoney={groupe.numeroMoovMoney}
+                lienWave={groupe.lienWave}
+                lienOrange={groupe.lienOrange}
+                qrPaiementUrl={groupe.qrPaiementUrl}
+                onDeclarer={(moyen,preuve)=>declarerPaiement(moyen,preuve)}
+                dejaDeclare={!!declarationEnAttente}
+                busy={declareBusy}
+              />
+            </div>
+          </details>}
+        </div>}
         {caisseMvtsMembre.length>0&&<div style={{marginBottom:16}}>
           <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"0 0 10px",letterSpacing:.5}}>HISTORIQUE CAISSE SOCIALE</p>
           {caisseMvtsMembre.map(m=>(
@@ -3267,10 +3334,8 @@ THT - Tontine Habi Traore`;
         <p style={{color:"#9A3412",fontSize:12,textAlign:"center",lineHeight:1.6,marginBottom:20,background:"#FFF7ED",border:"1px solid #FF6B00",borderRadius:10,padding:"9px 11px"}}>👥 Ou gagne des places gratuitement : partage ton code de parrainage depuis ton Profil. Chaque {FILLEULS_PAR_MEMBRE_BONUS} ami(e)s qui creent un compte te donnent <strong>+1 place</strong>.</p>
         <button onClick={async()=>{
           setPayBusy(true);
-          const {data,error}=await supabase.functions.invoke("cinetpay-init",{body:{formule:"mensuel"}});
+          await payerAbonnement(user,"mensuel",(m)=>onToast(m,"error"));
           setPayBusy(false);
-          if(error||data?.error)return onToast("Erreur : "+(data?.error||error?.message||"paiement indisponible"),"error");
-          if(data?.payment_url)window.open(data.payment_url,"_blank");
         }} disabled={payBusy} style={{width:"100%",background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"13px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant - 1 000 FCFA"}</button>
         <p style={{color:"#6B7280",fontSize:11,textAlign:"center",margin:"0 0 12px"}}>OU manuellement via WhatsApp :</p>
         <div style={{display:"flex",gap:10}}>
@@ -3841,7 +3906,7 @@ const AdminScreen = ({onBack,onToast,currentUserId,user}) => {
           </div>
         ))}
       </div>
-      <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"18px 16px 8px",letterSpacing:.5}}>REVENUS (PAIEMENTS CINETPAY REELS)</p>
+      <p style={{color:"#6B7280",fontSize:12,fontWeight:700,margin:"18px 16px 8px",letterSpacing:.5}}>REVENUS (PAIEMENTS FEDAPAY REELS)</p>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 16px"}}>
         {[["Revenu total",fmtFCFA(revenuTotal)],["Ce mois-ci",fmtFCFA(revenuMois)],["Paiements reussis",paiementsAcceptes.length],["Paiements aujourd'hui",paiementsAuj]].map(([l,v])=>(
           <div key={l} style={{background:"#FFFFFF",border:"1px solid #E5E7EB",borderRadius:14,padding:14}}>
@@ -4187,10 +4252,8 @@ const ProfilScreen = ({user,onLogout,onToast,onUpgrade,onOpenAdmin,lang,onChange
   // affiche "10 000/an" facturait en realite 1 000 FCFA.
   const onPayCinetPay=async(formule="mensuel")=>{
     setPayBusy(true);
-    const {data,error}=await supabase.functions.invoke("cinetpay-init",{body:{formule}});
+    await payerAbonnement(user,formule,(m)=>onToast(m,"error"));
     setPayBusy(false);
-    if(error||data?.error)return onToast("Erreur : "+(data?.error||error?.message||"paiement indisponible"),"error");
-    if(data?.payment_url)window.open(data.payment_url,"_blank");
   };
   const [showOut,setShowOut]=useState(false);
   const [showSupport,setShowSupport]=useState(false);
@@ -4771,10 +4834,8 @@ const ModalCreer = ({onClose,onCreate,user}) => {
     <p style={{color:"#6B7280",fontSize:13,textAlign:"center",lineHeight:1.6,marginBottom:20}}>Passe a THT Premium pour gerer plusieurs tontines en meme temps.</p>
     <button onClick={async()=>{
       setPayBusy(true);
-      const {data,error}=await supabase.functions.invoke("cinetpay-init",{body:{formule:"mensuel"}});
+      await payerAbonnement(user,"mensuel",setErr);
       setPayBusy(false);
-      if(error||data?.error)return setErr("Erreur : "+(data?.error||error?.message||"paiement indisponible"));
-      if(data?.payment_url)window.open(data.payment_url,"_blank");
     }} disabled={payBusy} style={{width:"100%",background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:"13px",color:"#0D0D0D",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}}>{payBusy?"Ouverture du paiement...":"💳 Payer en ligne maintenant - 1 000 FCFA"}</button>
     <p style={{color:"#6B7280",fontSize:11,textAlign:"center",margin:"0 0 12px"}}>OU manuellement via WhatsApp :</p>
     <div style={{display:"flex",gap:10}}>

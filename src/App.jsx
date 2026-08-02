@@ -454,7 +454,7 @@ const Toast = ({msg,type="success",onClose}) => {
 };
 
 const Modal = ({children,onClose}) => (
-  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
+  <div className="tht-scrim" style={{position:"fixed",inset:0,zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
     <div className="tht-modal" style={{background:"#FFFFFF",borderRadius:"24px 24px 0 0",padding:"20px 20px 44px",width:"100%",maxWidth:440,border:"1px solid #E5E7EB",borderBottom:"none",maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>{children}</div>
   </div>
 );

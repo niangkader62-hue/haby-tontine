@@ -17,7 +17,7 @@ const corsHeaders = {
 
 const QUOTA_GRATUIT_PAR_JOUR = 15;   // questions/jour sur le plan gratuit
 const MAX_MESSAGES_HISTORIQUE = 10;  // derniers messages envoyes a l'IA
-const MAX_TOKENS_REPONSE = 800;      // reponses courtes = facture reduite
+const MAX_TOKENS_REPONSE = 1200;     // marge suffisante pour ne pas couper les reponses
 
 const json = (corps: unknown, status = 200) =>
   new Response(JSON.stringify(corps), {
@@ -89,7 +89,11 @@ Deno.serve(async (req) => {
     const corpsGemini = JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
       contents,
-      generationConfig: { temperature: 0.6, maxOutputTokens: MAX_TOKENS_REPONSE, topP: 0.9 },
+      // thinkingBudget: 0 -> on DESACTIVE la "reflexion interne" de gemini-2.5-flash. Sinon
+      // elle consomme une partie du budget de tokens et la reponse visible etait COUPEE en
+      // cours de route. Pour un assistant de chat, la reponse directe suffit (et c'est plus
+      // rapide et moins cher). Tout le budget va desormais a la reponse.
+      generationConfig: { temperature: 0.6, maxOutputTokens: MAX_TOKENS_REPONSE, topP: 0.9, thinkingConfig: { thinkingBudget: 0 } },
     });
     const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 

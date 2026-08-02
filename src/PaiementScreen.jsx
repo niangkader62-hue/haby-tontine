@@ -78,13 +78,13 @@ export default function PaiementScreen() {
     // meme si le telephone est en mode sombre — comme un checkout bancaire, plus rassurant.
     <div data-noinvert style={{ minHeight: "100vh", background: "#F3F4F6", display: "flex", justifyContent: "center", padding: "24px 16px" }}>
       <div style={{ width: "100%", maxWidth: 460, background: "#FFFFFF", borderRadius: 20, padding: 22 }}>
-        <h1 style={{ color: "#FF6B00", fontSize: 22, fontWeight: 900, margin: "0 0 4px" }}>Paiement THT</h1>
+        <h1 style={{ color: "#D0A23E", fontSize: 22, fontWeight: 900, margin: "0 0 4px" }}>Paiement THT</h1>
         <p style={{ color: "#6B7280", fontSize: 13, margin: "0 0 8px" }}>Paie ta cotisation ou fais un dépôt en toute sécurité.</p>
 
         <label style={label}>Que veux-tu faire ?</label>
         <div style={{ display: "flex", gap: 8 }}>
           {[["cotisation", "💳 Payer une cotisation"], ["depot_personnel", "🏦 Faire un dépôt"]].map(([v, t]) => (
-            <button key={v} onClick={() => setObjectif(v)} style={{ flex: 1, padding: "12px 8px", borderRadius: 12, border: "1px solid", cursor: "pointer", fontSize: 13, fontWeight: 700, background: objectif === v ? "#FF6B00" : "#F3F4F6", color: objectif === v ? "#0D0D0D" : "#111827", borderColor: objectif === v ? "#FF6B00" : "#D1D5DB" }}>{t}</button>
+            <button key={v} onClick={() => setObjectif(v)} style={{ flex: 1, padding: "12px 8px", borderRadius: 12, border: "1px solid", cursor: "pointer", fontSize: 13, fontWeight: 700, background: objectif === v ? "#D0A23E" : "#F3F4F6", color: objectif === v ? "#0D0D0D" : "#111827", borderColor: objectif === v ? "#D0A23E" : "#D1D5DB" }}>{t}</button>
           ))}
         </div>
 
@@ -93,7 +93,7 @@ export default function PaiementScreen() {
           <input style={champ} value={tel} onChange={(e) => setTel(e.target.value.replace(/[^\d+ ]/g, ""))} placeholder="Ex : +229 97 00 00 00" inputMode="tel" />
 
           {objectif === "cotisation" && <>
-            <button onClick={chargerTontines} disabled={busy} style={{ width: "100%", marginTop: 10, background: "#E5E7EB", border: "1px solid #FF6B00", borderRadius: 10, padding: 10, color: "#FF6B00", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{busy ? "..." : "🔎 Trouver mes tontines"}</button>
+            <button onClick={chargerTontines} disabled={busy} style={{ width: "100%", marginTop: 10, background: "#E5E7EB", border: "1px solid #D0A23E", borderRadius: 10, padding: 10, color: "#D0A23E", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{busy ? "..." : "🔎 Trouver mes tontines"}</button>
             {tontines.length > 0 && <>
               <label style={label}>Tontine concernée</label>
               <select style={champ} value={tontine?.id || ""} onChange={(e) => { const t = tontines.find((x) => x.id === e.target.value); setTontine(t); setMontant(String(t?.montant || "")); }}>
@@ -118,7 +118,7 @@ export default function PaiementScreen() {
 
           {msg && <p style={{ color: "#EF4444", fontSize: 13, margin: "12px 0 0", fontWeight: 600 }}>{msg}</p>}
 
-          <button onClick={payer} disabled={busy} style={{ width: "100%", marginTop: 18, background: "linear-gradient(135deg,#FF6B00,#CC5200)", border: "none", borderRadius: 14, padding: 15, color: "#0D0D0D", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{busy ? "Ouverture du paiement..." : "✅ Payer maintenant"}</button>
+          <button onClick={payer} disabled={busy} style={{ width: "100%", marginTop: 18, background: "linear-gradient(135deg,#D0A23E,#A87C22)", border: "none", borderRadius: 14, padding: 15, color: "#0D0D0D", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{busy ? "Ouverture du paiement..." : "✅ Payer maintenant"}</button>
           <p style={{ color: "#9CA3AF", fontSize: 11, textAlign: "center", margin: "10px 0 0" }}>Paiement sécurisé via FedaPay. THT ne voit jamais ton code secret.</p>
         </>}
       </div>

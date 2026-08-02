@@ -1377,7 +1377,7 @@ const ParticipationScreen = ({groupe,onBack,user,onToast,onVoted,deepLink}) => {
       membre_id:groupe.moi.id,
       id_utilisateur:groupe.createurUserId||null,
       montant:montantP,
-      telephone:(groupe.moi.tel||"").replace(/\s/g,""),
+      telephone:(groupe.moi.tel||user.tel||"").replace(/\s/g,""),
       prenom:groupe.moi.prenom||user.prenom,
       devise:"XOF",
     }});

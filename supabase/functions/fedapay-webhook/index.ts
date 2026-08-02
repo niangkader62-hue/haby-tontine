@@ -76,8 +76,10 @@ Deno.serve(async (req) => {
 
     const type = meta.type_transaction || existant?.type_transaction;
     const idTontine = meta.id_tontine || existant?.id_tontine || null;
+    const idCagnotte = meta.id_cagnotte || null;
     const idUser = meta.id_utilisateur || existant?.id_utilisateur || null;
     const membreId = meta.membre_id || null;
+    const contributeur = meta.contributeur || "Contributeur";
     const dureeJours = Number(meta.duree_jours) || 0;
     const tel = existant?.telephone || null;
     const mnt = montant || existant?.montant || 0;
@@ -110,6 +112,14 @@ Deno.serve(async (req) => {
           cycle: g?.cycle || 1, statut: paye ? "paye" : "partiel",
         });
       }
+    } else if (type === "cagnotte" && idCagnotte) {
+      // Contribution a une cagnotte : on enregistre la contribution et on incremente le total
+      // collecte (meme logique que la contribution manuelle via cagnotte-contribute).
+      await service.from("cagnotte_contributions").insert({
+        cagnotte_id: idCagnotte, contributeur, tel, montant: mnt,
+      });
+      await service.rpc("increment_cagnotte", { p_cagnotte_id: idCagnotte, p_montant: mnt })
+        .then(() => {}, () => {});
     } else if (type === "depot_personnel") {
       await service.from("depots_personnels").insert({
         id_utilisateur: idUser, telephone: tel, montant: mnt, fedapay_id: String(fedapayId),

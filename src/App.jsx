@@ -4537,6 +4537,28 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
     setBusy(false);
   };
 
+  // OPTION A : contribuer en ligne via FedaPay (valide automatiquement, sans photo). On cree la
+  // transaction cote serveur puis on redirige vers le checkout ; le webhook credite la cagnotte.
+  const [payLigneBusy,setPayLigneBusy]=useState(false);
+  const payerEnLigne=async()=>{
+    if(!prenom.trim())return setErr("Ton prénom est requis");
+    if(!montant||Number(montant)<100)return setErr("Montant minimum : 100 FCFA");
+    if(tel.replace(/\D/g,"").length<8)return setErr("Entre ton numéro de téléphone pour payer en ligne");
+    setErr("");setPayLigneBusy(true);
+    const {data,error}=await supabase.functions.invoke("fedapay-init",{body:{
+      type_transaction:"cagnotte",
+      id_cagnotte:cagnotteId,
+      contributeur:`${prenom.trim()} ${(nom||"").trim()}`.trim(),
+      montant:Math.floor(Number(montant)),
+      telephone:tel.replace(/\s/g,""),
+      prenom:prenom.trim(),
+      devise:"XOF",
+    }});
+    setPayLigneBusy(false);
+    if(error||data?.error||!data?.url)return setErr("Le paiement en ligne n'a pas pu démarrer. Réessaie.");
+    window.location.href=data.url;
+  };
+
   const telechargerRecu=async()=>{
     setRecuBusy(true);
     try{
@@ -4585,6 +4607,17 @@ const ContributionPubliqueScreen = ({cagnotteId}) => {
           <Fld label="Ton nom (optionnel)"><Inp value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex: Diallo" maxLength={30}/></Fld>
           <Fld label="Ton numéro (optionnel)"><PhoneInput value={tel} onChange={setTel}/></Fld>
           <Fld label="Montant de ta contribution (FCFA)"><Inp value={montant} onChange={e=>setMontant(e.target.value.replace(/\D/g,""))} placeholder="Ex: 5000" inputMode="numeric"/></Fld>
+          {/* OPTION A : contribuer en ligne via FedaPay + QR a scanner (recommande, valide auto) */}
+          <div style={{background:"#FFF7ED",border:"1px solid #FF6B00",borderRadius:12,padding:14,margin:"6px 0 14px"}}>
+            <p style={{margin:"0 0 8px",color:"#FF6B00",fontWeight:800,fontSize:13}}>💳 Payer en ligne (recommandé)</p>
+            <p style={{margin:"0 0 10px",color:"#6B7280",fontSize:11,lineHeight:1.5}}>Contribue en toute sécurité (Orange Money, Wave, Moov, carte…). C'est validé automatiquement, sans photo.</p>
+            <button onClick={payerEnLigne} disabled={payLigneBusy} style={{width:"100%",background:"linear-gradient(135deg,#FF6B00,#CC5200)",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>{payLigneBusy?"Ouverture du paiement...":"✅ Contribuer en ligne maintenant"}</button>
+            <div data-noinvert style={{display:"flex",flexDirection:"column",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #FED7AA"}}>
+              <p style={{margin:"0 0 8px",color:"#111827",fontSize:11,fontWeight:700,textAlign:"center"}}>📷 Ou fais scanner ce code pour contribuer</p>
+              <QRCodeSVG value={`${window.location.origin}/?contribuer=${cagnotteId}`} size={140} level="M" bgColor="#FFFFFF" fgColor="#111827"/>
+            </div>
+          </div>
+          <p style={{textAlign:"center",color:"#9CA3AF",fontSize:11,margin:"0 0 6px"}}>— ou paie à la main puis envoie une preuve ci-dessous —</p>
           <BoutonsPaiementMobile montant={montant} numeroOrangeMoney={cagnotte.numero_orange_money} numeroWave={cagnotte.numero_wave} numeroMoovMoney={cagnotte.numero_moov_money} lienWave={cagnotte.lien_wave} lienOrange={cagnotte.lien_orange}/>
           <Fld label="Photo de ton depot (Orange Money, Wave, especes...) - obligatoire">
             <label style={{display:"block",background:"#FFFFFF",border:"1px dashed #FF6B00",borderRadius:12,padding:preuvePreview?0:20,textAlign:"center",cursor:"pointer",overflow:"hidden"}}>
